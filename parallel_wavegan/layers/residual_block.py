@@ -81,7 +81,7 @@ class ResidualBlock(torch.nn.Module):
 
         # dilation conv
         self.conv = self._apply_weight_norm(
-            Conv1d(residual_channels, skip_channels, kernel_size,
+            Conv1d(residual_channels, gate_channels, kernel_size,
                    padding=padding, dilation=dilation, bias=bias))
 
         # local conditioning
