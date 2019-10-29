@@ -1,0 +1,54 @@
+# generator setting
+generator:
+    layers: 30
+    kernel_size: 30
+    in_channels: 1
+    out_channels: 1
+    kernel_size: 3
+    layers: 30
+    stacks: 3
+    residual_channels: 64
+    gate_channels: 128
+    skip_channels: 64
+    aux_channels: 80
+    aux_context_window: 2
+    dropout: 0.05
+    use_weight_norm: true
+    upsample_conditional_features: true
+    upsample_net: "ConvInUpsampleNetwork"
+    upsample_params:
+        upsample_scales: [4, 4, 4, 4]
+
+# discriminator setting
+discriminator:
+    in_channels: 1
+    out_channels: 1
+    kernel_size: 3
+    layers: 10
+    conv_channels: 64
+    nonlinear_activation: "LeakyReLU"
+    nonlinear_activation_params:
+        negative_slope: 0.2
+    bias: true
+    use_weight_norm: true
+
+# STFT loss setting
+stft_loss:
+    fft_sizes: [1024, 2048, 512]
+    shift_sizes: [120, 240, 50]
+    window_lengths: [600, 1200, 240]
+    window_type: "hann_window"
+
+# other setting
+lambda_adv: 4
+batch_size: 8
+batch_max_steps: 20480
+hop_size: 256
+aux_context_window: 2
+eps: 1e-6
+generator_lr: 0.0001
+discriminator_lr: 0.00005
+discriminator_start_iter: 100000
+lr_shedular_step_size: 200000
+lr_shedular_gamma: 0.5
+iters: 400000
