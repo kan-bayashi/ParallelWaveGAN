@@ -111,42 +111,85 @@ def main():
         config = yaml.load(f, Loader=yaml.Loader)
 
     # get dataset
-    train_dataset = PyTorchDataset(args.train_dumpdir)
-    dev_dataset = PyTorchDataset(args.dev_dumpdir)
+    dataset = {}
+    dataset["train"] = PyTorchDataset(args.train_dumpdir)
+    dataset["dev"] = PyTorchDataset(args.dev_dumpdir)
 
     # get data loader
-    collate_fn = CustomCollater()
+    collate_fn = CustomCollater(
+        batch_max_steps=config["batch_max_steps"],
+        hop_size=config["hop_size"],
+        aux_context_window=config["generator"]["aux_context_window"],
+        device=torch.device("cpu"),
+    )
     data_loader = {}
-    data_loader["train"] = DataLoader(train_dataset, shuffle=True, collate_fn=collate_fn)
-    data_loader["eval"] = DataLoader(dev_dataset, shuffle=True, collate_fn=collate_fn)
+    data_loader["train"] = DataLoader(
+        dataset=dataset["train"],
+        shuffle=True,
+        collate_fn=collate_fn,
+        batch_size=config["batch_size"],
+        num_workers=config["num_workers"],
+        pin_memory=config["pin_memory"],
+    )
+    data_loader["dev"] = DataLoader(
+        dataset=dataset["dev"],
+        shuffle=True,
+        collate_fn=collate_fn,
+        batch_size=config["batch_size"],
+        num_workers=config["num_workers"],
+        pin_memory=config["pin_memory"],
+    )
 
     # define models and optimizers
     model_g = ParallelWaveGANGenerator(**config["generator"])
     model_d = ParallelWaveGANDiscriminator(**config["discriminator"])
     stft_criterion = MultiResolutionSTFTLoss(**config["stft_loss"])
     mse_criterion = torch.nn.MSELoss()
-    optimizer_g = RAdam(model_g.parameters(), lr=config["generator_lr"], eps=config["eps"])
-    optimizer_d = RAdam(model_d.parameters(), lr=config["discriminator_lr"], eps=config["eps"])
+    optimizer_g = RAdam(model_g.parameters(), **config["generator_optimizer"])
+    optimizer_d = RAdam(model_d.parameters(), **config["discriminator_optimizer"])
+    schedular_g = torch.optim.lr_scheduler.StepLR(
+        optimizer=optimizer_g,
+        step_size=config["lr_scheduler_step_size"],
+        gamma=config["lr_scheduler_gamma"],
+    )
+    schedular_d = torch.optim.lr_scheduler.StepLR(
+        optimizer=optimizer_d,
+        step_size=config["lr_scheduler_step_size"],
+        gamma=config["lr_scheduler_gamma"],
+    )
 
-    for z, c, y, input_lengths in data_loader["train"]:
-        y_hat = model_g(z, c)
-        p_hat = model_d(y_hat)
-        y, y_hat, p_hat = y.squeeze(1), y_hat.squeeze(1), p_hat.squeeze(1)
-        adv_loss = mse_criterion(p_hat, p_hat.new_ones(p_hat.size()))
-        aux_loss = stft_criterion(y_hat, y)
-        loss_g = adv_loss + config["lambda_adv"] * aux_loss
-        optimizer_g.zero_grad()
-        loss_g.backward()
-        optimizer_g.step()
+    global_step = 0
+    while True:
+        for z, c, y, input_lengths in data_loader["train"]:
+            y_hat = model_g(z, c)
+            p_hat = model_d(y_hat)
+            y, y_hat, p_hat = y.squeeze(1), y_hat.squeeze(1), p_hat.squeeze(1)
+            adv_loss = mse_criterion(p_hat, p_hat.new_ones(p_hat.size()))
+            aux_loss = stft_criterion(y_hat, y)
+            loss_g = adv_loss + config["lambda_adv"] * aux_loss
+            optimizer_g.zero_grad()
+            loss_g.backward()
+            if config["grad_norm"] > 0:
+                torch.nn.utils.clip_grad_norm_(model_g.parameters(), config["grad_norm"])
+            optimizer_g.step()
+            schedular_g.step()
 
-        y, y_hat = y.unsqueeze(1), y_hat.unsqueeze(1).detach()
-        p = model_d(y)
-        p_hat = model_d(y_hat)
-        p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-        loss_d = mse_criterion(p, p.new_ones(p.size())) + mse_criterion(p_hat, p_hat.new_zeros(p_hat.size()))
-        optimizer_d.zero_grad()
-        loss_d.backward()
-        optimizer_d.step()
+            if global_step > config["discriminator_start_iter"]:
+                y, y_hat = y.unsqueeze(1), y_hat.unsqueeze(1).detach()
+                p = model_d(y)
+                p_hat = model_d(y_hat)
+                p, p_hat = p.squeeze(1), p_hat.squeeze(1)
+                loss_d = mse_criterion(p, p.new_ones(p.size())) + mse_criterion(p_hat, p_hat.new_zeros(p_hat.size()))
+                optimizer_d.zero_grad()
+                loss_d.backward()
+                if config["grad_norm"] > 0:
+                    torch.nn.utils.clip_grad_norm_(model_d.parameters(), config["grad_norm"])
+                optimizer_d.step()
+                schedular_d.step()
+
+        global_step += 1
+        if global_step >= config["iters"]:
+            break
 
 
 if __name__ == "__main__":
