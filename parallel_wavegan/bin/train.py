@@ -3,9 +3,11 @@
 
 """Train Parallel WaveGAN."""
 
-import configargparse
+import argparse
+
 import numpy as np
 import torch
+import yaml
 
 from torch.utils.data import DataLoader
 
@@ -43,7 +45,7 @@ class CustomCollater(object):
 
         Returns:
             Tensor: Gaussian noise batch (B, 1, T).
-            Tensor: Auxiliary feature batch (B, C, T').
+            Tensor: Auxiliary feature batch (B, C, T").
             Tensor: Target signal batch (B, 1, T).
             LongTensor: Input length batch (B,)
 
@@ -97,15 +99,16 @@ class CustomCollater(object):
 
 def main():
     """Run main process."""
-    parser = configargparse.ArgumentParser()
-    # general configuration
-    parser.add('--config', is_config_file=True,
-               help='config file path')
-    parser.add_argument('--train-dumpdir', default=None, type=str,
-                        help='Directory including trainning data.')
-    parser.add_argument('--dev-dumpdir', default=None, type=str,
-                        help='Direcotry including development data.')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train-dumpdir", default=None, type=str,
+                        help="Directory including trainning data.")
+    parser.add_argument("--dev-dumpdir", default=None, type=str,
+                        help="Direcotry including development data.")
+    parser.add_argument("--config", default="hparam.yml", type=str,
+                        help="Yaml format configuration file.")
     args = parser.parse_args()
+    with open(args.config) as f:
+        config = yaml.load(f, Loader=yaml.Loader)
 
     # get dataset
     train_dataset = PyTorchDataset(args.train_dumpdir)
@@ -118,12 +121,12 @@ def main():
     data_loader["eval"] = DataLoader(dev_dataset, shuffle=True, collate_fn=collate_fn)
 
     # define models and optimizers
-    model_g = ParallelWaveGANGenerator()
-    model_d = ParallelWaveGANDiscriminator()
-    stft_criterion = MultiResolutionSTFTLoss()
+    model_g = ParallelWaveGANGenerator(**config["generator"])
+    model_d = ParallelWaveGANDiscriminator(**config["discriminator"])
+    stft_criterion = MultiResolutionSTFTLoss(**config["stft_loss"])
     mse_criterion = torch.nn.MSELoss()
-    optimizer_g = RAdam(model_g.parameters())
-    optimizer_d = RAdam(model_d.parameters())
+    optimizer_g = RAdam(model_g.parameters(), lr=config["generator_lr"], eps=config["eps"])
+    optimizer_d = RAdam(model_d.parameters(), lr=config["discriminator_lr"], eps=config["eps"])
 
     for z, c, y, input_lengths in data_loader["train"]:
         y_hat = model_g(z, c)
@@ -131,7 +134,7 @@ def main():
         y, y_hat, p_hat = y.squeeze(1), y_hat.squeeze(1), p_hat.squeeze(1)
         adv_loss = mse_criterion(p_hat, p_hat.new_ones(p_hat.size()))
         aux_loss = stft_criterion(y_hat, y)
-        loss_g = adv_loss + aux_loss
+        loss_g = adv_loss + config["lambda_adv"] * aux_loss
         optimizer_g.zero_grad()
         loss_g.backward()
         optimizer_g.step()
