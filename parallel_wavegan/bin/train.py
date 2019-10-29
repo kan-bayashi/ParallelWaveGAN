@@ -165,6 +165,7 @@ def main():
         print(f"resumed from {args.resume}.")
 
     while True:
+        finish_train = False
         for z, c, y, input_lengths in data_loader["train"]:
             y_ = model_g(z, c)
             p_ = model_d(y_)
@@ -192,8 +193,12 @@ def main():
                 optimizer_d.step()
                 schedular_d.step()
 
-        global_steps += 1
-        if global_steps >= config["iters"]:
+            global_steps += 1
+            if global_steps >= config["iters"]:
+                finish_train = True
+                break
+
+        if finish_train:
             break
 
 
