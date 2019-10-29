@@ -164,10 +164,10 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
         assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
         self.use_weight_norm = True
         self.conv_layers = torch.nn.ModuleList()
+        conv_in_channels = in_channels
         for i in range(layers - 1):
             if i == 0:
                 dilation = 1
-                conv_in_channels = in_channels
             else:
                 dilation = i
                 conv_in_channels = conv_channels
@@ -180,8 +180,9 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
                 getattr(torch.nn, nonlinear_activation)(inplace=True, **nonlinear_activation_params)
             ]
             self.conv_layers += conv_layer
+        padding = (kernel_size - 1) // 2
         last_conv_layer = self._apply_weight_norm(Conv1d(
-            conv_channels, out_channels,
+            conv_in_channels, out_channels,
             kernel_size=kernel_size, padding=padding, bias=bias))
         self.conv_layers += [last_conv_layer]
 
