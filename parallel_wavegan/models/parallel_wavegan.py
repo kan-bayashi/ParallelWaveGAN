@@ -208,4 +208,3 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
             return torch.nn.utils.weight_norm(module)
         else:
             return module
-
