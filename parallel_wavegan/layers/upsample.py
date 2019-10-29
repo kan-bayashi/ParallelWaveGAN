@@ -7,9 +7,10 @@ This code is modified from https://github.com/r9y9/wavenet_vocoder.
 """
 
 import numpy as np
-
 import torch
-from torch.nn import functional as F
+import torch.nn.functional as F
+
+from parallel_wavegan.layers import Conv1d
 
 
 class Stretch2d(torch.nn.Module):
@@ -72,6 +73,7 @@ class UpsampleNetwork(torch.nn.Module):
             self.up_layers += [stretch]
 
             # conv layer
+            assert (freq_axis_kernel_size - 1) % 2 == 0, "Not support even number freq axis kernel size."
             freq_axis_padding = (freq_axis_kernel_size - 1) // 2
             kernel_size = (freq_axis_kernel_size, scale * 2 + 1)
             padding = (freq_axis_padding, scale)
@@ -131,9 +133,8 @@ class ConvInUpsampleNetwork(torch.nn.Module):
         super(ConvInUpsampleNetwork, self).__init__()
         # To capture wide-context information in conditional features
         kernel_size = 2 * aux_context_window + 1
-        total_scale = np.prod(upsample_scales)
-        self.indent = aux_context_window * total_scale
-        conv_in = torch.nn.Conv1d(aux_channels, aux_channels, kernel_size=kernel_size, bias=False)
+        padding = (kernel_size - 1) // 2
+        conv_in = Conv1d(aux_channels, aux_channels, kernel_size=kernel_size, padding=padding, bias=False)
         if use_weight_norm:
             conv_in = torch.nn.utils.weight_norm(conv_in)
         self.conv_in = conv_in
@@ -151,10 +152,4 @@ class ConvInUpsampleNetwork(torch.nn.Module):
             Tensor: Upsampled tensor (B, C, T'), where T' = T * prod(upsample_scales).
 
         """
-        c = self.upsample(self.conv_in(c))
-
-        # remove padded parts
-        if self.indent > 0:
-            c = c[:, :, self.indent:-self.indent]
-
-        return c
+        return self.upsample(self.conv_in(c))
