@@ -133,8 +133,8 @@ class ConvInUpsampleNetwork(torch.nn.Module):
         super(ConvInUpsampleNetwork, self).__init__()
         # To capture wide-context information in conditional features
         kernel_size = 2 * aux_context_window + 1
-        padding = (kernel_size - 1) // 2
-        conv_in = Conv1d(aux_channels, aux_channels, kernel_size=kernel_size, padding=padding, bias=False)
+        # NOTE(kan-bayashi): Here do not use padding because the input is already padded
+        conv_in = Conv1d(aux_channels, aux_channels, kernel_size=kernel_size, bias=False)
         if use_weight_norm:
             conv_in = torch.nn.utils.weight_norm(conv_in)
         self.conv_in = conv_in
@@ -146,10 +146,16 @@ class ConvInUpsampleNetwork(torch.nn.Module):
         """Calculate forward propagation.
 
         Args:
-            c : Input tensor (B, C, T).
+            c : Input tensor (B, C, T').
 
         Returns:
-            Tensor: Upsampled tensor (B, C, T'), where T' = T * prod(upsample_scales).
+            Tensor: Upsampled tensor (B, C, T),
+                where T = (T' - aux_context_window * 2) * prod(upsample_scales).
+
+        Note:
+            The length of inputs considers the context window size.
 
         """
-        return self.upsample(self.conv_in(c))
+        c = self.upsample(self.conv_in(c))
+
+        return c
