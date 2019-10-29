@@ -104,9 +104,13 @@ def main():
                         help="Directory including trainning data.")
     parser.add_argument("--dev-dumpdir", default=None, type=str,
                         help="Direcotry including development data.")
+    parser.add_argument("--resume", default=None, type=str,
+                        help="Checkpoint file path to resume training.")
     parser.add_argument("--config", default="hparam.yml", type=str,
                         help="Yaml format configuration file.")
     args = parser.parse_args()
+
+    # load config
     with open(args.config) as f:
         config = yaml.load(f, Loader=yaml.Loader)
 
@@ -149,23 +153,24 @@ def main():
     optimizer_d = RAdam(model_d.parameters(), **config["discriminator_optimizer"])
     schedular_g = torch.optim.lr_scheduler.StepLR(
         optimizer=optimizer_g,
-        step_size=config["lr_scheduler_step_size"],
-        gamma=config["lr_scheduler_gamma"],
+        **config["generator_optimizer_lr_schedular"]
     )
     schedular_d = torch.optim.lr_scheduler.StepLR(
         optimizer=optimizer_d,
-        step_size=config["lr_scheduler_step_size"],
-        gamma=config["lr_scheduler_gamma"],
+        **config["discriminator_optimizer_lr_schedular"]
     )
+    global_steps = 0
 
-    global_step = 0
+    if args.resume is not None:
+        print(f"resumed from {args.resume}.")
+
     while True:
         for z, c, y, input_lengths in data_loader["train"]:
-            y_hat = model_g(z, c)
-            p_hat = model_d(y_hat)
-            y, y_hat, p_hat = y.squeeze(1), y_hat.squeeze(1), p_hat.squeeze(1)
-            adv_loss = mse_criterion(p_hat, p_hat.new_ones(p_hat.size()))
-            aux_loss = stft_criterion(y_hat, y)
+            y_ = model_g(z, c)
+            p_ = model_d(y_)
+            y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
+            adv_loss = mse_criterion(p_, p_.new_ones(p_.size()))
+            aux_loss = stft_criterion(y_, y)
             loss_g = adv_loss + config["lambda_adv"] * aux_loss
             optimizer_g.zero_grad()
             loss_g.backward()
@@ -174,12 +179,12 @@ def main():
             optimizer_g.step()
             schedular_g.step()
 
-            if global_step > config["discriminator_start_iter"]:
-                y, y_hat = y.unsqueeze(1), y_hat.unsqueeze(1).detach()
+            if global_steps > config["discriminator_start_iter"]:
+                y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
                 p = model_d(y)
-                p_hat = model_d(y_hat)
-                p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-                loss_d = mse_criterion(p, p.new_ones(p.size())) + mse_criterion(p_hat, p_hat.new_zeros(p_hat.size()))
+                p_ = model_d(y_)
+                p, p_ = p.squeeze(1), p_.squeeze(1)
+                loss_d = mse_criterion(p, p.new_ones(p.size())) + mse_criterion(p_, p_.new_zeros(p_.size()))
                 optimizer_d.zero_grad()
                 loss_d.backward()
                 if config["grad_norm"] > 0:
@@ -187,8 +192,8 @@ def main():
                 optimizer_d.step()
                 schedular_d.step()
 
-        global_step += 1
-        if global_step >= config["iters"]:
+        global_steps += 1
+        if global_steps >= config["iters"]:
             break
 
 

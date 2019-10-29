@@ -54,11 +54,15 @@ num_worker: 4
 generator_optimizer:
     lr: 0.0001
     eps: 1e-6
+generator_optimizer_lr_schedular:
+    step_size: 200000
+    gamma: 0.5
 discriminator_optimizer:
     lr: 0.00005
     eps: 1e-6
+discriminator_optimizer_lr_schedular:
+    step_size: 200000
+    gamma: 0.5
 discriminator_start_iter: 100000
-lr_shedular_step_size: 200000
-lr_shedular_gamma: 0.5
 iters: 400000
 grad_norm: 1
