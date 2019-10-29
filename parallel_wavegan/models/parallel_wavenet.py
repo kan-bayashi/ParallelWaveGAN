@@ -6,6 +6,7 @@ import math
 
 import torch
 
+from parallel_wavegan.layers import Conv1d
 from parallel_wavegan.layers import Conv1d1x1
 from parallel_wavegan.layers import ResidualBlock
 from parallel_wavegan.layers import upsample
@@ -147,10 +148,64 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
     def __init__(self,
                  in_channels=1,
                  out_channels=1,
+                 kernel_size=3,
                  layers=10,
                  conv_channels=64,
-                 activation_fn=torch.nn.LeakyReLU(0.2),
+                 nonlinear_activation="LeakyReLU",
+                 nonlinear_activation_params={"negative_slope": 0.2},
+                 bias=True,
+                 use_weight_norm=True,
                  ):
         """Initialize Parallel WaveGAN Discriminator module."""
         super(ParallelWaveGANDiscriminator, self).__init__()
-        pass
+        self.conv_layers = torch.nn.Module()
+        for i in range(layers - 1):
+            if i == 0:
+                dilation = 1
+                conv_in_channels = in_channels
+            else:
+                dilation = i
+                conv_in_channels = conv_channels
+            padding = (kernel_size - 1) // 2 * dilation
+            conv_layer = [
+                self._apply_weight_norm(Conv1d(
+                    conv_in_channels, conv_channels,
+                    kernel_size=kernel_size, padding=padding,
+                    dilation=dilation, bias=bias)),
+                getattr(torch.nn, nonlinear_activation)(inplace=True, **nonlinear_activation_params)
+            ]
+            self.conv_layers += conv_layer
+        last_conv_layer = self._apply_weight_norm(Conv1d(
+            conv_channels, out_channels,
+            kernel_size=kernel_size, padding=padding, bias=bias))
+        self.conv_layers += [last_conv_layer]
+
+    def forward(self, x):
+        """Calculate forward propagation.
+
+        Args:
+            x (Tensor): Input noise signal (B, 1, T).
+
+        Returns:
+            Tensor: Output tensor (B, 1, T)
+
+        """
+        for f in self.conv_layers:
+            x = f(x)
+        return x
+
+    def remove_weight_norm(self):
+        """Remove weight normalization module from all of the layers."""
+        def _remove_weight_norm(m):
+            try:
+                torch.nn.utils.remove_weight_norm(m)
+            except ValueError:  # this module didn't have weight norm
+                return
+        self.apply(_remove_weight_norm)
+
+    def _apply_weight_norm(self, module):
+        if self.use_weight_norm:
+            return torch.nn.utils.weight_norm(module)
+        else:
+            return module
+
