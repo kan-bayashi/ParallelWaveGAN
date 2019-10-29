@@ -25,6 +25,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                  gate_channels=128,
                  skip_channels=64,
                  aux_channels=80,
+                 aux_context_window=2,
                  dropout=1 - 0.95,
                  use_weight_norm=True,
                  upsample_conditional_features=True,
@@ -52,6 +53,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
         if upsample_conditional_features:
             self.upsample_net = getattr(upsample, upsample_net)(
                 aux_channels=aux_channels,
+                aux_context_window=aux_context_window,
                 use_weight_norm=use_weight_norm,
                 **upsample_params)
         else:
