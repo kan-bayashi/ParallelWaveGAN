@@ -1,7 +1,5 @@
 # generator setting
 generator:
-    layers: 30
-    kernel_size: 30
     in_channels: 1
     out_channels: 1
     kernel_size: 3
@@ -39,16 +37,28 @@ stft_loss:
     window_lengths: [600, 1200, 240]
     window_type: "hann_window"
 
-# other setting
-lambda_adv: 4
+# Adversarial loss setting
+lambda_adv: 4.0
+
+# feature setting
+fft_size: 1024
+hop_size: 256
+
+# data loader setting
 batch_size: 8
 batch_max_steps: 20480
-hop_size: 256
-aux_context_window: 2
-eps: 1e-6
-generator_lr: 0.0001
-discriminator_lr: 0.00005
+pin_memory: true
+num_worker: 4
+
+# optimizer setting
+generator_optimizer:
+    lr: 0.0001
+    eps: 1e-6
+discriminator_optimizer:
+    lr: 0.00005
+    eps: 1e-6
 discriminator_start_iter: 100000
 lr_shedular_step_size: 200000
 lr_shedular_gamma: 0.5
 iters: 400000
+grad_norm: 1
