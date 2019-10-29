@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
+"""Train Parallel WaveGAN."""
 
 import configargparse
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 from torch.utils.data import DataLoader
 
@@ -60,7 +59,8 @@ class CustomCollater(object):
                 start_frame = np.random.randint(interval_start, interval_end)
                 start_step = start_frame * self.hop_size
                 x = x[start_step: start_step + self.batch_max_steps]
-                c = c[start_frame - self.aux_context_window: start_frame + self.batch_max_frames + self.aux_context_window]
+                c = c[start_frame - self.aux_context_window:
+                      start_frame + self.aux_context_window + self.batch_max_frames]
                 self._assert_ready_for_upsampling(x, c, self.hop_size, self.aux_context_window)
             new_batch.append((x, c))
         batch = new_batch
@@ -73,7 +73,7 @@ class CustomCollater(object):
 
         # Make padded conditional auxiliary feature batch
         clens = [len(b[1]) for b in batch]
-        max_clen = max([len(b[1]) for b in batch])
+        max_clen = max(clens)
         c_batch = np.array([self._pad_2darray(b[1], max_clen) for b in batch], dtype=np.float32)
         c_batch = torch.FloatTensor(c_batch).transpose(2, 1).to(self.device)
 
@@ -95,35 +95,8 @@ class CustomCollater(object):
                       mode="constant", constant_values=constant_values)
 
 
-def get_data_loaders(dump_root, batch_size, num_workers=4, pin_memory=True, shuffle_test=True):
-    """Get Pytorch data loader.
-
-    Args:
-        dump_root (str):
-        batch_size (int):
-        num_workers (int):
-        pin_memory (bool):
-
-    """
-    data_loaders = {}
-    for phase in ["train_no_dev", "dev"]:
-        is_train = phase == "train_no_dev"
-        dataset = PyTorchDataset(os.path.join(dump_root, phase))
-        print(f"[{phase}]: length of the dataset is {len(dataset)}")
-        if is_train:
-            shuffle = True
-        else:
-            shuffle = shuffle_test
-        data_loader = DataLoader(
-            dataset, batch_size=batch_size, drop_last=True,
-            num_workers=num_workers, shuffle=shuffle,
-            collate_fn=collate_fn, pin_memory=pin_memory)
-        data_loaders[phase] = data_loader
-
-    return data_loaders
-
-
 def main():
+    """Run main process."""
     parser = configargparse.ArgumentParser()
     # general configuration
     parser.add('--config', is_config_file=True,
@@ -147,7 +120,7 @@ def main():
     # define models and optimizers
     model_g = ParallelWaveGANGenerator()
     model_d = ParallelWaveGANDiscriminator()
-    aux_criterion = MultiResolutionSTFTLoss()
+    stft_criterion = MultiResolutionSTFTLoss()
     mse_criterion = torch.nn.MSELoss()
     optimizer_g = RAdam(model_g.parameters())
     optimizer_d = RAdam(model_d.parameters())
@@ -156,8 +129,8 @@ def main():
         y_hat = model_g(z, c)
         p_hat = model_d(y_hat)
         y, y_hat, p_hat = y.squeeze(1), y_hat.squeeze(1), p_hat.squeeze(1)
-        adv_loss = F.mse_loss(p_hat, p_hat.new_ones(p_hat.size()))
-        aux_loss = aux_criterion(y_hat, y)
+        adv_loss = mse_criterion(p_hat, p_hat.new_ones(p_hat.size()))
+        aux_loss = stft_criterion(y_hat, y)
         loss_g = adv_loss + aux_loss
         optimizer_g.zero_grad()
         loss_g.backward()
@@ -167,7 +140,7 @@ def main():
         p = model_d(y)
         p_hat = model_d(y_hat)
         p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-        loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(p_hat, p_hat.new_zeros(p_hat.size()))
+        loss_d = mse_criterion(p, p.new_ones(p.size())) + mse_criterion(p_hat, p_hat.new_zeros(p_hat.size()))
         optimizer_d.zero_grad()
         loss_d.backward()
         optimizer_d.step()
