@@ -23,6 +23,7 @@ def make_generator_args(**kwargs):
         gate_channels=16,
         skip_channels=8,
         aux_channels=10,
+        aux_context_window=0,
         dropout=1 - 0.95,
         use_weight_norm=True,
         upsample_conditional_features=True,
@@ -70,7 +71,7 @@ def make_mutli_reso_stft_loss_args(**kwargs):
         ({"gate_channels": 8}, {}, {}),
         ({"stacks": 1}, {}, {}),
         ({"use_weight_norm": False}, {"use_weight_norm": False}, {}),
-        ({"upsample_params": {"upsample_scales": [4], "aux_context_window": 1}}, {}, {}),
+        ({"aux_context_window": 2}, {}, {}),
         ({"upsample_params": {"upsample_scales": [4], "freq_axis_kernel_size": 3}}, {}, {}),
         ({"upsample_conditional_features": False, "upsample_params": {"upsample_scales": [1]}}, {}, {}),
         ({}, {"nonlinear_activation": "ReLU", "nonlinear_activation_params": {}}, {}),
@@ -85,7 +86,8 @@ def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     z = torch.randn(batch_size, 1, batch_length)
     y = torch.randn(batch_size, 1, batch_length)
     c = torch.randn(batch_size, args_g["aux_channels"],
-                    batch_length // np.prod(args_g["upsample_params"]["upsample_scales"]))
+                    batch_length // np.prod(
+                        args_g["upsample_params"]["upsample_scales"]) + 2 * args_g["aux_context_window"])
     model_g = ParallelWaveGANGenerator(**args_g)
     model_d = ParallelWaveGANDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
