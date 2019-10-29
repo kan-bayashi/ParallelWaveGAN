@@ -50,7 +50,8 @@ class ParallelWaveGANGenerator(torch.nn.Module):
 
         # define conv + upsampling network
         if upsample_conditional_features:
-            self.upsample_net = getattr(upsample, upsample_net)(**upsample_params)
+            self.upsample_net = getattr(upsample, upsample_net)(
+                aux_channels=aux_channels, **upsample_params)
         else:
             self.upsample_net = None
 
