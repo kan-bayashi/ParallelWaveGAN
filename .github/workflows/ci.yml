@@ -18,14 +18,11 @@ jobs:
           architecture: 'x64'
       - name: Install dependencies
         run: |
-          sudo apt-get install nkf
           python -m pip install --upgrade pip
           pip install -q -U numpy
           pip install -q torch==${{ matrix.pytorch-version }} -f https://download.pytorch.org/whl/cpu/stable
           pip install -q -e .
           pip install -q -e .[test]
-          mkdir -p tools/venv/bin
-          touch tools/venv/bin/activate
       - name: Linter
         run: |
           flake8 parallel_wavegan
@@ -33,5 +30,5 @@ jobs:
           test ! -s check_autopep8
       - name: Pytest
         run: |
-          pytest test/python
+          pytest test
 
