@@ -51,7 +51,9 @@ class ParallelWaveGANGenerator(torch.nn.Module):
         # define conv + upsampling network
         if upsample_conditional_features:
             self.upsample_net = getattr(upsample, upsample_net)(
-                aux_channels=aux_channels, **upsample_params)
+                aux_channels=aux_channels,
+                use_weight_norm=use_weight_norm,
+                **upsample_params)
         else:
             self.upsample_net = None
 
@@ -159,6 +161,7 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
                  ):
         """Initialize Parallel WaveGAN Discriminator module."""
         super(ParallelWaveGANDiscriminator, self).__init__()
+        assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
         self.use_weight_norm = True
         self.conv_layers = torch.nn.ModuleList()
         for i in range(layers - 1):
