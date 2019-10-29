@@ -3,15 +3,35 @@ name: CI
 on: [push]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  linter_and_test:
+    runs-on: ubuntu-16.04
+    strategy:
+      max-parallel: 10
+      matrix:
+        python-version: [3.6, 3.7]
+        pytorch-version: [1.0.1, 1.1]
     steps:
-    - uses: actions/checkout@v1
-    - name: Run a one-line script
-      run: echo Hello, world!
-    - name: Run a multi-line script
-      run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: 'x64'
+      - name: Install dependencies
+        run: |
+          sudo apt-get install nkf
+          python -m pip install --upgrade pip
+          pip install -q -U numpy
+          pip install -q torch==${{ matrix.pytorch-version }} -f https://download.pytorch.org/whl/cpu/stable
+          pip install -q -e .
+          pip install -q -e .[test]
+          mkdir -p tools/venv/bin
+          touch tools/venv/bin/activate
+      - name: Linter
+        run: |
+          flake8 parallel_wavegan
+          autopep8 -r parallel_wavegan --global-config .pep8 --diff --max-line-length 120 | tee check_autopep8
+          test ! -s check_autopep8
+      - name: Pytest
+        run: |
+          pytest test/python
+
