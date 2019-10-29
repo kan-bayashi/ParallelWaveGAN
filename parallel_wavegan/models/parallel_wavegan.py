@@ -46,7 +46,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
         layers_per_stack = layers // stacks
 
         # define first convolution
-        self.first_conv = self._apply_weight_norm(Conv1d1x1(in_channels, residual_channels))
+        self.first_conv = self._apply_weight_norm(Conv1d1x1(in_channels, residual_channels, bias=True))
 
         # define conv + upsampling network
         if upsample_conditional_features:
@@ -59,7 +59,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
         for layer in range(layers):
             dilation = 2**(layer % layers_per_stack)
             conv = ResidualBlock(
-                Kernel_size=kernel_size,
+                kernel_size=kernel_size,
                 residual_channels=residual_channels,
                 gate_channels=gate_channels,
                 skip_channels=skip_channels,
@@ -75,9 +75,9 @@ class ParallelWaveGANGenerator(torch.nn.Module):
         # define output layers
         self.last_conv_layers = torch.nn.ModuleList([
             torch.nn.ReLU(inplace=True),
-            self._apply_weight_norm(Conv1d1x1(skip_channels, skip_channels)),
+            self._apply_weight_norm(Conv1d1x1(skip_channels, skip_channels, bias=True)),
             torch.nn.ReLU(inplace=True),
-            self._apply_weight_norm(Conv1d1x1(skip_channels, out_channels)),
+            self._apply_weight_norm(Conv1d1x1(skip_channels, out_channels, bias=True)),
         ])
 
     def forward(self, x, c):
@@ -158,7 +158,8 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
                  ):
         """Initialize Parallel WaveGAN Discriminator module."""
         super(ParallelWaveGANDiscriminator, self).__init__()
-        self.conv_layers = torch.nn.Module()
+        self.use_weight_norm = True
+        self.conv_layers = torch.nn.ModuleList()
         for i in range(layers - 1):
             if i == 0:
                 dilation = 1

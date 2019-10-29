@@ -17,7 +17,7 @@ class Conv1d(torch.nn.Conv1d):
 
     def __init__(self, *args, **kwargs):
         """Initialize Conv1d module."""
-        super(Conv1d, self).__init(*args, **kwargs)
+        super(Conv1d, self).__init__(*args, **kwargs)
 
     def reset_parameters(self):
         """Reset parameters."""
@@ -82,7 +82,7 @@ class ResidualBlock(torch.nn.Module):
         # dilation conv
         self.conv = self._apply_weight_norm(
             Conv1d(residual_channels, skip_channels, kernel_size,
-                   adding=padding, dilation=dilation, bias=bias))
+                   padding=padding, dilation=dilation, bias=bias))
 
         # local conditioning
         if aux_channels > 0:
