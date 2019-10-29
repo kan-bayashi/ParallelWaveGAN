@@ -75,6 +75,7 @@ class ResidualBlock(torch.nn.Module):
             if causal:
                 padding = (kernel_size - 1) * dilation
             else:
+                assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
                 padding = (kernel_size - 1) // 2 * dilation
         self.causal = causal
         self.use_weight_norm = use_weight_norm
