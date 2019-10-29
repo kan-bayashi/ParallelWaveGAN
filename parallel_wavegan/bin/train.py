@@ -4,6 +4,7 @@
 """Train Parallel WaveGAN."""
 
 import argparse
+import os
 
 import numpy as np
 import torch
@@ -97,6 +98,30 @@ class CustomCollater(object):
                       mode="constant", constant_values=constant_values)
 
 
+def save_checkpoint(checkpoint_name,
+                    model_g,
+                    model_d,
+                    optimizer_g,
+                    optimizer_d,
+                    schedular_g,
+                    schedular_d,
+                    global_steps,
+                    epochs):
+    """Save states as checkpoint."""
+    state_dict = {
+        "model_g": model_g.state_dict(),
+        "model_d": model_g.state_dict(),
+        "optimizer_g": optimizer_g.state_dict(),
+        "optimizer_d": optimizer_d.state_dict(),
+        "schedular_g": schedular_g.state_dict(),
+        "schedular_d": schedular_d.state_dict(),
+        "global_steps": global_steps,
+        "epochs": epochs,
+    }
+    if not os.path.exists(os.path.dirname(checkpoint_name)):
+        os.makedirs(os.path.dirname(checkpoint_name))
+    torch.save(checkpoint_name, state_dict)
+
 def main():
     """Run main process."""
     parser = argparse.ArgumentParser()
@@ -104,6 +129,8 @@ def main():
                         help="Directory including trainning data.")
     parser.add_argument("--dev-dumpdir", default=None, type=str,
                         help="Direcotry including development data.")
+    parser.add_argument("--outdir", default=None, type=str,
+                        help="Direcotry to checkpoints.")
     parser.add_argument("--resume", default=None, type=str,
                         help="Checkpoint file path to resume training.")
     parser.add_argument("--config", default="hparam.yml", type=str,
@@ -159,9 +186,22 @@ def main():
         optimizer=optimizer_d,
         **config["discriminator_optimizer_lr_schedular"]
     )
-    global_steps = 0
 
+    # initialize count
+    global_steps = 0
+    epochs = 0
+
+    # resume from checkpoint
     if args.resume is not None:
+        state_dict = torch.load(args.resume)
+        global_steps = state_dict["global_steps"]
+        epochs = state_dict["epochs"]
+        model_g.load_state_dict(state_dict["model_g"])
+        model_d.load_state_dict(state_dict["model_d"])
+        optimizer_g.load_state_dict(state_dict["optimizer_g"])
+        optimizer_d.load_state_dict(state_dict["optimizer_d"])
+        schedular_g.load_state_dict(state_dict["schedular_g"])
+        schedular_d.load_state_dict(state_dict["schedular_d"])
         print(f"resumed from {args.resume}.")
 
     while True:
@@ -198,8 +238,18 @@ def main():
                 finish_train = True
                 break
 
+            if global_steps % config["save_interval"] == 0:
+                save_checkpoint(os.path.join(args.outdir, f"checkpoint-{global_steps}.pkl"),
+                    model_g, model_d, optimizer_g, optimizer_d,
+                    schedular_g, schedular_d, global_steps, epochs)
+                print(f"save checkpoint @ {global_steps} steps.")
+
+        # check training is finished
         if finish_train:
             break
+
+        # update epoch count
+        epochs += 1
 
 
 if __name__ == "__main__":

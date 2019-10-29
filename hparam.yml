@@ -65,4 +65,5 @@ discriminator_optimizer_lr_schedular:
     gamma: 0.5
 discriminator_start_iter: 100000
 iters: 400000
+save_interval: 10000
 grad_norm: 1
