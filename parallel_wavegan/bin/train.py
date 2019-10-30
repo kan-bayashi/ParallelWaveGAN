@@ -65,44 +65,58 @@ class Trainer(object):
         batch = [b.to(self.device) for b in batch]
         z, c, y, _ = batch
 
-        # train generator
+        # calculate loss for generator
+        loss = {}
         y_ = self.model["generator"](z, c)
-        p_ = self.model["discriminator"](y_)
-        y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
-        adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
-        aux_loss = self.criterion["stft"](y_, y)
-        loss_g = aux_loss + self.config["lambda_adv"] * adv_loss
+        y, y_ = y.squeeze(1), y_.squeeze(1)
+        sc_loss, mag_loss = self.criterion["stft"](y_, y)
+        if self.steps > self.config["discriminator_start_iter"]:
+            p_ = self.model["discriminator"](y_).squeeze(1)
+            adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
+            gen_loss = sc_loss + mag_loss + self.config["lambda_adv"] * adv_loss
+            loss.update({
+                "spectral_convergenge_loss": sc_loss.item(),
+                "log_stft_magnitude_loss": mga_loss.item(),
+                "adversarial_loss": adv_loss.item(),
+                "generator_loss": gen_loss.item(),
+            })
+        else:
+            gen_loss = sc_loss + mag_loss
+            loss.update({
+                "spectral_convergenge_loss": sc_loss.item(),
+                "log_stft_magnitude_loss": mag_loss.item(),
+                "generator_loss": gen_loss.item(),
+            })
+
+        # update generator
         self.optimizer["generator"].zero_grad()
-        loss_g.backward()
+        gen_loss.backward()
         if self.config["grad_norm"] > 0:
             torch.nn.utils.clip_grad_norm_(
                 self.model["generator"].parameters(),
                 self.config["grad_norm"])
         self.optimizer["generator"].step()
         self.scheduler["generator"].step()
-        loss = {
-            "generator_adv_loss": adv_loss.item(),
-            "generator_aux_loss": aux_loss.item(),
-            "generator_loss": loss_g.item(),
-        }
 
-        # train discriminator
         if self.steps > self.config["discriminator_start_iter"]:
+            # calculate discriminator loss
             y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
             p = self.model["discriminator"](y)
             p_ = self.model["discriminator"](y_)
             p, p_ = p.squeeze(1), p_.squeeze(1)
-            loss_d = self.criterion["mse"](p, p.new_ones(p.size())) + \
+            dis_loss = self.criterion["mse"](p, p.new_ones(p.size())) + \
                 self.criterion["mse"](p_, p_.new_zeros(p_.size()))
+            loss["discriminator_loss"] = dis_loss.item()
+
+            # update discriminator
             self.optimizer["discriminator"].zero_grad()
-            loss_d.backward()
+            dis_loss.backward()
             if self.config["grad_norm"] > 0:
                 torch.nn.utils.clip_grad_norm_(
                     self.model["discriminator"].parameters(),
                     self.config["grad_norm"])
             self.optimizer["discriminator"].step()
             self.scheduler["discriminator"].step()
-            loss["discriminator_loss"] = loss_d.item()
 
         # update counts
         self.steps += 1
@@ -150,23 +164,25 @@ class Trainer(object):
         p_ = self.model["discriminator"](y_)
         y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
         adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
-        aux_loss = self.criterion["stft"](y_, y)
-        loss_g = adv_loss + self.config["lambda_adv"] * aux_loss
+        sc_loss, mag_loss = self.criterion["stft"](y_, y)
+        aux_loss = sc_loss + mag_loss
+        gen_loss = aux_loss + self.config["lambda_adv"] * adv_loss
 
         # train discriminator
         y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
         p = self.model["discriminator"](y)
         p_ = self.model["discriminator"](y_)
         p, p_ = p.squeeze(1), p_.squeeze(1)
-        loss_d = self.criterion["mse"](p, p.new_ones(p.size())) + \
+        dis_loss = self.criterion["mse"](p, p.new_ones(p.size())) + \
             self.criterion["mse"](p_, p_.new_zeros(p_.size()))
 
         # store into dict
         loss = {
-            "validation/generator_adv_loss": adv_loss.item(),
-            "validation/generator_aux_loss": aux_loss.item(),
-            "validation/generator_loss": loss_g.item(),
-            "validation/discriminator_loss": loss_d.item(),
+            "validation/adversarial_loss": adv_loss.item(),
+            "validation/spectral_convergenge_loss": sc_loss.item(),
+            "validation/log_stft_magnitude_loss": mag_loss.item(),
+            "validation/generator_loss": gen_loss.item(),
+            "validation/discriminator_loss": dis_loss.item(),
         }
 
         return loss
