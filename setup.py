@@ -27,6 +27,7 @@ requirements = {
         "tensorboardX>=1.8",
         "matplotlib>=3.1.0",
         "PyYAML>=3.12",
+        "nnmnkwii>=0.0.19"
     ],
     "setup": [
         "numpy",
