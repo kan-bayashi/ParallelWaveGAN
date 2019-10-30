@@ -74,7 +74,7 @@ class Trainer(object):
         y_ = self.model["generator"](z, c)
         y, y_ = y.squeeze(1), y_.squeeze(1)
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
-        if self.steps > self.config["discriminator_train_start_step"]:
+        if self.steps > self.config["discriminator_train_start_steps"]:
             p_ = self.model["discriminator"](y_).squeeze(1)
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
             gen_loss = sc_loss + mag_loss + self.config["lambda_adv"] * adv_loss
@@ -102,7 +102,7 @@ class Trainer(object):
         self.optimizer["generator"].step()
         self.scheduler["generator"].step()
 
-        if self.steps > self.config["discriminator_train_start_step"]:
+        if self.steps > self.config["discriminator_train_start_steps"]:
             # calculate discriminator loss
             y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
             p = self.model["discriminator"](y)
@@ -129,7 +129,6 @@ class Trainer(object):
 
     def _train_epoch(self):
         """Train model one epoch."""
-        logging.info(f"(step: {self.steps}) start {self.epochs + 1} epoch training.")
         for train_steps_per_epoch, batch in enumerate(self.data_loader["train"], 1):
             # train one step
             loss = self._train_step(batch)
@@ -233,7 +232,7 @@ class Trainer(object):
 
     def _check_log_interval(self, loss):
         if self.steps % self.config["log_interval_steps"] == 0:
-            self.tqdm.update(config["log_interval_steps"])
+            self.tqdm.update(self.config["log_interval_steps"])
             for key in loss.keys():
                 loss[key] /= self.config["log_interval_steps"]
                 logging.info(f"(steps: {self.steps}) {key} = {loss[key]}.")
