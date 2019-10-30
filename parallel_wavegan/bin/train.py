@@ -49,10 +49,12 @@ class Trainer(object):
         self.writer = SummaryWriter(config["outdir"])
         self.finish_train = False
         self.total_loss = {}
-        self.tqdm = tqdm(total=config["train_max_steps"])
 
     def run(self):
         """Run training."""
+        self.tqdm = tqdm(initial=self.steps,
+                         total=self.config["train_max_steps"],
+                         ascii=True)
         while True:
             # train one epoch
             self._train_epoch()
@@ -62,6 +64,7 @@ class Trainer(object):
                 break
 
         self.tqdm.close()
+        loging.info("finished training.")
 
     def _train_step(self, batch):
         """Train model one step."""
@@ -75,7 +78,7 @@ class Trainer(object):
         y, y_ = y.squeeze(1), y_.squeeze(1)
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
         if self.steps > self.config["discriminator_train_start_steps"]:
-            p_ = self.model["discriminator"](y_).squeeze(1)
+            p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
             gen_loss = sc_loss + mag_loss + self.config["lambda_adv"] * adv_loss
             loss.update({
@@ -104,10 +107,8 @@ class Trainer(object):
 
         if self.steps > self.config["discriminator_train_start_steps"]:
             # calculate discriminator loss
-            y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
-            p = self.model["discriminator"](y)
-            p_ = self.model["discriminator"](y_)
-            p, p_ = p.squeeze(1), p_.squeeze(1)
+            p = self.model["discriminator"](y.unsqueeze(1)).squeeze(1)
+            p_ = self.model["discriminator"](y_.unsqueeze(1).detach()).squeeze(1)
             dis_loss = self.criterion["mse"](p, p.new_ones(p.size())) + \
                 self.criterion["mse"](p_, p_.new_zeros(p_.size()))
             loss["discriminator_loss"] = dis_loss.item()
@@ -172,10 +173,8 @@ class Trainer(object):
         gen_loss = aux_loss + self.config["lambda_adv"] * adv_loss
 
         # train discriminator
-        y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
-        p = self.model["discriminator"](y)
-        p_ = self.model["discriminator"](y_)
-        p, p_ = p.squeeze(1), p_.squeeze(1)
+        p = self.model["discriminator"](y.unsqueeze(1)).squeeze(1)
+        p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
         dis_loss = self.criterion["mse"](p, p.new_ones(p.size())) + \
             self.criterion["mse"](p_, p_.new_zeros(p_.size()))
 
@@ -194,22 +193,24 @@ class Trainer(object):
         """Evaluate model one epoch."""
         logging.info(f"(step: {self.steps}) start evaluation.")
         # calculate each loss
-        for eval_steps_per_epoch, batch in enumerate(self.data_loader["dev"], 1):
+        eval_steps_per_epoch = 0
+        for batch in tqdm(self.data_loader["dev"], ascii=True):
             loss = self._eval_step(batch)
-            if eval_steps_per_epoch == 1:
+            if eval_steps_per_epoch == 0:
                 total_loss = loss
             else:
                 for key, value in loss.items():
                     total_loss[key] += value
+            eval_steps_per_epoch += 1
 
         self.eval_steps_per_epoch = eval_steps_per_epoch
         logging.info(f"(step: {self.steps}) finished evaluation.")
-        logging.info(f"evaluation steps per epoch = f{self.eval_steps_per_epoch}.")
+        logging.info(f"evaluation steps per epoch = {self.eval_steps_per_epoch}.")
 
         # average loss
         for key in total_loss.keys():
             total_loss[key] /= eval_steps_per_epoch
-            logging.info(f"(steps: {self.steps}) {key} = {total_loss[key]}.")
+            logging.info(f"(steps: {self.steps}) {key} = {total_loss[key]:.4f}.")
 
         # record
         self._write_to_tensorboard(total_loss)
@@ -235,7 +236,7 @@ class Trainer(object):
             self.tqdm.update(self.config["log_interval_steps"])
             for key in loss.keys():
                 loss[key] /= self.config["log_interval_steps"]
-                logging.info(f"(steps: {self.steps}) {key} = {loss[key]}.")
+                logging.info(f"(steps: {self.steps}) {key} = {loss[key]:.4f}.")
             self._write_to_tensorboard(loss)
             return {}
         else:
@@ -246,7 +247,7 @@ class Trainer(object):
             self.finish_train = True
 
 
-class CustomCollater(object):
+class Collater(object):
     """Customized collater for Pytorch DataLoader."""
 
     def __init__(self,
@@ -351,7 +352,7 @@ def save_checkpoint(checkpoint_name,
     }
     if not os.path.exists(os.path.dirname(checkpoint_name)):
         os.makedirs(os.path.dirname(checkpoint_name))
-    torch.save(checkpoint_name, state_dict)
+    torch.save(state_dict, checkpoint_name)
 
 
 def resume_from_checkpoint(checkpoint_name, trainer):
@@ -365,6 +366,7 @@ def resume_from_checkpoint(checkpoint_name, trainer):
     trainer.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
     trainer.scheduler["generator"].load_state_dict(state_dict["scheduler"]["generator"])
     trainer.scheduler["discriminator"].load_state_dict(state_dict["scheduler"]["discriminator"])
+    return trainer
 
 
 def main():
@@ -421,7 +423,7 @@ def main():
             audio_length_threshold=audio_length_threshold,
             mel_length_threshold=mel_length_threshold),
         "dev": PyTorchDataset(
-            dump_root=args.train_dumpdir,
+            dump_root=args.dev_dumpdir,
             audio_length_threshold=audio_length_threshold,
             mel_length_threshold=mel_length_threshold),
     }
@@ -431,7 +433,7 @@ def main():
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    collate_fn = CustomCollater(
+    collate_fn = Collater(
         batch_max_steps=config["batch_max_steps"],
         hop_size=config["hop_size"],
         aux_context_window=config["generator_params"]["aux_context_window"],
@@ -499,7 +501,8 @@ def main():
 
     # resume from checkpoint
     if args.resume is not None:
-        resume_from_checkpoint(args.resume, trainer)
+        trainer = resume_from_checkpoint(args.resume, trainer)
+        logging.info(f"resumed from {args.resume}.")
 
     # run training loop
     trainer.run()
