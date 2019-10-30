@@ -76,7 +76,7 @@ class Trainer(object):
             gen_loss = sc_loss + mag_loss + self.config["lambda_adv"] * adv_loss
             loss.update({
                 "spectral_convergenge_loss": sc_loss.item(),
-                "log_stft_magnitude_loss": mga_loss.item(),
+                "log_stft_magnitude_loss": mag_loss.item(),
                 "adversarial_loss": adv_loss.item(),
                 "generator_loss": gen_loss.item(),
             })
