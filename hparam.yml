@@ -48,19 +48,19 @@ hop_size: 256
 batch_size: 8
 batch_max_steps: 20480
 pin_memory: true
-num_worker: 4
+num_workers: 4
 
 # optimizer setting
-generator_optimizer_parmas:
+generator_optimizer_params:
     lr: 0.0001
-    eps: 1e-6
-generator_schedular_params:
+    eps: 0.000001
+generator_scheduler_params:
     step_size: 200000
     gamma: 0.5
-discriminator_optimizer:
+discriminator_optimizer_params:
     lr: 0.00005
-    eps: 1e-6
-discriminator_schedular_params:
+    eps: 0.000001
+discriminator_scheduler_params:
     step_size: 200000
     gamma: 0.5
 discriminator_start_iter: 100000

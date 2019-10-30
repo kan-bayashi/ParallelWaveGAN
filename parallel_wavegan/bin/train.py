@@ -33,6 +33,7 @@ class Trainer(object):
                  optimizer,
                  scheduler,
                  config,
+                 device=torch.device("cpu"),
                  ):
         """Initialize trainer."""
         self.steps = steps
@@ -43,6 +44,7 @@ class Trainer(object):
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.config = config
+        self.device = device
         self.writer = SummaryWriter(config["outdir"])
         self.finish_train = False
         self.total_loss = {}
@@ -51,7 +53,7 @@ class Trainer(object):
         """Run training."""
         while True:
             # train one epoch
-            self._train_one_epoch()
+            self._train_epoch()
 
             # check whether training is finished
             if self.finish_train:
@@ -60,11 +62,12 @@ class Trainer(object):
     def _train_step(self, batch):
         """Train model one step."""
         # parse batch
+        batch = [b.to(self.device) for b in batch]
         z, c, y, _ = batch
 
         # train generator
         y_ = self.model["generator"](z, c)
-        p_ = self.model["generator"](y_)
+        p_ = self.model["discriminator"](y_)
         y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
         adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
         aux_loss = self.criterion["stft"](y_, y)
@@ -114,11 +117,11 @@ class Trainer(object):
             loss = self._train_step(batch)
 
             # record
-            if self.total_loss.keys() == 0:
-                self.total_loss = loss
-            else:
-                for key, value in loss:
+            for key, value in loss.items():
+                if key in self.total_loss.keys():
                     self.total_loss[key] += value
+                else:
+                    self.total_loss[key] = value
 
             # check interval
             self.total_loss = self._check_log_interval(self.total_loss)
@@ -139,11 +142,12 @@ class Trainer(object):
     def _eval_step(self, batch):
         """Evaluate model one step."""
         # parse batch
+        batch = [b.to(self.device) for b in batch]
         z, c, y, _ = batch
 
         # calculate generator loss
         y_ = self.model["generator"](z, c)
-        p_ = self.model["generator"](y_)
+        p_ = self.model["discriminator"](y_)
         y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
         adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
         aux_loss = self.criterion["stft"](y_, y)
@@ -228,8 +232,7 @@ class CustomCollater(object):
     def __init__(self,
                  batch_max_steps=20480,
                  hop_size=256,
-                 aux_context_window=2,
-                 device=torch.device("cpu")
+                 aux_context_window=2
                  ):
         """Initialize customized collater."""
         if batch_max_steps % hop_size != 0:
@@ -239,7 +242,6 @@ class CustomCollater(object):
         self.batch_max_frames = batch_max_steps // hop_size
         self.hop_size = hop_size
         self.aux_context_window = aux_context_window
-        self.device = device
 
     def __call__(self, batch):
         """Convert into batch tensors.
@@ -275,19 +277,19 @@ class CustomCollater(object):
         xlens = [len(b[0]) for b in batch]
         max_olen = max(xlens)
         y_batch = np.array([self._pad_2darray(b[0].reshape(-1, 1), max_olen) for b in batch], dtype=np.float32)
-        y_batch = torch.FloatTensor(y_batch).transpose(2, 1).to(self.device)
+        y_batch = torch.FloatTensor(y_batch).transpose(2, 1)
 
         # Make padded conditional auxiliary feature batch
         clens = [len(b[1]) for b in batch]
         max_clen = max(clens)
         c_batch = np.array([self._pad_2darray(b[1], max_clen) for b in batch], dtype=np.float32)
-        c_batch = torch.FloatTensor(c_batch).transpose(2, 1).to(self.device)
+        c_batch = torch.FloatTensor(c_batch).transpose(2, 1)
 
         # Make input noise signale batch
-        z_batch = torch.randn(y_batch.size()).to(self.device)
+        z_batch = torch.randn(y_batch.size())
 
         # Make the list of the length of input signals
-        input_lengths = torch.LongTensor(xlens).to(self.device)
+        input_lengths = torch.LongTensor(xlens)
 
         return z_batch, c_batch, y_batch, input_lengths
 
@@ -376,6 +378,8 @@ def main():
     with open(args.config) as f:
         config = yaml.load(f, Loader=yaml.Loader)
         config.update(vars(args))
+    for key, value in config.items():
+        logging.info(f"{key} = {value}")
 
     # get dataset
     dataset = {
@@ -391,8 +395,7 @@ def main():
     collate_fn = CustomCollater(
         batch_max_steps=config["batch_max_steps"],
         hop_size=config["hop_size"],
-        aux_context_window=config["generator"]["aux_context_window"],
-        device=device,
+        aux_context_window=config["generator_params"]["aux_context_window"],
     )
     data_loader = {
         "train": DataLoader(
@@ -439,6 +442,8 @@ def main():
             optimizer=optimizer["discriminator"],
             **config["discriminator_scheduler_params"]),
     }
+    logging.info(model["generator"])
+    logging.info(model["discriminator"])
 
     # define trainer
     trainer = Trainer(
@@ -450,6 +455,7 @@ def main():
         optimizer=optimizer,
         scheduler=scheduler,
         config=config,
+        device=device,
     )
 
     # resume from checkpoint
