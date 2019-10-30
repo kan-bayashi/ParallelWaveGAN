@@ -7,7 +7,9 @@ import argparse
 import logging
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
+import soundfile as sf
 import torch
 import yaml
 
@@ -64,7 +66,7 @@ class Trainer(object):
                 break
 
         self.tqdm.close()
-        loging.info("finished training.")
+        logging.info("finished training.")
 
     def _train_step(self, batch):
         """Train model one step."""
@@ -192,7 +194,11 @@ class Trainer(object):
     def _eval_epoch(self):
         """Evaluate model one epoch."""
         logging.info(f"(step: {self.steps}) start evaluation.")
-        # calculate each loss
+        # change mode
+        for key in self.model.keys():
+            self.model[key].eval()
+
+        # calculate loss for each batch
         eval_steps_per_epoch = 0
         for batch in tqdm(self.data_loader["dev"], ascii=True):
             loss = self._eval_step(batch)
@@ -202,10 +208,12 @@ class Trainer(object):
                 for key, value in loss.items():
                     total_loss[key] += value
             eval_steps_per_epoch += 1
-
         self.eval_steps_per_epoch = eval_steps_per_epoch
         logging.info(f"(step: {self.steps}) finished evaluation.")
         logging.info(f"evaluation steps per epoch = {self.eval_steps_per_epoch}.")
+
+        # save intermediate result
+        self._genearete_and_save_intermediate_result(batch)
 
         # average loss
         for key in total_loss.keys():
@@ -214,6 +222,41 @@ class Trainer(object):
 
         # record
         self._write_to_tensorboard(total_loss)
+
+        # restore mode
+        for key in self.model.keys():
+            self.model[key].train()
+
+    def _genearete_and_save_intermediate_result(self, batch):
+        """Generate and save intermediate result."""
+        with torch.no_grad():
+            batch = [b.to(self.device) for b in batch]
+            z, c, y, _ = batch
+            y_ = self.model["generator"](z, c)
+            y, y_ = y[0].view(-1).cpu().numpy(), y_[0].view(-1).cpu().numpy()
+
+        # plot figure and save it
+        figname = os.path.join(self.config["outdir"], f"predictions/{self.steps}-steps.png")
+        dirname = os.path.dirname(figname)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        plt.subplot(2, 1, 1)
+        plt.plot(y)
+        plt.title("groundtruth speech")
+        plt.subplot(2, 1, 2)
+        plt.plot(y_)
+        plt.title(f"generated speech @ {self.steps} steps")
+        plt.tight_layout()
+        plt.savefig(figname)
+        plt.close()
+
+        # save as wavfile
+        y = np.clip(y, -1, 1)
+        y_ = np.clip(y_, -1, 1)
+        sf.write(figname.replace(".png", "_ref.wav"), y,
+                 self.config["sampling_rate"], "PCM_16")
+        sf.write(figname.replace(".png", "_gen.wav"), y_,
+                 self.config["sampling_rate"], "PCM_16")
 
     def _write_to_tensorboard(self, loss):
         """Write to tensorboard."""
@@ -402,10 +445,12 @@ def main():
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir)
 
-    # load config
+    # load and save config
     with open(args.config) as f:
         config = yaml.load(f, Loader=yaml.Loader)
-        config.update(vars(args))
+    config.update(vars(args))
+    with open(os.path.join(args.outdir, "config.yml"), "w") as f:
+        yaml.dump(config, f, Dumper=yaml.Dumper)
     for key, value in config.items():
         logging.info(f"{key} = {value}")
 
