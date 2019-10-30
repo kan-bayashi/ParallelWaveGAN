@@ -64,7 +64,7 @@ discriminator_optimizer_params:
 discriminator_scheduler_params:
     step_size: 200000
     gamma: 0.5
-grad_norm: 1
+grad_norm: 5
 
 # interval setting
 discriminator_train_start_steps: 100000
