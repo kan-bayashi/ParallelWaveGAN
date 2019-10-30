@@ -1,5 +1,5 @@
 # generator setting
-generator:
+generator_params:
     in_channels: 1
     out_channels: 1
     kernel_size: 3
@@ -18,7 +18,7 @@ generator:
         upsample_scales: [4, 4, 4, 4]
 
 # discriminator setting
-discriminator:
+discriminator_params:
     in_channels: 1
     out_channels: 1
     kernel_size: 3
@@ -31,7 +31,7 @@ discriminator:
     use_weight_norm: true
 
 # STFT loss setting
-stft_loss:
+stft_loss_params:
     fft_sizes: [1024, 2048, 512]
     shift_sizes: [120, 240, 50]
     window_lengths: [600, 1200, 240]
@@ -51,19 +51,23 @@ pin_memory: true
 num_worker: 4
 
 # optimizer setting
-generator_optimizer:
+generator_optimizer_parmas:
     lr: 0.0001
     eps: 1e-6
-generator_optimizer_lr_schedular:
+generator_schedular_params:
     step_size: 200000
     gamma: 0.5
 discriminator_optimizer:
     lr: 0.00005
     eps: 1e-6
-discriminator_optimizer_lr_schedular:
+discriminator_schedular_params:
     step_size: 200000
     gamma: 0.5
 discriminator_start_iter: 100000
-iters: 400000
-save_interval: 10000
 grad_norm: 1
+
+# interval setting
+train_max_steps: 400000
+save_interval_steps: 5000
+eval_interval_steps: 5000
+log_interval_steps: 100
