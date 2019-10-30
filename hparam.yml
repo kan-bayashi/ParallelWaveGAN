@@ -41,6 +41,7 @@ stft_loss_params:
 lambda_adv: 4.0
 
 # feature setting
+sampling_rate: 22050
 fft_size: 1024
 hop_size: 256
 remove_short_samples: false
