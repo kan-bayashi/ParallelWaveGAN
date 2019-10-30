@@ -2,8 +2,6 @@
 
 """STFT-based Loss modules."""
 
-import logging
-
 import torch
 
 
@@ -20,9 +18,9 @@ def stft(x, fft_size, hop_size, window_length, window):
     x_stft = torch.stft(x, fft_size, hop_size, window_length, window)
     real = x_stft[..., 0]
     imag = x_stft[..., 1]
-    mag = torch.sqrt(real ** 2 + imag ** 2).transpose(2, 1)
-    # TODO(kan-bayashi): need to investigate suitable range
-    return torch.clamp(mag, min=1e-9)
+
+    # NOTE(kan-bayashi): clamp is needed to avoid nan or inf
+    return torch.sqrt(torch.clamp(real ** 2 + imag ** 2, min=1e-7)).transpose(2, 1)
 
 
 class SpectralConvergengeLoss(torch.nn.Module):
@@ -103,7 +101,7 @@ class STFTLoss(torch.nn.Module):
         sc_loss = self.spectral_convergenge_loss(x_mag, y_mag)
         mag_loss = self.log_stft_magnitude_loss(x_mag, y_mag)
 
-        return sc_loss + mag_loss
+        return sc_loss, mag_loss
 
 
 class MultiResolutionSTFTLoss(torch.nn.Module):
@@ -132,8 +130,13 @@ class MultiResolutionSTFTLoss(torch.nn.Module):
             Tensor: Mutli resolution STFT loss values.
 
         """
-        loss = 0.0
+        sc_loss = 0.0
+        mag_loss = 0.0
         for f in self.stft_losses:
-            loss += f(x, y)
+            sc_l, mag_l = f(x, y)
+            sc_loss += sc_l
+            mag_loss += mag_l
+        sc_loss /= len(self.stft_losses)
+        mag_loss /= len(self.stft_losses)
 
-        return loss / len(self.stft_losses)
+        return sc_loss, mag_loss
