@@ -34,6 +34,7 @@ class Trainer(object):
                  scheduler,
                  config,
                  ):
+        """Initialize trainer."""
         self.steps = steps
         self.epochs = epochs
         self.data_loader = data_loader
@@ -44,8 +45,10 @@ class Trainer(object):
         self.config = config
         self.writer = SummaryWriter(config["outdir"])
         self.finish_train = False
+        self.total_loss = {}
 
     def run(self):
+        """Run training."""
         while True:
             # train one epoch
             self._train_one_epoch()
@@ -68,12 +71,12 @@ class Trainer(object):
         loss_g = adv_loss + self.config["lambda_adv"] * aux_loss
         self.optimizer["generator"].zero_grad()
         loss_g.backward()
-        if config["grad_norm"] > 0:
+        if self.config["grad_norm"] > 0:
             torch.nn.utils.clip_grad_norm_(
                 self.model["generator"].parameters(),
                 self.config["grad_norm"])
         self.optimizer["generator"].step()
-        self.schedular["generator"].step()
+        self.scheduler["generator"].step()
         loss = {
             "generator_adv_loss": adv_loss.item(),
             "generator_aux_loss": aux_loss.item(),
@@ -81,21 +84,21 @@ class Trainer(object):
         }
 
         # train discriminator
-        if self.steps > config["discriminator_start_iter"]:
+        if self.steps > self.config["discriminator_start_iter"]:
             y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
             p = self.model["discriminator"](y)
             p_ = self.model["discriminator"](y_)
             p, p_ = p.squeeze(1), p_.squeeze(1)
             loss_d = self.criterion["mse"](p, p.new_ones(p.size())) + \
                 self.criterion["mse"](p_, p_.new_zeros(p_.size()))
-            optimizer["discriminator"].zero_grad()
+            self.optimizer["discriminator"].zero_grad()
             loss_d.backward()
-            if config["grad_norm"] > 0:
+            if self.config["grad_norm"] > 0:
                 torch.nn.utils.clip_grad_norm_(
                     self.model["discriminator"].parameters(),
                     self.config["grad_norm"])
             self.optimizer["discriminator"].step()
-            self.schedular["discriminator"].step()
+            self.scheduler["discriminator"].step()
             loss["discriminator_loss"] = loss_d.item()
 
         # update counts
@@ -111,16 +114,16 @@ class Trainer(object):
             loss = self._train_step(batch)
 
             # record
-            if total_loss.keys() == 0:
-                total_loss = loss
+            if self.total_loss.keys() == 0:
+                self.total_loss = loss
             else:
                 for key, value in loss:
-                    total_loss[key] += value
+                    self.total_loss[key] += value
 
             # check interval
+            self.total_loss = self._check_log_interval(self.total_loss)
             self._check_eval_interval()
             self._check_save_interval()
-            total_loss = self._check_log_interval(total_loss)
             self._check_train_finish()
 
             # check whether training is finished
@@ -195,8 +198,9 @@ class Trainer(object):
 
     def _check_save_interval(self):
         if self.steps % self.config["save_interval_steps"] == 0:
-            save_checkpoint(os.path.join(config["outdir"], f"checkpoint-{self.steps}steps.pkl"),
-                self.model, self.optimizer, self.schedular, self.steps, self.epochs)
+            save_checkpoint(
+                os.path.join(self.config["outdir"], f"checkpoint-{self.steps}steps.pkl"),
+                self.model, self.optimizer, self.scheduler, self.steps, self.epochs)
             logging.info(f"saved checkpoint @ {self.steps} steps.")
 
     def _check_eval_interval(self):
@@ -208,7 +212,7 @@ class Trainer(object):
             for key in loss.keys():
                 loss[key] /= self.config["log_interval_steps"]
                 logging.info(f"(steps: {self.steps}) {key} = {loss[key]}.")
-            _write_to_tensorboard(loss)
+            self._write_to_tensorboard(loss)
             return {}
         else:
             return loss
@@ -300,7 +304,7 @@ class CustomCollater(object):
 def save_checkpoint(checkpoint_name,
                     model,
                     optimizer,
-                    schedular,
+                    scheduler,
                     steps,
                     epochs):
     """Save states as checkpoint."""
@@ -313,9 +317,9 @@ def save_checkpoint(checkpoint_name,
             "generator": optimizer["generator"].state_dict(),
             "discriminator": optimizer["discriminator"].state_dict(),
         },
-        "schedular": {
-            "generator": schedular["generator"].state_dict(),
-            "discriminator": schedular["discriminator"].state_dict(),
+        "scheduler": {
+            "generator": scheduler["generator"].state_dict(),
+            "discriminator": scheduler["discriminator"].state_dict(),
         },
         "steps": steps,
         "epochs": epochs,
@@ -334,8 +338,8 @@ def resume_from_checkpoint(checkpoint_name, trainer):
     trainer.model["discriminator"].load_state_dict(state_dict["model"]["discriminator"])
     trainer.optimizer["generator"].load_state_dict(state_dict["optimizer"]["generator"])
     trainer.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
-    trainer.schedular["generator"].load_state_dict(state_dict["schedular"]["generator"])
-    trainer.schedular["discriminator"].load_state_dict(state_dict["schedular"]["discriminator"])
+    trainer.scheduler["generator"].load_state_dict(state_dict["scheduler"]["generator"])
+    trainer.scheduler["discriminator"].load_state_dict(state_dict["scheduler"]["discriminator"])
 
 
 def main():
@@ -355,7 +359,7 @@ def main():
                         help="logging level (higher is more logging)")
     args = parser.parse_args()
 
-   # set logger
+    # set logger
     if args.verbose > 0:
         logging.basicConfig(
             level=logging.INFO, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
@@ -392,7 +396,7 @@ def main():
     )
     data_loader = {
         "train": DataLoader(
-            dataset=datasets["train"],
+            dataset=dataset["train"],
             shuffle=True,
             collate_fn=collate_fn,
             batch_size=config["batch_size"],
@@ -436,18 +440,10 @@ def main():
             **config["discriminator_scheduler_params"]),
     }
 
-    # initialize count
-    steps = 0
-    epochs = 0
-
-    # resume from checkpoint
-    if args.resume is not None:
-        resume_from_checkpoint(args.resume, trainer)
-
     # define trainer
     trainer = Trainer(
-        steps=steps,
-        epochs=epochs,
+        steps=0,
+        epochs=0,
         data_loader=data_loader,
         model=model,
         criterion=criterion,
@@ -455,6 +451,10 @@ def main():
         scheduler=scheduler,
         config=config,
     )
+
+    # resume from checkpoint
+    if args.resume is not None:
+        resume_from_checkpoint(args.resume, trainer)
 
     # run training loop
     trainer.run()
