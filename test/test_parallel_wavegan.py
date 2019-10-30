@@ -99,7 +99,8 @@ def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     p_hat = model_d(y_hat)
     y, y_hat, p_hat = y.squeeze(1), y_hat.squeeze(1), p_hat.squeeze(1)
     adv_loss = F.mse_loss(p_hat, p_hat.new_ones(p_hat.size()))
-    aux_loss = aux_criterion(y_hat, y)
+    sc_loss, mag_loss = aux_criterion(y_hat, y)
+    aux_loss = sc_loss + mag_loss
     loss_g = adv_loss + aux_loss
     optimizer_g.zero_grad()
     loss_g.backward()
