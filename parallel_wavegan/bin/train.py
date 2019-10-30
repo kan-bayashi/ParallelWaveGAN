@@ -196,10 +196,7 @@ class Trainer(object):
     def _check_save_interval(self):
         if self.steps % self.config["save_interval_steps"] == 0:
             save_checkpoint(os.path.join(config["outdir"], f"checkpoint-{self.steps}steps.pkl"),
-                self.model["generator"], self.model["discriminator"],
-                self.optimizer["generator"], self.optimizer["discriminator"],
-                self.schedular["generator"], self.scheduler["discriminator"],
-                self.steps, self.epochs)
+                self.model, self.optimizer, self.schedular, self.steps, self.epochs)
             logging.info(f"saved checkpoint @ {self.steps} steps.")
 
     def _check_eval_interval(self):
@@ -328,6 +325,19 @@ def save_checkpoint(checkpoint_name,
     torch.save(checkpoint_name, state_dict)
 
 
+def resume_from_checkpoint(checkpoint_name, trainer):
+    """Resume from checkpoint."""
+    state_dict = torch.load(checkpoint_name)
+    trainer.steps = state_dict["steps"]
+    trainer.epochs = state_dict["epochs"]
+    trainer.model["generator"].load_state_dict(state_dict["model"]["generator"])
+    trainer.model["discriminator"].load_state_dict(state_dict["model"]["discriminator"])
+    trainer.optimizer["generator"].load_state_dict(state_dict["optimizer"]["generator"])
+    trainer.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
+    trainer.schedular["generator"].load_state_dict(state_dict["schedular"]["generator"])
+    trainer.schedular["discriminator"].load_state_dict(state_dict["schedular"]["discriminator"])
+
+
 def main():
     """Run main process."""
     parser = argparse.ArgumentParser()
@@ -341,7 +351,22 @@ def main():
                         help="Checkpoint file path to resume training.")
     parser.add_argument("--config", default="hparam.yml", type=str,
                         help="Yaml format configuration file.")
+    parser.add_argument("--verbose", type=int, default=1,
+                        help="logging level (higher is more logging)")
     args = parser.parse_args()
+
+   # set logger
+    if args.verbose > 0:
+        logging.basicConfig(
+            level=logging.INFO, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+    else:
+        logging.basicConfig(
+            level=logging.WARN, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+        logging.warning('skip DEBUG/INFO messages')
+
+    # check direcotry existence
+    if not os.path.exists(args.outdir):
+        os.makedirs(args.outdir)
 
     # load config
     with open(args.config) as f:
@@ -417,16 +442,7 @@ def main():
 
     # resume from checkpoint
     if args.resume is not None:
-        state_dict = torch.load(args.resume)
-        steps = state_dict["steps"]
-        epochs = state_dict["epochs"]
-        model["generator"].load_state_dict(state_dict["model_g"])
-        model["discriminator"].load_state_dict(state_dict["model_d"])
-        optimizer["generator"].load_state_dict(state_dict["optimizer_g"])
-        optimizer["discriminator"].load_state_dict(state_dict["optimizer_d"])
-        schedular["generator"].load_state_dict(state_dict["schedular_g"])
-        schedular["discriminator"].load_state_dict(state_dict["schedular_d"])
-        logging.info(f"resumed from {args.resume}.")
+        resume_from_checkpoint(args.resume, trainer)
 
     # define trainer
     trainer = Trainer(
