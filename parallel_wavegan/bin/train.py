@@ -71,7 +71,7 @@ class Trainer(object):
         y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
         adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
         aux_loss = self.criterion["stft"](y_, y)
-        loss_g = adv_loss + self.config["lambda_adv"] * aux_loss
+        loss_g = aux_loss + self.config["lambda_adv"] * adv_loss
         self.optimizer["generator"].zero_grad()
         loss_g.backward()
         if self.config["grad_norm"] > 0:
@@ -388,9 +388,13 @@ def main():
         logging.info(f"{key} = {value}")
 
     # get dataset
-    mel_length_threshold = config["batch_max_steps"] // config["hop_size"] + \
-        2 * config["generator_params"]["aux_context_window"]
-    audio_length_threshold = mel_length_threshold * config["hop_size"]
+    if config["remove_short_samples"]:
+        mel_length_threshold = config["batch_max_steps"] // config["hop_size"] + \
+            2 * config["generator_params"]["aux_context_window"]
+        audio_length_threshold = mel_length_threshold * config["hop_size"]
+    else:
+        mel_length_threshold = None
+        audio_length_threshold = None
     dataset = {
         "train": PyTorchDataset(
             dump_root=args.train_dumpdir,
