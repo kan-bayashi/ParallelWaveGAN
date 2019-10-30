@@ -4,12 +4,14 @@
 """Train Parallel WaveGAN."""
 
 import argparse
+import logging
 import os
 
 import numpy as np
 import torch
 import yaml
 
+from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
@@ -17,6 +19,206 @@ from parallel_wavegan.models import ParallelWaveGANDiscriminator
 from parallel_wavegan.models import ParallelWaveGANGenerator
 from parallel_wavegan.optimizers import RAdam
 from parallel_wavegan.utils.dataset import PyTorchDataset
+
+
+class Trainer(object):
+    """Customized trainer module."""
+
+    def __init__(self,
+                 steps,
+                 epochs,
+                 data_loader,
+                 model,
+                 criterion,
+                 optimizer,
+                 scheduler,
+                 config,
+                 ):
+        self.steps = steps
+        self.epochs = epochs
+        self.data_loader = data_loader
+        self.model = model
+        self.criterion = criterion
+        self.optimizer = optimizer
+        self.scheduler = scheduler
+        self.config = config
+        self.writer = SummaryWriter(config["outdir"])
+        self.finish_train = False
+
+    def run(self):
+        while True:
+            # train one epoch
+            self._train_one_epoch()
+
+            # check whether training is finished
+            if self.finish_train:
+                break
+
+    def _train_step(self, batch):
+        """Train model one step."""
+        # parse batch
+        z, c, y, _ = batch
+
+        # train generator
+        y_ = self.model["generator"](z, c)
+        p_ = self.model["generator"](y_)
+        y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
+        adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
+        aux_loss = self.criterion["stft"](y_, y)
+        loss_g = adv_loss + self.config["lambda_adv"] * aux_loss
+        self.optimizer["generator"].zero_grad()
+        loss_g.backward()
+        if config["grad_norm"] > 0:
+            torch.nn.utils.clip_grad_norm_(
+                self.model["generator"].parameters(),
+                self.config["grad_norm"])
+        self.optimizer["generator"].step()
+        self.schedular["generator"].step()
+        loss = {
+            "generator_adv_loss": adv_loss.item(),
+            "generator_aux_loss": aux_loss.item(),
+            "generator_loss": loss_g.item(),
+        }
+
+        # train discriminator
+        if self.steps > config["discriminator_start_iter"]:
+            y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
+            p = self.model["discriminator"](y)
+            p_ = self.model["discriminator"](y_)
+            p, p_ = p.squeeze(1), p_.squeeze(1)
+            loss_d = self.criterion["mse"](p, p.new_ones(p.size())) + \
+                self.criterion["mse"](p_, p_.new_zeros(p_.size()))
+            optimizer["discriminator"].zero_grad()
+            loss_d.backward()
+            if config["grad_norm"] > 0:
+                torch.nn.utils.clip_grad_norm_(
+                    self.model["discriminator"].parameters(),
+                    self.config["grad_norm"])
+            self.optimizer["discriminator"].step()
+            self.schedular["discriminator"].step()
+            loss["discriminator_loss"] = loss_d.item()
+
+        # update counts
+        self.steps += 1
+
+        return loss
+
+    def _train_epoch(self):
+        """Train model one epoch."""
+        logging.info(f"(step: {self.steps}) start {self.epochs + 1} epoch training.")
+        for train_steps_per_epoch, batch in enumerate(self.data_loader["train"], 1):
+            # train one step
+            loss = self._train_step(batch)
+
+            # record
+            if total_loss.keys() == 0:
+                total_loss = loss
+            else:
+                for key, value in loss:
+                    total_loss[key] += value
+
+            # check interval
+            self._check_eval_interval()
+            self._check_save_interval()
+            total_loss = self._check_log_interval(total_loss)
+            self._check_train_finish()
+
+            # check whether training is finished
+            if self.finish_train:
+                return
+
+        # update
+        self.epochs += 1
+        self.train_steps_per_epoch = train_steps_per_epoch
+        logging.info(f"(steps: {self.steps}) finished {self.epochs} epoch training.")
+        logging.info(f"training steps per epoch = f{self.train_steps_per_epoch}.")
+
+    def _eval_step(self, batch):
+        """Evaluate model one step."""
+        # parse batch
+        z, c, y, _ = batch
+
+        # calculate generator loss
+        y_ = self.model["generator"](z, c)
+        p_ = self.model["generator"](y_)
+        y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
+        adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
+        aux_loss = self.criterion["stft"](y_, y)
+        loss_g = adv_loss + self.config["lambda_adv"] * aux_loss
+
+        # train discriminator
+        y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
+        p = self.model["discriminator"](y)
+        p_ = self.model["discriminator"](y_)
+        p, p_ = p.squeeze(1), p_.squeeze(1)
+        loss_d = self.criterion["mse"](p, p.new_ones(p.size())) + \
+            self.criterion["mse"](p_, p_.new_zeros(p_.size()))
+
+        # store into dict
+        loss = {
+            "validation/generator_adv_loss": adv_loss.item(),
+            "validation/generator_aux_loss": aux_loss.item(),
+            "validation/generator_loss": loss_g.item(),
+            "validation/discriminator_loss": loss_d.item(),
+        }
+
+        return loss
+
+    def _eval_epoch(self):
+        """Evaluate model one epoch."""
+        logging.info(f"(step: {self.steps}) start evaluation.")
+        # calculate each loss
+        for eval_steps_per_epoch, batch in enumerate(self.data_loader["dev"], 1):
+            loss = self._eval_step(batch)
+            if eval_steps_per_epoch == 1:
+                total_loss = loss
+            else:
+                for key, value in loss.items():
+                    total_loss[key] += value
+
+        self.eval_steps_per_epoch = eval_steps_per_epoch
+        logging.info(f"(step: {self.steps}) finished evaluation.")
+        logging.info(f"evaluation steps per epoch = f{self.eval_steps_per_epoch}.")
+
+        # average loss
+        for key in total_loss.keys():
+            total_loss[key] /= eval_steps_per_epoch
+            logging.info(f"(steps: {self.steps}) {key} = {total_loss[key]}.")
+
+        # record
+        self._write_to_tensorboard(total_loss)
+
+    def _write_to_tensorboard(self, loss):
+        """Write to tensorboard."""
+        for key, value in loss:
+            self.writer.add_scalar(key, value, self.steps)
+
+    def _check_save_interval(self):
+        if self.steps % self.config["save_interval_steps"] == 0:
+            save_checkpoint(os.path.join(config["outdir"], f"checkpoint-{self.steps}steps.pkl"),
+                self.model["generator"], self.model["discriminator"],
+                self.optimizer["generator"], self.optimizer["discriminator"],
+                self.schedular["generator"], self.scheduler["discriminator"],
+                self.steps, self.epochs)
+            logging.info(f"saved checkpoint @ {self.steps} steps.")
+
+    def _check_eval_interval(self):
+        if self.steps % self.config["eval_interval_steps"] == 0:
+            self._eval_epoch()
+
+    def _check_log_interval(self, loss):
+        if self.steps % self.config["log_interval_steps"] == 0:
+            for key in loss.keys():
+                loss[key] /= self.config["log_interval_steps"]
+                logging.info(f"(steps: {self.steps}) {key} = {loss[key]}.")
+            _write_to_tensorboard(loss)
+            return {}
+        else:
+            return loss
+
+    def _check_train_finish(self):
+        if self.steps >= self.config["train_max_steps"]:
+            self.finish_train = True
 
 
 class CustomCollater(object):
@@ -99,28 +301,32 @@ class CustomCollater(object):
 
 
 def save_checkpoint(checkpoint_name,
-                    model_g,
-                    model_d,
-                    optimizer_g,
-                    optimizer_d,
-                    schedular_g,
-                    schedular_d,
-                    global_steps,
+                    model,
+                    optimizer,
+                    schedular,
+                    steps,
                     epochs):
     """Save states as checkpoint."""
     state_dict = {
-        "model_g": model_g.state_dict(),
-        "model_d": model_g.state_dict(),
-        "optimizer_g": optimizer_g.state_dict(),
-        "optimizer_d": optimizer_d.state_dict(),
-        "schedular_g": schedular_g.state_dict(),
-        "schedular_d": schedular_d.state_dict(),
-        "global_steps": global_steps,
+        "model": {
+            "generator": model["generator"].state_dict(),
+            "discriminator": model["discriminator"].state_dict(),
+        },
+        "optimizer": {
+            "generator": optimizer["generator"].state_dict(),
+            "discriminator": optimizer["discriminator"].state_dict(),
+        },
+        "schedular": {
+            "generator": schedular["generator"].state_dict(),
+            "discriminator": schedular["discriminator"].state_dict(),
+        },
+        "steps": steps,
         "epochs": epochs,
     }
     if not os.path.exists(os.path.dirname(checkpoint_name)):
         os.makedirs(os.path.dirname(checkpoint_name))
     torch.save(checkpoint_name, state_dict)
+
 
 def main():
     """Run main process."""
@@ -130,7 +336,7 @@ def main():
     parser.add_argument("--dev-dumpdir", default=None, type=str,
                         help="Direcotry including development data.")
     parser.add_argument("--outdir", default=None, type=str,
-                        help="Direcotry to checkpoints.")
+                        help="Direcotry to save checkpoints.")
     parser.add_argument("--resume", default=None, type=str,
                         help="Checkpoint file path to resume training.")
     parser.add_argument("--config", default="hparam.yml", type=str,
@@ -140,116 +346,102 @@ def main():
     # load config
     with open(args.config) as f:
         config = yaml.load(f, Loader=yaml.Loader)
+        config.update(vars(args))
 
     # get dataset
-    dataset = {}
-    dataset["train"] = PyTorchDataset(args.train_dumpdir)
-    dataset["dev"] = PyTorchDataset(args.dev_dumpdir)
+    dataset = {
+        "train": PyTorchDataset(args.train_dumpdir),
+        "dev": PyTorchDataset(args.dev_dumpdir),
+    }
 
     # get data loader
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
     collate_fn = CustomCollater(
         batch_max_steps=config["batch_max_steps"],
         hop_size=config["hop_size"],
         aux_context_window=config["generator"]["aux_context_window"],
-        device=torch.device("cpu"),
+        device=device,
     )
-    data_loader = {}
-    data_loader["train"] = DataLoader(
-        dataset=dataset["train"],
-        shuffle=True,
-        collate_fn=collate_fn,
-        batch_size=config["batch_size"],
-        num_workers=config["num_workers"],
-        pin_memory=config["pin_memory"],
-    )
-    data_loader["dev"] = DataLoader(
-        dataset=dataset["dev"],
-        shuffle=True,
-        collate_fn=collate_fn,
-        batch_size=config["batch_size"],
-        num_workers=config["num_workers"],
-        pin_memory=config["pin_memory"],
-    )
+    data_loader = {
+        "train": DataLoader(
+            dataset=datasets["train"],
+            shuffle=True,
+            collate_fn=collate_fn,
+            batch_size=config["batch_size"],
+            num_workers=config["num_workers"],
+            pin_memory=config["pin_memory"]),
+        "dev": DataLoader(
+            dataset=dataset["dev"],
+            shuffle=True,
+            collate_fn=collate_fn,
+            batch_size=config["batch_size"],
+            num_workers=config["num_workers"],
+            pin_memory=config["pin_memory"]),
+    }
 
     # define models and optimizers
-    model_g = ParallelWaveGANGenerator(**config["generator"])
-    model_d = ParallelWaveGANDiscriminator(**config["discriminator"])
-    stft_criterion = MultiResolutionSTFTLoss(**config["stft_loss"])
-    mse_criterion = torch.nn.MSELoss()
-    optimizer_g = RAdam(model_g.parameters(), **config["generator_optimizer"])
-    optimizer_d = RAdam(model_d.parameters(), **config["discriminator_optimizer"])
-    schedular_g = torch.optim.lr_scheduler.StepLR(
-        optimizer=optimizer_g,
-        **config["generator_optimizer_lr_schedular"]
-    )
-    schedular_d = torch.optim.lr_scheduler.StepLR(
-        optimizer=optimizer_d,
-        **config["discriminator_optimizer_lr_schedular"]
-    )
+    model = {
+        "generator": ParallelWaveGANGenerator(
+            **config["generator_params"]).to(device),
+        "discriminator": ParallelWaveGANDiscriminator(
+            **config["discriminator_params"]).to(device),
+    }
+    criterion = {
+        "stft": MultiResolutionSTFTLoss(
+            **config["stft_loss_params"]).to(device),
+        "mse": torch.nn.MSELoss().to(device),
+    }
+    optimizer = {
+        "generator": RAdam(
+            model["generator"].parameters(),
+            **config["generator_optimizer_params"]),
+        "discriminator": RAdam(
+            model["discriminator"].parameters(),
+            **config["discriminator_optimizer_params"]),
+    }
+    scheduler = {
+        "generator": torch.optim.lr_scheduler.StepLR(
+            optimizer=optimizer["generator"],
+            **config["generator_scheduler_params"]),
+        "discriminator": torch.optim.lr_scheduler.StepLR(
+            optimizer=optimizer["discriminator"],
+            **config["discriminator_scheduler_params"]),
+    }
 
     # initialize count
-    global_steps = 0
+    steps = 0
     epochs = 0
 
     # resume from checkpoint
     if args.resume is not None:
         state_dict = torch.load(args.resume)
-        global_steps = state_dict["global_steps"]
+        steps = state_dict["steps"]
         epochs = state_dict["epochs"]
-        model_g.load_state_dict(state_dict["model_g"])
-        model_d.load_state_dict(state_dict["model_d"])
-        optimizer_g.load_state_dict(state_dict["optimizer_g"])
-        optimizer_d.load_state_dict(state_dict["optimizer_d"])
-        schedular_g.load_state_dict(state_dict["schedular_g"])
-        schedular_d.load_state_dict(state_dict["schedular_d"])
-        print(f"resumed from {args.resume}.")
+        model["generator"].load_state_dict(state_dict["model_g"])
+        model["discriminator"].load_state_dict(state_dict["model_d"])
+        optimizer["generator"].load_state_dict(state_dict["optimizer_g"])
+        optimizer["discriminator"].load_state_dict(state_dict["optimizer_d"])
+        schedular["generator"].load_state_dict(state_dict["schedular_g"])
+        schedular["discriminator"].load_state_dict(state_dict["schedular_d"])
+        logging.info(f"resumed from {args.resume}.")
 
-    while True:
-        finish_train = False
-        for z, c, y, input_lengths in data_loader["train"]:
-            y_ = model_g(z, c)
-            p_ = model_d(y_)
-            y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
-            adv_loss = mse_criterion(p_, p_.new_ones(p_.size()))
-            aux_loss = stft_criterion(y_, y)
-            loss_g = adv_loss + config["lambda_adv"] * aux_loss
-            optimizer_g.zero_grad()
-            loss_g.backward()
-            if config["grad_norm"] > 0:
-                torch.nn.utils.clip_grad_norm_(model_g.parameters(), config["grad_norm"])
-            optimizer_g.step()
-            schedular_g.step()
+    # define trainer
+    trainer = Trainer(
+        steps=steps,
+        epochs=epochs,
+        data_loader=data_loader,
+        model=model,
+        criterion=criterion,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        config=config,
+    )
 
-            if global_steps > config["discriminator_start_iter"]:
-                y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
-                p = model_d(y)
-                p_ = model_d(y_)
-                p, p_ = p.squeeze(1), p_.squeeze(1)
-                loss_d = mse_criterion(p, p.new_ones(p.size())) + mse_criterion(p_, p_.new_zeros(p_.size()))
-                optimizer_d.zero_grad()
-                loss_d.backward()
-                if config["grad_norm"] > 0:
-                    torch.nn.utils.clip_grad_norm_(model_d.parameters(), config["grad_norm"])
-                optimizer_d.step()
-                schedular_d.step()
-
-            global_steps += 1
-            if global_steps >= config["iters"]:
-                finish_train = True
-                break
-
-            if global_steps % config["save_interval"] == 0:
-                save_checkpoint(os.path.join(args.outdir, f"checkpoint-{global_steps}.pkl"),
-                    model_g, model_d, optimizer_g, optimizer_d,
-                    schedular_g, schedular_d, global_steps, epochs)
-                print(f"save checkpoint @ {global_steps} steps.")
-
-        # check training is finished
-        if finish_train:
-            break
-
-        # update epoch count
-        epochs += 1
+    # run training loop
+    trainer.run()
 
 
 if __name__ == "__main__":
