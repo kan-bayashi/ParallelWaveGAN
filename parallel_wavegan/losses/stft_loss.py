@@ -2,6 +2,8 @@
 
 """STFT-based Loss modules."""
 
+import logging
+
 import torch
 
 
@@ -18,7 +20,9 @@ def stft(x, fft_size, hop_size, window_length, window):
     x_stft = torch.stft(x, fft_size, hop_size, window_length, window)
     real = x_stft[..., 0]
     imag = x_stft[..., 1]
-    return torch.sqrt(real ** 2 + imag ** 2).transpose(2, 1)
+    mag = torch.sqrt(real ** 2 + imag ** 2).transpose(2, 1)
+    # TODO(kan-bayashi): need to investigate suitable range
+    return torch.clamp(mag, min=1e-9)
 
 
 class SpectralConvergengeLoss(torch.nn.Module):
