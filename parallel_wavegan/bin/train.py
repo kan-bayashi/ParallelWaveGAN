@@ -335,7 +335,7 @@ class Collater(object):
                       start_frame + self.aux_context_window + self.batch_max_frames]
                 self._assert_ready_for_upsampling(x, c, self.hop_size, self.aux_context_window)
             else:
-                logging.warn("skipped short sample.")
+                logging.warn(f"removed short sample from batch (length={len(x)}).")
                 continue
             new_batch.append((x, c))
         batch = new_batch
