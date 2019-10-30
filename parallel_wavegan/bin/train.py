@@ -365,7 +365,10 @@ def main():
     args = parser.parse_args()
 
     # set logger
-    if args.verbose > 0:
+    if args.verbose > 1:
+        logging.basicConfig(
+            level=logging.DEBUG, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+    elif args.verbose > 0:
         logging.basicConfig(
             level=logging.INFO, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
     else:
