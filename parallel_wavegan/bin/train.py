@@ -13,6 +13,7 @@ import yaml
 
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.models import ParallelWaveGANDiscriminator
@@ -48,6 +49,7 @@ class Trainer(object):
         self.writer = SummaryWriter(config["outdir"])
         self.finish_train = False
         self.total_loss = {}
+        self.tqdm = tqdm(total=config["train_max_steps"])
 
     def run(self):
         """Run training."""
@@ -58,6 +60,8 @@ class Trainer(object):
             # check whether training is finished
             if self.finish_train:
                 break
+
+        self.tqdm.close()
 
     def _train_step(self, batch):
         """Train model one step."""
@@ -70,7 +74,7 @@ class Trainer(object):
         y_ = self.model["generator"](z, c)
         y, y_ = y.squeeze(1), y_.squeeze(1)
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
-        if self.steps > self.config["discriminator_start_iter"]:
+        if self.steps > self.config["discriminator_train_start_step"]:
             p_ = self.model["discriminator"](y_).squeeze(1)
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
             gen_loss = sc_loss + mag_loss + self.config["lambda_adv"] * adv_loss
@@ -98,7 +102,7 @@ class Trainer(object):
         self.optimizer["generator"].step()
         self.scheduler["generator"].step()
 
-        if self.steps > self.config["discriminator_start_iter"]:
+        if self.steps > self.config["discriminator_train_start_step"]:
             # calculate discriminator loss
             y, y_ = y.unsqueeze(1), y_.unsqueeze(1).detach()
             p = self.model["discriminator"](y)
@@ -229,6 +233,7 @@ class Trainer(object):
 
     def _check_log_interval(self, loss):
         if self.steps % self.config["log_interval_steps"] == 0:
+            self.tqdm.update(config["log_interval_steps"])
             for key in loss.keys():
                 loss[key] /= self.config["log_interval_steps"]
                 logging.info(f"(steps: {self.steps}) {key} = {loss[key]}.")
