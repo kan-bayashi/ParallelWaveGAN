@@ -197,7 +197,7 @@ class Trainer(object):
 
     def _write_to_tensorboard(self, loss):
         """Write to tensorboard."""
-        for key, value in loss:
+        for key, value in loss.items():
             self.writer.add_scalar(key, value, self.steps)
 
     def _check_save_interval(self):
@@ -261,7 +261,7 @@ class CustomCollater(object):
         for idx in range(len(batch)):
             x, c = batch[idx]
             self._assert_ready_for_upsampling(x, c, self.hop_size, 0)
-            if len(x) > self.batch_max_steps:
+            if len(c) - 2 * self.aux_context_window > self.batch_max_frames:
                 interval_start = self.aux_context_window
                 interval_end = len(c) - self.batch_max_frames - self.aux_context_window
                 start_frame = np.random.randint(interval_start, interval_end)
@@ -270,6 +270,9 @@ class CustomCollater(object):
                 c = c[start_frame - self.aux_context_window:
                       start_frame + self.aux_context_window + self.batch_max_frames]
                 self._assert_ready_for_upsampling(x, c, self.hop_size, self.aux_context_window)
+            else:
+                logging.warn("skipped short sample.")
+                continue
             new_batch.append((x, c))
         batch = new_batch
 
@@ -382,9 +385,18 @@ def main():
         logging.info(f"{key} = {value}")
 
     # get dataset
+    mel_length_threshold = config["batch_max_steps"] // config["hop_size"] + \
+        2 * config["generator_params"]["aux_context_window"]
+    audio_length_threshold = mel_length_threshold * config["hop_size"]
     dataset = {
-        "train": PyTorchDataset(args.train_dumpdir),
-        "dev": PyTorchDataset(args.dev_dumpdir),
+        "train": PyTorchDataset(
+            dump_root=args.train_dumpdir,
+            audio_length_threshold=audio_length_threshold,
+            mel_length_threshold=mel_length_threshold),
+        "dev": PyTorchDataset(
+            dump_root=args.train_dumpdir,
+            audio_length_threshold=audio_length_threshold,
+            mel_length_threshold=mel_length_threshold),
     }
 
     # get data loader
