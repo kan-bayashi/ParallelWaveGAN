@@ -46,7 +46,7 @@ def main():
     else:
         logging.basicConfig(
             level=logging.WARN, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
-        logging.warning('skip DEBUG/INFO messages')
+        logging.warning("skip DEBUG/INFO messages")
 
     # check direcotry existence
     if not os.path.exists(args.outdir):
