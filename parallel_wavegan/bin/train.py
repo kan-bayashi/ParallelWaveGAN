@@ -157,7 +157,7 @@ class Trainer(object):
         self.epochs += 1
         self.train_steps_per_epoch = train_steps_per_epoch
         logging.info(f"(steps: {self.steps}) finished {self.epochs} epoch training.")
-        logging.info(f"training steps per epoch = f{self.train_steps_per_epoch}.")
+        logging.info(f"training steps per epoch = {self.train_steps_per_epoch}.")
 
     def _eval_step(self, batch):
         """Evaluate model one step."""
