@@ -76,9 +76,9 @@ class AudioMelDataset(Dataset):
         mel = self.mel_load_fn(self.mel_files[idx])
 
         if self.return_filename:
-            return audio, mel
-        else:
             return self.audio_files[idx], self.mel_files[idx], audio, mel
+        else:
+            return audio, mel
 
     def __len__(self):
         """Return dataset length."""
