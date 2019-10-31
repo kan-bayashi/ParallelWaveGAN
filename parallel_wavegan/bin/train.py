@@ -237,7 +237,7 @@ class Trainer(object):
 
         for idx, (y, y_) in enumerate(zip(y_batch, y_batch_), 1):
             # convert to ndarray
-            y, y_ = y[0].view(-1).cpu().numpy(), y_[0].view(-1).cpu().numpy()
+            y, y_ = y.view(-1).cpu().numpy(), y_.view(-1).cpu().numpy()
 
             # plot figure and save it
             figname = os.path.join(self.config["outdir"], f"predictions/{self.steps}-steps_{idx}.png")
