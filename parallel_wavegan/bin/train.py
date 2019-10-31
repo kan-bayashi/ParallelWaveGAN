@@ -68,6 +68,40 @@ class Trainer(object):
         self.tqdm.close()
         logging.info("finished training.")
 
+    def save_checkpoint(self, checkpoint_path):
+        """Save checkpoint."""
+        state_dict = {
+            "model": {
+                "generator": self.model["generator"].state_dict(),
+                "discriminator": self.model["discriminator"].state_dict(),
+            },
+            "optimizer": {
+                "generator": self.optimizer["generator"].state_dict(),
+                "discriminator": self.optimizer["discriminator"].state_dict(),
+            },
+            "scheduler": {
+                "generator": self.scheduler["generator"].state_dict(),
+                "discriminator": self.scheduler["discriminator"].state_dict(),
+            },
+            "steps": self.steps,
+            "epochs": self.epochs,
+        }
+        if not os.path.exists(os.path.dirname(checkpoint_path)):
+            os.makedirs(os.path.dirname(checkpoint_path))
+        torch.save(state_dict, checkpoint_path)
+
+    def load_checkpoint(self, checkpoint_path):
+        """Load checkpoint."""
+        state_dict = torch.load(checkpoint_path)
+        self.steps = state_dict["steps"]
+        self.epochs = state_dict["epochs"]
+        self.model["generator"].load_state_dict(state_dict["model"]["generator"])
+        self.model["discriminator"].load_state_dict(state_dict["model"]["discriminator"])
+        self.optimizer["generator"].load_state_dict(state_dict["optimizer"]["generator"])
+        self.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
+        self.scheduler["generator"].load_state_dict(state_dict["scheduler"]["generator"])
+        self.scheduler["discriminator"].load_state_dict(state_dict["scheduler"]["discriminator"])
+
     def _train_step(self, batch):
         """Train model one step."""
         # parse batch
@@ -274,9 +308,8 @@ class Trainer(object):
 
     def _check_save_interval(self):
         if self.steps % self.config["save_interval_steps"] == 0:
-            save_checkpoint(
-                os.path.join(self.config["outdir"], f"checkpoint-{self.steps}steps.pkl"),
-                self.model, self.optimizer, self.scheduler, self.steps, self.epochs)
+            self.save_checkpoint(
+                os.path.join(self.config["outdir"], f"checkpoint-{self.steps}steps.pkl"))
             logging.info(f"saved checkpoint @ {self.steps} steps.")
 
     def _check_eval_interval(self):
@@ -379,46 +412,8 @@ class Collater(object):
                       mode="constant", constant_values=constant_values)
 
 
-def save_checkpoint(checkpoint_name,
-                    model,
-                    optimizer,
-                    scheduler,
-                    steps,
-                    epochs):
-    """Save states as checkpoint."""
-    state_dict = {
-        "model": {
-            "generator": model["generator"].state_dict(),
-            "discriminator": model["discriminator"].state_dict(),
-        },
-        "optimizer": {
-            "generator": optimizer["generator"].state_dict(),
-            "discriminator": optimizer["discriminator"].state_dict(),
-        },
-        "scheduler": {
-            "generator": scheduler["generator"].state_dict(),
-            "discriminator": scheduler["discriminator"].state_dict(),
-        },
-        "steps": steps,
-        "epochs": epochs,
-    }
-    if not os.path.exists(os.path.dirname(checkpoint_name)):
-        os.makedirs(os.path.dirname(checkpoint_name))
-    torch.save(state_dict, checkpoint_name)
-
-
 def resume_from_checkpoint(checkpoint_name, trainer):
     """Resume from checkpoint."""
-    state_dict = torch.load(checkpoint_name)
-    trainer.steps = state_dict["steps"]
-    trainer.epochs = state_dict["epochs"]
-    trainer.model["generator"].load_state_dict(state_dict["model"]["generator"])
-    trainer.model["discriminator"].load_state_dict(state_dict["model"]["discriminator"])
-    trainer.optimizer["generator"].load_state_dict(state_dict["optimizer"]["generator"])
-    trainer.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
-    trainer.scheduler["generator"].load_state_dict(state_dict["scheduler"]["generator"])
-    trainer.scheduler["discriminator"].load_state_dict(state_dict["scheduler"]["discriminator"])
-    return trainer
 
 
 def main():
@@ -555,7 +550,7 @@ def main():
 
     # resume from checkpoint
     if args.resume is not None:
-        trainer = resume_from_checkpoint(args.resume, trainer)
+        trainer.load_checkpoint(args.resume)
         logging.info(f"resumed from {args.resume}.")
 
     # run training loop
