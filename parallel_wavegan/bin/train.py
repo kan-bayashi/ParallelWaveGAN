@@ -219,12 +219,16 @@ class Trainer(object):
 
         # calculate loss for each batch
         for eval_steps_per_epoch, batch in enumerate(tqdm(self.data_loader["dev"], ascii=True), 1):
+            # eval one step
             self._eval_step(batch)
+
+            # save intermediate result
+            if eval_steps_per_epoch == 1:
+                self._genearete_and_save_intermediate_result(batch)
+
         logging.info(f"(step: {self.steps}) finished evaluation "
                      f"({eval_steps_per_epoch} steps per epoch).")
 
-        # save intermediate result
-        self._genearete_and_save_intermediate_result(batch)
 
         # average loss
         for key in self.total_eval_loss.keys():
