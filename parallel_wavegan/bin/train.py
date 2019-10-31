@@ -144,7 +144,7 @@ class Trainer(object):
                     self.total_loss[key] = value
 
             # check interval
-            self.total_loss = self._check_log_interval(self.total_loss)
+            self._check_log_interval()
             self._check_eval_interval()
             self._check_save_interval()
             self._check_train_finish()
@@ -156,8 +156,8 @@ class Trainer(object):
         # update
         self.epochs += 1
         self.train_steps_per_epoch = train_steps_per_epoch
-        logging.info(f"(steps: {self.steps}) finished {self.epochs} epoch training.")
-        logging.info(f"training steps per epoch = {self.train_steps_per_epoch}.")
+        logging.info(f"(steps: {self.steps}) finished {self.epochs} epoch training "
+                     f"({self.train_steps_per_epoch} steps per epoch).")
 
     def _eval_step(self, batch):
         """Evaluate model one step."""
@@ -209,8 +209,8 @@ class Trainer(object):
                     total_loss[key] += value
             eval_steps_per_epoch += 1
         self.eval_steps_per_epoch = eval_steps_per_epoch
-        logging.info(f"(step: {self.steps}) finished evaluation.")
-        logging.info(f"evaluation steps per epoch = {self.eval_steps_per_epoch}.")
+        logging.info(f"(step: {self.steps}) finished evaluation "
+                     f"({self.eval_steps_per_epoch} steps per epoch).")
 
         # save intermediate result
         self._genearete_and_save_intermediate_result(batch)
@@ -235,15 +235,17 @@ class Trainer(object):
             z_batch, c_batch, y_batch, _ = batch
             y_batch_ = self.model["generator"](z_batch, c_batch)
 
+        # check directory
+        dirname = os.path.join(self.config["outdir"], f"predictions/{self.steps}steps")
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
         for idx, (y, y_) in enumerate(zip(y_batch, y_batch_), 1):
             # convert to ndarray
             y, y_ = y.view(-1).cpu().numpy(), y_.view(-1).cpu().numpy()
 
             # plot figure and save it
-            figname = os.path.join(self.config["outdir"], f"predictions/{self.steps}-steps_{idx}.png")
-            dirname = os.path.dirname(figname)
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
+            figname = os.path.join(dirname, f"{idx}.png")
             plt.subplot(2, 1, 1)
             plt.plot(y)
             plt.title("groundtruth speech")
@@ -281,16 +283,16 @@ class Trainer(object):
         if self.steps % self.config["eval_interval_steps"] == 0:
             self._eval_epoch()
 
-    def _check_log_interval(self, loss):
+    def _check_log_interval(self):
         if self.steps % self.config["log_interval_steps"] == 0:
             self.tqdm.update(self.config["log_interval_steps"])
-            for key in loss.keys():
+            for key in self.total_loss.keys():
                 loss[key] /= self.config["log_interval_steps"]
                 logging.info(f"(steps: {self.steps}) {key} = {loss[key]:.4f}.")
-            self._write_to_tensorboard(loss)
-            return {}
-        else:
-            return loss
+            self._write_to_tensorboard(self.total_loss)
+
+            # reset
+            self.total_loss = {}
 
     def _check_train_finish(self):
         if self.steps >= self.config["train_max_steps"]:
