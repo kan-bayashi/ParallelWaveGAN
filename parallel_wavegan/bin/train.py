@@ -58,8 +58,7 @@ class Trainer(object):
     def run(self):
         """Run training."""
         self.tqdm = tqdm(initial=self.steps,
-                         total=self.config["train_max_steps"],
-                         ascii=True)
+                         total=self.config["train_max_steps"])
         while True:
             # train one epoch
             self._train_epoch()
@@ -159,6 +158,7 @@ class Trainer(object):
 
         # update counts
         self.steps += 1
+        self.tqdm.update(1)
 
     def _train_epoch(self):
         """Train model one epoch."""
@@ -218,7 +218,7 @@ class Trainer(object):
             self.model[key].eval()
 
         # calculate loss for each batch
-        for eval_steps_per_epoch, batch in enumerate(tqdm(self.data_loader["dev"], ascii=True), 1):
+        for eval_steps_per_epoch, batch in enumerate(tqdm(self.data_loader["dev"]), 1):
             # eval one step
             self._eval_step(batch)
 
@@ -302,7 +302,6 @@ class Trainer(object):
 
     def _check_log_interval(self):
         if self.steps % self.config["log_interval_steps"] == 0:
-            self.tqdm.update(self.config["log_interval_steps"])
             for key in self.total_train_loss.keys():
                 self.total_train_loss[key] /= self.config["log_interval_steps"]
                 logging.info(f"(steps: {self.steps}) {key} = {self.total_train_loss[key]:.4f}.")
