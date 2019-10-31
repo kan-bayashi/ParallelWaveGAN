@@ -50,7 +50,7 @@ remove_short_samples: false
 batch_size: 8
 batch_max_steps: 19200  # make sure divible by hop_size
 pin_memory: true
-num_workers: 4
+num_workers: 8
 
 # optimizer setting
 generator_optimizer_params:
@@ -71,5 +71,8 @@ grad_norm: 5
 discriminator_train_start_steps: 100000
 train_max_steps: 400000
 save_interval_steps: 5000
-eval_interval_steps: 5000
+eval_interval_steps: 1000
 log_interval_steps: 100
+
+# other setting
+num_save_intermediate_results: 4
