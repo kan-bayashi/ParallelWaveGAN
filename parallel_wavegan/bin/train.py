@@ -17,7 +17,7 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from parallel_wavegan.data import AudioMelDataset
+from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.models import ParallelWaveGANDiscriminator
 from parallel_wavegan.models import ParallelWaveGANGenerator
