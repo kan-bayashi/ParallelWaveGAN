@@ -2,10 +2,11 @@
 
 """Dataset related classes."""
 
+import logging
+
 import numpy as np
 
 from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
 
 from parallel_wavegan.utils import find_files
 
@@ -33,7 +34,7 @@ class AudioMelDataset(Dataset):
             idxs = [idx for idx in range(len(audio_files)) if audio_lengths[idx] >= audio_length_threshold]
             if len(audio_files) != len(idxs):
                 logging.info(f"some files are filtered by audio length threshold "
-                             f"({len(audio_files)} -> {len(idx)}).")
+                             f"({len(audio_files)} -> {len(idxs)}).")
             audio_files = [audio_files[idx] for idx in idxs]
             mel_files = [mel_files[idx] for idx in idxs]
         if mel_length_threshold is not None:
@@ -41,7 +42,7 @@ class AudioMelDataset(Dataset):
             idxs = [idx for idx in range(len(mel_files)) if mel_lengths[idx] >= mel_length_threshold]
             if len(mel_files) != len(idxs):
                 logging.info(f"some files are filtered by mel length threshold "
-                             f"({len(mel_files)} -> {len(idx)}).")
+                             f"({len(mel_files)} -> {len(idxs)}).")
             audio_files = [audio_files[idx] for idx in idxs]
             mel_files = [mel_files[idx] for idx in idxs]
 

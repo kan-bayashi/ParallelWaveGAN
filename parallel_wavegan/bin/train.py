@@ -17,11 +17,11 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from parallel_wavegan.data import AudioMelDataset
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.models import ParallelWaveGANDiscriminator
 from parallel_wavegan.models import ParallelWaveGANGenerator
 from parallel_wavegan.optimizers import RAdam
-from parallel_wavegan.utils.dataset import PyTorchDataset
 
 
 class Trainer(object):
@@ -320,8 +320,8 @@ class Trainer(object):
         if self.steps % self.config["log_interval_steps"] == 0:
             self.tqdm.update(self.config["log_interval_steps"])
             for key in self.total_loss.keys():
-                loss[key] /= self.config["log_interval_steps"]
-                logging.info(f"(steps: {self.steps}) {key} = {loss[key]:.4f}.")
+                self.total_loss[key] /= self.config["log_interval_steps"]
+                logging.info(f"(steps: {self.steps}) {key} = {self.total_loss[key]:.4f}.")
             self._write_to_tensorboard(self.total_loss)
 
             # reset
@@ -412,10 +412,6 @@ class Collater(object):
                       mode="constant", constant_values=constant_values)
 
 
-def resume_from_checkpoint(checkpoint_name, trainer):
-    """Resume from checkpoint."""
-
-
 def main():
     """Run main process."""
     parser = argparse.ArgumentParser()
@@ -462,18 +458,14 @@ def main():
     if config["remove_short_samples"]:
         mel_length_threshold = config["batch_max_steps"] // config["hop_size"] + \
             2 * config["generator_params"]["aux_context_window"]
-        audio_length_threshold = mel_length_threshold * config["hop_size"]
     else:
         mel_length_threshold = None
-        audio_length_threshold = None
     dataset = {
-        "train": PyTorchDataset(
-            dump_root=args.train_dumpdir,
-            audio_length_threshold=audio_length_threshold,
+        "train": AudioMelDataset(
+            root_dir=args.train_dumpdir,
             mel_length_threshold=mel_length_threshold),
-        "dev": PyTorchDataset(
-            dump_root=args.dev_dumpdir,
-            audio_length_threshold=audio_length_threshold,
+        "dev": AudioMelDataset(
+            root_dir=args.dev_dumpdir,
             mel_length_threshold=mel_length_threshold),
     }
 
