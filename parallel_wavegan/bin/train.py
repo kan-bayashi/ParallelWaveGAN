@@ -229,34 +229,41 @@ class Trainer(object):
 
     def _genearete_and_save_intermediate_result(self, batch):
         """Generate and save intermediate result."""
+        # generate
         with torch.no_grad():
             batch = [b.to(self.device) for b in batch]
-            z, c, y, _ = batch
-            y_ = self.model["generator"](z, c)
+            z_batch, c_batch, y_batch, _ = batch
+            y_batch_ = self.model["generator"](z_batch, c_batch)
+
+        for idx, (y, y_) in enumerate(zip(y_batch, y_batch_), 1):
+            # convert to ndarray
             y, y_ = y[0].view(-1).cpu().numpy(), y_[0].view(-1).cpu().numpy()
 
-        # plot figure and save it
-        figname = os.path.join(self.config["outdir"], f"predictions/{self.steps}-steps.png")
-        dirname = os.path.dirname(figname)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-        plt.subplot(2, 1, 1)
-        plt.plot(y)
-        plt.title("groundtruth speech")
-        plt.subplot(2, 1, 2)
-        plt.plot(y_)
-        plt.title(f"generated speech @ {self.steps} steps")
-        plt.tight_layout()
-        plt.savefig(figname)
-        plt.close()
+            # plot figure and save it
+            figname = os.path.join(self.config["outdir"], f"predictions/{self.steps}-steps_{idx}.png")
+            dirname = os.path.dirname(figname)
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
+            plt.subplot(2, 1, 1)
+            plt.plot(y)
+            plt.title("groundtruth speech")
+            plt.subplot(2, 1, 2)
+            plt.plot(y_)
+            plt.title(f"generated speech @ {self.steps} steps")
+            plt.tight_layout()
+            plt.savefig(figname)
+            plt.close()
 
-        # save as wavfile
-        y = np.clip(y, -1, 1)
-        y_ = np.clip(y_, -1, 1)
-        sf.write(figname.replace(".png", "_ref.wav"), y,
-                 self.config["sampling_rate"], "PCM_16")
-        sf.write(figname.replace(".png", "_gen.wav"), y_,
-                 self.config["sampling_rate"], "PCM_16")
+            # save as wavfile
+            y = np.clip(y, -1, 1)
+            y_ = np.clip(y_, -1, 1)
+            sf.write(figname.replace(".png", "_ref.wav"), y,
+                     self.config["sampling_rate"], "PCM_16")
+            sf.write(figname.replace(".png", "_gen.wav"), y_,
+                     self.config["sampling_rate"], "PCM_16")
+
+            if idx >= self.config["num_save_intermediate_results"]:
+                break
 
     def _write_to_tensorboard(self, loss):
         """Write to tensorboard."""
