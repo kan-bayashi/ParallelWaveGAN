@@ -7,6 +7,8 @@ import argparse
 import logging
 import os
 
+from collections import defaultdict
+
 import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
@@ -50,7 +52,8 @@ class Trainer(object):
         self.device = device
         self.writer = SummaryWriter(config["outdir"])
         self.finish_train = False
-        self.total_loss = {}
+        self.total_train_loss = defaultdict(float)
+        self.total_eval_loss = defaultdict(float)
 
     def run(self):
         """Run training."""
@@ -109,7 +112,6 @@ class Trainer(object):
         z, c, y, _ = batch
 
         # calculate loss for generator
-        loss = {}
         y_ = self.model["generator"](z, c)
         y, y_ = y.squeeze(1), y_.squeeze(1)
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
@@ -117,19 +119,15 @@ class Trainer(object):
             p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
             gen_loss = sc_loss + mag_loss + self.config["lambda_adv"] * adv_loss
-            loss.update({
-                "spectral_convergenge_loss": sc_loss.item(),
-                "log_stft_magnitude_loss": mag_loss.item(),
-                "adversarial_loss": adv_loss.item(),
-                "generator_loss": gen_loss.item(),
-            })
+            self.total_train_loss["adversarial_loss"] += adv_loss.item()
+            self.total_train_loss["spectral_convergenge_loss"] += sc_loss.item()
+            self.total_train_loss["log_stft_magnitude_loss"] += mag_loss.item()
+            self.total_train_loss["generator_loss"] += gen_loss.item()
         else:
             gen_loss = sc_loss + mag_loss
-            loss.update({
-                "spectral_convergenge_loss": sc_loss.item(),
-                "log_stft_magnitude_loss": mag_loss.item(),
-                "generator_loss": gen_loss.item(),
-            })
+            self.total_train_loss["spectral_convergenge_loss"] += sc_loss.item()
+            self.total_train_loss["log_stft_magnitude_loss"] += mag_loss.item()
+            self.total_train_loss["generator_loss"] += gen_loss.item()
 
         # update generator
         self.optimizer["generator"].zero_grad()
@@ -147,7 +145,7 @@ class Trainer(object):
             p_ = self.model["discriminator"](y_.unsqueeze(1).detach()).squeeze(1)
             dis_loss = self.criterion["mse"](p, p.new_ones(p.size())) + \
                 self.criterion["mse"](p_, p_.new_zeros(p_.size()))
-            loss["discriminator_loss"] = dis_loss.item()
+            self.total_train_loss["discriminator_loss"] += dis_loss.item()
 
             # update discriminator
             self.optimizer["discriminator"].zero_grad()
@@ -162,20 +160,11 @@ class Trainer(object):
         # update counts
         self.steps += 1
 
-        return loss
-
     def _train_epoch(self):
         """Train model one epoch."""
         for train_steps_per_epoch, batch in enumerate(self.data_loader["train"], 1):
             # train one step
-            loss = self._train_step(batch)
-
-            # record
-            for key, value in loss.items():
-                if key in self.total_loss.keys():
-                    self.total_loss[key] += value
-                else:
-                    self.total_loss[key] = value
+            self._train_step(batch)
 
             # check interval
             self._check_log_interval()
@@ -214,16 +203,12 @@ class Trainer(object):
         dis_loss = self.criterion["mse"](p, p.new_ones(p.size())) + \
             self.criterion["mse"](p_, p_.new_zeros(p_.size()))
 
-        # store into dict
-        loss = {
-            "validation/adversarial_loss": adv_loss.item(),
-            "validation/spectral_convergenge_loss": sc_loss.item(),
-            "validation/log_stft_magnitude_loss": mag_loss.item(),
-            "validation/generator_loss": gen_loss.item(),
-            "validation/discriminator_loss": dis_loss.item(),
-        }
-
-        return loss
+        # add to total eval loss
+        self.total_eval_loss["validation/adversarial_loss"] += adv_loss.item()
+        self.total_eval_loss["validation/spectral_convergenge_loss"] += sc_loss.item()
+        self.total_eval_loss["validation/log_stft_magnitude_loss"] += mag_loss.item()
+        self.total_eval_loss["validation/generator_loss"] += gen_loss.item()
+        self.total_eval_loss["validation/discriminator_loss"] += dis_loss.item()
 
     def _eval_epoch(self):
         """Evaluate model one epoch."""
@@ -233,29 +218,24 @@ class Trainer(object):
             self.model[key].eval()
 
         # calculate loss for each batch
-        eval_steps_per_epoch = 0
-        for batch in tqdm(self.data_loader["dev"], ascii=True):
-            loss = self._eval_step(batch)
-            if eval_steps_per_epoch == 0:
-                total_loss = loss
-            else:
-                for key, value in loss.items():
-                    total_loss[key] += value
-            eval_steps_per_epoch += 1
-        self.eval_steps_per_epoch = eval_steps_per_epoch
+        for eval_steps_per_epoch, batch in enumerate(tqdm(self.data_loader["dev"], ascii=True), 1):
+            self._eval_step(batch)
         logging.info(f"(step: {self.steps}) finished evaluation "
-                     f"({self.eval_steps_per_epoch} steps per epoch).")
+                     f"({eval_steps_per_epoch} steps per epoch).")
 
         # save intermediate result
         self._genearete_and_save_intermediate_result(batch)
 
         # average loss
-        for key in total_loss.keys():
-            total_loss[key] /= eval_steps_per_epoch
-            logging.info(f"(steps: {self.steps}) {key} = {total_loss[key]:.4f}.")
+        for key in self.total_eval_loss.keys():
+            self.total_eval_loss[key] /= eval_steps_per_epoch
+            logging.info(f"(steps: {self.steps}) {key} = {self.total_eval_loss[key]:.4f}.")
 
         # record
-        self._write_to_tensorboard(total_loss)
+        self._write_to_tensorboard(self.total_eval_loss)
+
+        # reset
+        self.total_eval_loss = defaultdict(float)
 
         # restore mode
         for key in self.model.keys():
@@ -319,13 +299,13 @@ class Trainer(object):
     def _check_log_interval(self):
         if self.steps % self.config["log_interval_steps"] == 0:
             self.tqdm.update(self.config["log_interval_steps"])
-            for key in self.total_loss.keys():
-                self.total_loss[key] /= self.config["log_interval_steps"]
-                logging.info(f"(steps: {self.steps}) {key} = {self.total_loss[key]:.4f}.")
-            self._write_to_tensorboard(self.total_loss)
+            for key in self.total_train_loss.keys():
+                self.total_train_loss[key] /= self.config["log_interval_steps"]
+                logging.info(f"(steps: {self.steps}) {key} = {self.total_train_loss[key]:.4f}.")
+            self._write_to_tensorboard(self.total_train_loss)
 
             # reset
-            self.total_loss = {}
+            self.total_train_loss = defaultdict(float)
 
     def _check_train_finish(self):
         if self.steps >= self.config["train_max_steps"]:
