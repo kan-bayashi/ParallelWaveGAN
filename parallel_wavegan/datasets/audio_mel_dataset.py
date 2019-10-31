@@ -22,6 +22,7 @@ class AudioMelDataset(Dataset):
                  mel_length_threshold=None,
                  audio_load_fn=np.load,
                  mel_load_fn=np.load,
+                 return_filename=False,
                  ):
         """Initialize pytorch dataset."""
         # find all of audio and mel files
@@ -55,6 +56,7 @@ class AudioMelDataset(Dataset):
         self.mel_files = mel_files
         self.audio_load_fn = audio_load_fn
         self.mel_load_fn = mel_load_fn
+        self.return_filename = return_filename
 
     def __getitem__(self, idx):
         """Get specifed idx items.
@@ -70,7 +72,10 @@ class AudioMelDataset(Dataset):
         audio = self.audio_load_fn(self.audio_files[idx])
         mel = self.mel_load_fn(self.mel_files[idx])
 
-        return audio, mel
+        if self.return_filename:
+            return audio, mel
+        else:
+            return self.audio_files[idx], self.mel_files[idx], audio, mel
 
     def __len__(self):
         """Return dataset length."""
@@ -85,6 +90,7 @@ class MelDataset(Dataset):
                  mel_query="*-feats.npy",
                  mel_length_threshold=None,
                  mel_load_fn=np.load,
+                 return_filename=False,
                  ):
         """Initialize pytorch dataset."""
         # find all of the mel files
@@ -104,6 +110,7 @@ class MelDataset(Dataset):
 
         self.mel_files = mel_files
         self.mel_load_fn = mel_load_fn
+        self.return_filename = return_filename
 
     def __getitem__(self, idx):
         """Get specifed idx items.
@@ -112,11 +119,14 @@ class MelDataset(Dataset):
             idx (int): Index of the item.
 
         Returns:
-            ndarray: Audio signal (T,).
+            str: Filename.
             ndarray: Mel spec feature (T', C).
 
         """
-        return self.mel_load_fn(self.mel_files[idx])
+        if self.return_filename:
+            return self.mel_files[idx], self.mel_load_fn(self.mel_files[idx])
+        else:
+            return self.mel_load_fn(self.mel_files[idx])
 
     def __len__(self):
         """Return dataset length."""

@@ -58,7 +58,7 @@ def main():
     config.update(vars(args))
 
     # get dataset
-    dataset = MelDataset(args.dumpdir)
+    dataset = MelDataset(args.dumpdir, return_filename=True)
     logging.info(f"the number of features to be decoded = {len(dataset)}.")
 
     # setup
