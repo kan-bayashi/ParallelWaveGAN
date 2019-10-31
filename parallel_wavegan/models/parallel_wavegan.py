@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# Copyright 2019 Tomoki Hayashi
+#  MIT License (https://opensource.org/licenses/MIT)
+
 """Parallel WaveGAN Modules."""
 
 import math

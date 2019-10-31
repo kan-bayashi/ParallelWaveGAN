@@ -41,11 +41,16 @@ source venv/bin/activate
     - [x] trainer
     - [x] resume function
     - [x] intermediate result checker
+- [x] implement decoding script
 - [ ] train model and check the performance
-- [x] implement evaluation script
 - [ ] implement pre-processing scripts (or reuse @r9y9's scripts?)
 
 ## References
 
 - https://arxiv.org/pdf/1910.11480.pdf
 - https://github.com/r9y9/wavenet_vocoder
+
+## Contact
+
+Tomoki Hayashi @ Nagoya University  
+hayashi.tomoki@g.sp.m.is.nagoya-u.ac.jp

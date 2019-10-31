@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# Copyright 2019 Tomoki Hayashi
+#  MIT License (https://opensource.org/licenses/MIT)
+
 import numpy as np
 import pytest
 import torch
