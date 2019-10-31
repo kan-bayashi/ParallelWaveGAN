@@ -59,6 +59,7 @@ def main():
 
     # get dataset
     dataset = MelDataset(args.dumpdir)
+    logging.info(f"the number of features to be decoded = {len(dataset)}.")
 
     # setup
     if torch.cuda.is_available():
@@ -69,6 +70,7 @@ def main():
     model.load_state_dict(torch.load(args.checkpoint, map_location="cpu")["model"]["generator"])
     model.remove_weight_norm()
     model = model.to(device)
+    logging.info(f"loaded model parameters from {args.checkpoint}.")
 
     # generate
     pad_size = (config["generator_params"]["aux_context_window"],
