@@ -42,7 +42,7 @@ source venv/bin/activate
     - [x] resume function
     - [x] intermediate result checker
 - [ ] train model and check the performance
-- [ ] implement evaluation script
+- [x] implement evaluation script
 - [ ] implement pre-processing scripts (or reuse @r9y9's scripts?)
 
 ## References
