@@ -526,7 +526,12 @@ def main():
         logging.info(f"resumed from {args.resume}.")
 
     # run training loop
-    trainer.run()
+    try:
+        trainer.run()
+    except KeyboardInterrupt:
+        trainer.save_checkpoint(
+            os.path.join(config["outdir"], f"checkpoint-{trainer.steps}steps.pkl"))
+        logging.info(f"successfully saved checkpoint @ {trainer.steps}steps.")
 
 
 if __name__ == "__main__":
