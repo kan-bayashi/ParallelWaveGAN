@@ -134,10 +134,10 @@ class Trainer(object):
         # update generator
         self.optimizer["generator"].zero_grad()
         gen_loss.backward()
-        if self.config["grad_norm"] > 0:
+        if self.config["generator_grad_norm"] > 0:
             torch.nn.utils.clip_grad_norm_(
                 self.model["generator"].parameters(),
-                self.config["grad_norm"])
+                self.config["generator_grad_norm"])
         self.optimizer["generator"].step()
         self.scheduler["generator"].step()
 
@@ -152,10 +152,10 @@ class Trainer(object):
             # update discriminator
             self.optimizer["discriminator"].zero_grad()
             dis_loss.backward()
-            if self.config["grad_norm"] > 0:
+            if self.config["discriminator_grad_norm"] > 0:
                 torch.nn.utils.clip_grad_norm_(
                     self.model["discriminator"].parameters(),
-                    self.config["grad_norm"])
+                    self.config["discriminator_grad_norm"])
             self.optimizer["discriminator"].step()
             self.scheduler["discriminator"].step()
 
