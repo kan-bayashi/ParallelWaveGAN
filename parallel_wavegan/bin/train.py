@@ -315,7 +315,7 @@ class Trainer(object):
 
 
 class Collater(object):
-    """Customized collater for Pytorch DataLoader."""
+    """Customized collater for Pytorch DataLoader in training."""
 
     def __init__(self,
                  batch_max_steps=20480,
@@ -395,7 +395,7 @@ class Collater(object):
 
 
 def main():
-    """Run main process."""
+    """Run training process."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--train-dumpdir", default=None, type=str,
                         help="Directory including trainning data.")
