@@ -474,7 +474,7 @@ def main():
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    collate_fn = Collater(
+    collater = Collater(
         batch_max_steps=config["batch_max_steps"],
         hop_size=config["hop_size"],
         aux_context_window=config["generator_params"]["aux_context_window"],
@@ -483,14 +483,14 @@ def main():
         "train": DataLoader(
             dataset=dataset["train"],
             shuffle=True,
-            collate_fn=collate_fn,
+            collate_fn=collater,
             batch_size=config["batch_size"],
             num_workers=config["num_workers"],
             pin_memory=config["pin_memory"]),
         "dev": DataLoader(
             dataset=dataset["dev"],
             shuffle=True,
-            collate_fn=collate_fn,
+            collate_fn=collater,
             batch_size=config["batch_size"],
             num_workers=config["num_workers"],
             pin_memory=config["pin_memory"]),
