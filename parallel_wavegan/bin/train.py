@@ -229,7 +229,6 @@ class Trainer(object):
         logging.info(f"(step: {self.steps}) finished evaluation "
                      f"({eval_steps_per_epoch} steps per epoch).")
 
-
         # average loss
         for key in self.total_eval_loss.keys():
             self.total_eval_loss[key] /= eval_steps_per_epoch
