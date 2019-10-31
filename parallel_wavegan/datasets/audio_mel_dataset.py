@@ -75,3 +75,49 @@ class AudioMelDataset(Dataset):
     def __len__(self):
         """Return dataset length."""
         return len(self.audio_files)
+
+
+class MelDataset(Dataset):
+    """PyTorch compatible dataset."""
+
+    def __init__(self,
+                 root_dir,
+                 mel_query="*-feats.npy",
+                 mel_length_threshold=None,
+                 mel_load_fn=np.load,
+                 ):
+        """Initialize pytorch dataset."""
+        # find all of the mel files
+        mel_files = sorted(find_files(root_dir, mel_query))
+
+        # filter by threshold
+        if mel_length_threshold is not None:
+            mel_lengths = [mel_load_fn(f).shape[0] for f in mel_files]
+            idxs = [idx for idx in range(len(mel_files)) if mel_lengths[idx] >= mel_length_threshold]
+            if len(mel_files) != len(idxs):
+                logging.info(f"some files are filtered by mel length threshold "
+                             f"({len(mel_files)} -> {len(idxs)}).")
+            mel_files = [mel_files[idx] for idx in idxs]
+
+        # assert the number of files
+        assert len(mel_files) != 0, f"Not found any mel files in ${root_dir}."
+
+        self.mel_files = mel_files
+        self.mel_load_fn = mel_load_fn
+
+    def __getitem__(self, idx):
+        """Get specifed idx items.
+
+        Args:
+            idx (int): Index of the item.
+
+        Returns:
+            ndarray: Audio signal (T,).
+            ndarray: Mel spec feature (T', C).
+
+        """
+        return self.mel_load_fn(self.mel_files[idx])
+
+    def __len__(self):
+        """Return dataset length."""
+        return len(self.mel_files)
