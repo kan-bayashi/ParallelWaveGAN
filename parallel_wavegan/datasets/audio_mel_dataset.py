@@ -25,8 +25,8 @@ class AudioMelDataset(Dataset):
                  ):
         """Initialize pytorch dataset."""
         # find all of audio and mel files
-        audio_files = find_files(root_dir, audio_query)
-        mel_files = find_files(root_dir, mel_query)
+        audio_files = sorted(find_files(root_dir, audio_query))
+        mel_files = sorted(find_files(root_dir, mel_query))
 
         # filter by threshold
         if audio_length_threshold is not None:
