@@ -44,13 +44,13 @@ lambda_adv: 4.0
 sampling_rate: 22050
 fft_size: 1024
 hop_size: 256
-remove_short_samples: false
 
 # data loader setting
 batch_size: 8
 batch_max_steps: 19200  # make sure divible by hop_size
 pin_memory: true
 num_workers: 8
+remove_short_samples: false
 
 # optimizer setting
 generator_optimizer_params:
