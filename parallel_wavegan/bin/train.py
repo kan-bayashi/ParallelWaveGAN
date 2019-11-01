@@ -64,7 +64,8 @@ class Trainer(object):
     def run(self):
         """Run training."""
         self.tqdm = tqdm(initial=self.steps,
-                         total=self.config["train_max_steps"])
+                         total=self.config["train_max_steps"],
+                         desc="[train]")
         while True:
             # train one epoch
             self._train_epoch()
@@ -224,7 +225,7 @@ class Trainer(object):
             self.model[key].eval()
 
         # calculate loss for each batch
-        for eval_steps_per_epoch, batch in enumerate(tqdm(self.data_loader["dev"]), 1):
+        for eval_steps_per_epoch, batch in enumerate(tqdm(self.data_loader["dev"], desc="[eval]"), 1):
             # eval one step
             self._eval_step(batch)
 
