@@ -153,11 +153,11 @@ def main():
         # save
         if config["format"] == "hdf5":
             write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"), "wave", audio.astype(np.float32))
-            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"), "mel", mel.astype(np.float32))
+            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"), "feats", mel.astype(np.float32))
         elif config["format"] == "npy":
             np.save(os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
                     audio.astype(np.float32), allow_pickle=False)
-            np.save(os.path.join(args.dumpdir, f"{utt_id}-mel.npy"),
+            np.save(os.path.join(args.dumpdir, f"{utt_id}-feats.npy"),
                     mel.astype(np.float32), allow_pickle=False)
         else:
             raise ValueError("support only hdf5 or npy format.")
