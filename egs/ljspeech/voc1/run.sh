@@ -12,7 +12,8 @@ stop_stage=100
 verbose=1
 nj=16
 
-config=conf/hparam.yml
+# config
+config=conf/parallel_wavegan.v1.yaml
 
 # directory path setting
 download_dir=downloads
