@@ -37,12 +37,7 @@ requirements = {
     ],
     "test": [
         "pytest>=3.3.0",
-        "pytest-pythonpath>=0.7.3",
-        "pytest-cov>=2.7.1",
         "hacking>=1.1.0",
-        "mock>=2.0.0",
-        "autopep8>=1.3.3",
-        "jsondiff>=1.2.0",
         "flake8>=3.7.8",
         "flake8-docstrings>=1.3.1"
     ]}
