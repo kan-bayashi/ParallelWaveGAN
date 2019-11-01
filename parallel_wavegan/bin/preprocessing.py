@@ -4,7 +4,7 @@
 # Copyright 2019 Tomoki Hayashi
 #  MIT License (https://opensource.org/licenses/MIT)
 
-"""Perform preprocessing for the training of WaveGAN."""
+"""Perform preprocessing and raw feature extraction."""
 
 import argparse
 import logging
@@ -21,6 +21,7 @@ from joblib import Parallel
 from tqdm import tqdm
 
 from parallel_wavegan.datasets import AudioDataset
+from parallel_wavegan.utils import write_hdf5
 
 # make sure each process use single thread
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -144,10 +145,16 @@ def main():
                 return
 
         # save
-        np.save(os.path.join(args.outdir, f"{utt_id}-wave.npy"),
-                x.astype(np.float32), allow_pickle=False)
-        np.save(os.path.join(args.outdir, f"{utt_id}-feats.npy"),
-                feats.astype(np.float32), allow_pickle=False)
+        if config["format"] == "hdf5":
+            write_hdf5(os.path.join(args.outdir, f"{utt_id}.h5"), "wave", x.astype(np.float32))
+            write_hdf5(os.path.join(args.outdir, f"{utt_id}.h5"), "feats", feats.astype(np.float32))
+        elif config["format"] == "npy":
+            np.save(os.path.join(args.outdir, f"{utt_id}-wave.npy"),
+                    x.astype(np.float32), allow_pickle=False)
+            np.save(os.path.join(args.outdir, f"{utt_id}-feats.npy"),
+                    feats.astype(np.float32), allow_pickle=False)
+        else:
+            raise ValueError("support only hdf5 or npy format.")
 
     # process in parallel
     Parallel(n_jobs=args.n_jobs, verbose=args.verbose)(
