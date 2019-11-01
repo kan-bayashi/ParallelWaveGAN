@@ -85,6 +85,59 @@ class AudioMelDataset(Dataset):
         return len(self.audio_files)
 
 
+class AudioDataset(Dataset):
+    """PyTorch compatible dataset."""
+
+    def __init__(self,
+                 root_dir,
+                 audio_query="*-wave.npy",
+                 audio_length_threshold=None,
+                 audio_load_fn=np.load,
+                 return_filename=False,
+                 ):
+        """Initialize pytorch dataset."""
+        # find all of audio and mel files
+        audio_files = sorted(find_files(root_dir, audio_query))
+
+        # filter by threshold
+        if audio_length_threshold is not None:
+            audio_lengths = [audio_load_fn(f).shape[0] for f in audio_files]
+            idxs = [idx for idx in range(len(audio_files)) if audio_lengths[idx] > audio_length_threshold]
+            if len(audio_files) != len(idxs):
+                logging.info(f"some files are filtered by audio length threshold "
+                             f"({len(audio_files)} -> {len(idxs)}).")
+            audio_files = [audio_files[idx] for idx in idxs]
+
+        # assert the number of files
+        assert len(audio_files) != 0, f"Not found any audio files in ${root_dir}."
+
+        self.audio_files = audio_files
+        self.audio_load_fn = audio_load_fn
+        self.return_filename = return_filename
+
+    def __getitem__(self, idx):
+        """Get specifed idx items.
+
+        Args:
+            idx (int): Index of the item.
+
+        Returns:
+            ndarray: Audio signal (T,).
+            ndarray: Mel spec feature (T', C).
+
+        """
+        audio = self.audio_load_fn(self.audio_files[idx])
+
+        if self.return_filename:
+            return self.audio_files[idx], audio
+        else:
+            return audio
+
+    def __len__(self):
+        """Return dataset length."""
+        return len(self.audio_files)
+
+
 class MelDataset(Dataset):
     """PyTorch compatible dataset."""
 
