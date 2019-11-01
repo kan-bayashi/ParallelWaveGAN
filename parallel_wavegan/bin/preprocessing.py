@@ -121,6 +121,13 @@ def main():
         assert np.abs(x).max() <= 1.0, \
             f"{utt_id} seems to be different from 16 bit PCM."
 
+        # trim silence
+        if config["trim_silence"]:
+            x, _ = librosa.effects.trim(x,
+                                        top_db=config["trim_threshold_in_db"],
+                                        frame_length=config["trim_frame_size"],
+                                        hop_length=config["trim_hop_size"])
+
         # extract feature
         feats = logmelfilterbank(x, fs,
                                  fft_size=config["fft_size"],

@@ -11,6 +11,10 @@ num_mels: 80
 fmin: 80
 fmax: 7600
 global_gain_scale: 1.0
+trim_silence: true
+trim_threshold_in_db: 60
+trim_frame_size: 2048
+trim_hop_size: 512
 format: "hdf5"
 
 # generator setting
