@@ -88,30 +88,29 @@ def main():
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
 
-    # get reader
+    # get dataset
     if args.wavscp is not None:
-        reader = kaldiio.ReadHelper(f"scp:{args.wavscp}",
-                                    segments=args.segments)
+        dataset = kaldiio.ReadHelper(f"scp:{args.wavscp}",
+                                     segments=args.segments)
     else:
-        reader = AudioDataset(args.rootdir, "*.wav",
-                              audio_load_fn=sf.read,
-                              return_filename=True)
+        dataset = AudioDataset(args.rootdir, "*.wav",
+                               audio_load_fn=sf.read,
+                               return_filename=True)
 
     # check directly existence
     if not os.path.exists(args.dumpdir):
         os.makedirs(args.dumpdir, exist_ok=True)
 
     # define function for parallel processing
-    def _process_single_file(name, data):
+    def _process_single_file(data):
         # parse inputs
         if args.wavscp is not None:
-            utt_id = name
-            fs, audio = data
+            utt_id, (fs, audio) = data
             audio = audio.astype(np.float32)
             audio /= (1 << (16 - 1))  # assume that wav is PCM 16 bit
         else:
+            name, (audio, fs) = data
             utt_id = os.path.basename(name).replace(".wav", "")
-            audio, fs = data
 
         # check
         assert len(audio.shape) == 1, \
@@ -165,7 +164,7 @@ def main():
 
     # process in parallel
     Parallel(n_jobs=args.n_jobs, verbose=args.verbose)(
-        [delayed(_process_single_file)(name, data) for name, data in tqdm(reader)])
+        [delayed(_process_single_file)(data) for data in tqdm(dataset)])
 
 
 if __name__ == "__main__":
