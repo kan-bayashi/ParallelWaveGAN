@@ -4,7 +4,7 @@
 # Copyright 2019 Tomoki Hayashi
 #  MIT License (https://opensource.org/licenses/MIT)
 
-"""Calculate statistics of feature files."""
+"""Normalize feature files and dump them."""
 
 import argparse
 import logging
