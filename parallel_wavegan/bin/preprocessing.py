@@ -27,7 +27,7 @@ from parallel_wavegan.utils import write_hdf5
 os.environ["OMP_NUM_THREADS"] = "1"
 
 
-def logmelfilterbank(x,
+def logmelfilterbank(audio,
                      sampling_rate,
                      fft_size=1024,
                      hop_size=256,
@@ -40,7 +40,7 @@ def logmelfilterbank(x,
                      ):
     """Compute log-Mel filterbank feature."""
     # get amplitude spectrogram
-    x_stft = librosa.stft(x, n_fft=fft_size, hop_length=hop_size,
+    x_stft = librosa.stft(audio, n_fft=fft_size, hop_length=hop_size,
                           win_length=win_length, window=window, pad_mode="reflect")
     spc = np.abs(x_stft).T  # (#frames, #bins)
 
@@ -62,7 +62,7 @@ def main():
     parser.add_argument("--rootdir", default=None, type=str,
                         help="Directory including wav files.")
     parser.add_argument("--dumpdir", default=None, type=str,
-                        help="Direcotry to save checkpoints.")
+                        help="Direcotry to dump feature files.")
     parser.add_argument("--config", default="hparam.yml", type=str,
                         help="Yaml format configuration file.")
     parser.add_argument("--verbose", type=int, default=1,
@@ -106,60 +106,60 @@ def main():
         # parse inputs
         if args.wavscp is not None:
             utt_id = name
-            fs, x = data
-            x = x.astype(np.float32)
-            x /= (1 << (16 - 1))  # assume that wav is PCM 16 bit
+            fs, audio = data
+            audio = audio.astype(np.float32)
+            audio /= (1 << (16 - 1))  # assume that wav is PCM 16 bit
         else:
             utt_id = os.path.basename(name).replace(".wav", "")
-            x, fs = data
+            audio, fs = data
 
         # check
-        assert len(x.shape) == 1, \
+        assert len(audio.shape) == 1, \
             f"{utt_id} seems to be multi-channel signal."
         assert fs == config["sampling_rate"], \
             f"{utt_id} seems to have a different sampling rate."
-        assert np.abs(x).max() <= 1.0, \
+        assert np.abs(audio).max() <= 1.0, \
             f"{utt_id} seems to be different from 16 bit PCM."
 
         # trim silence
         if config["trim_silence"]:
-            x, _ = librosa.effects.trim(x,
-                                        top_db=config["trim_threshold_in_db"],
-                                        frame_length=config["trim_frame_size"],
-                                        hop_length=config["trim_hop_size"])
+            audio, _ = librosa.effects.trim(audio,
+                                            top_db=config["trim_threshold_in_db"],
+                                            frame_length=config["trim_frame_size"],
+                                            hop_length=config["trim_hop_size"])
 
         # extract feature
-        feats = logmelfilterbank(x, fs,
-                                 fft_size=config["fft_size"],
-                                 hop_size=config["hop_size"],
-                                 win_length=config["win_length"],
-                                 window=config["window"],
-                                 num_mels=config["num_mels"],
-                                 fmin=config["fmin"],
-                                 fmax=config["fmax"])
+        mel = logmelfilterbank(audio, fs,
+                               fft_size=config["fft_size"],
+                               hop_size=config["hop_size"],
+                               win_length=config["win_length"],
+                               window=config["window"],
+                               num_mels=config["num_mels"],
+                               fmin=config["fmin"],
+                               fmax=config["fmax"])
 
         # make sure the audio length and feature length are matched
-        x = np.pad(x, (0, config["fft_size"]), mode="edge")
-        x = x[:len(feats) * config["hop_size"]]
-        assert len(feats) * config["hop_size"] == len(x)
+        audio = np.pad(audio, (0, config["fft_size"]), mode="edge")
+        audio = audio[:len(mel) * config["hop_size"]]
+        assert len(mel) * config["hop_size"] == len(audio)
 
         # apply global gain
         if config["global_gain_scale"] > 0.0:
-            x *= config["global_gain_scale"]
-            if np.abs(x).max() > 1.0:
+            audio *= config["global_gain_scale"]
+            if np.abs(audio).max() > 1.0:
                 logging.warn(f"{utt_id} causes clipping. "
                              f"it is better to re-consider global gain scale.")
                 return
 
         # save
         if config["format"] == "hdf5":
-            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"), "wave", x.astype(np.float32))
-            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"), "feats", feats.astype(np.float32))
+            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"), "wave", audio.astype(np.float32))
+            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"), "mel", mel.astype(np.float32))
         elif config["format"] == "npy":
             np.save(os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
-                    x.astype(np.float32), allow_pickle=False)
-            np.save(os.path.join(args.dumpdir, f"{utt_id}-feats.npy"),
-                    feats.astype(np.float32), allow_pickle=False)
+                    audio.astype(np.float32), allow_pickle=False)
+            np.save(os.path.join(args.dumpdir, f"{utt_id}-mel.npy"),
+                    mel.astype(np.float32), allow_pickle=False)
         else:
             raise ValueError("support only hdf5 or npy format.")
 
