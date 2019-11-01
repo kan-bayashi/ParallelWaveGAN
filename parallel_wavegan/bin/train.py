@@ -26,6 +26,7 @@ from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.models import ParallelWaveGANDiscriminator
 from parallel_wavegan.models import ParallelWaveGANGenerator
 from parallel_wavegan.optimizers import RAdam
+from parallel_wavegan.utils import read_hdf5
 
 # set to avoid matplotlib error in CLI environment
 os.environ["MPL_BACKEND"] = "Agg"
@@ -450,12 +451,31 @@ def main():
             2 * config["generator_params"]["aux_context_window"]
     else:
         mel_length_threshold = None
+    if config["format"] == "hdf5":
+        audio_query, mel_query = "*.h5", "*.h5"
+        audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
+        mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+    elif config["format"] == "npy":
+        audio_query, mel_query = "*-wave.npy", "*-feats.npy"
+        audio_load_fn = np.load
+        mel_load_fn = np.load
+    else:
+        raise ValueError("support only hdf5 or npy format.")
     dataset = {
         "train": AudioMelDataset(
             root_dir=args.train_dumpdir,
-            mel_length_threshold=mel_length_threshold),
+            audio_query=audio_query,
+            mel_query=mel_query,
+            audio_load_fn=audio_load_fn,
+            mel_load_fn=mel_load_fn,
+            mel_length_threshold=mel_length_threshold,
+        ),
         "dev": AudioMelDataset(
             root_dir=args.dev_dumpdir,
+            audio_query=audio_query,
+            mel_query=mel_query,
+            audio_load_fn=audio_load_fn,
+            mel_load_fn=mel_load_fn,
             mel_length_threshold=mel_length_threshold),
     }
 
