@@ -12,7 +12,6 @@ import os
 
 from collections import defaultdict
 
-import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
 import torch
@@ -27,6 +26,9 @@ from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.models import ParallelWaveGANDiscriminator
 from parallel_wavegan.models import ParallelWaveGANGenerator
 from parallel_wavegan.optimizers import RAdam
+
+# set to avoid matplotlib error in CLI environment
+os.environ["MPL_BACKEND"] = "Agg"
 
 
 class Trainer(object):
@@ -249,6 +251,9 @@ class Trainer(object):
 
     def _genearete_and_save_intermediate_result(self, batch):
         """Generate and save intermediate result."""
+        # delayed import to avoid error related backend error
+        import matplotlib.pyplot as plt
+
         # generate
         with torch.no_grad():
             batch = [b.to(self.device) for b in batch]
