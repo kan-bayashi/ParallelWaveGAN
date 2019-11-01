@@ -19,6 +19,7 @@ from tqdm import tqdm
 
 from parallel_wavegan.datasets import MelDataset
 from parallel_wavegan.models import ParallelWaveGANGenerator
+from parallel_wavegan.utils import read_hdf5
 
 
 def main():
@@ -61,7 +62,19 @@ def main():
     config.update(vars(args))
 
     # get dataset
-    dataset = MelDataset(args.dumpdir, return_filename=True)
+    if config["format"] == "hdf5":
+        mel_query = "*.h5"
+        mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+    elif config["format"] == "npy":
+        mel_query = "*-feats.npy"
+        mel_load_fn = np.load
+    else:
+        raise ValueError("support only hdf5 or npy format.")
+    dataset = MelDataset(
+        args.dumpdir,
+        mel_query=mel_query,
+        mel_load_fn=mel_load_fn,
+        return_filename=True)
     logging.info(f"the number of features to be decoded = {len(dataset)}.")
 
     # setup

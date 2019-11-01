@@ -28,6 +28,8 @@ requirements = {
         "matplotlib>=3.1.0",
         "PyYAML>=3.12",
         "tqdm>=4.26.1",
+        "kaldiio>=2.14.1",
+        "h5py>=2.10.0",
     ],
     "setup": [
         "numpy",
@@ -35,12 +37,7 @@ requirements = {
     ],
     "test": [
         "pytest>=3.3.0",
-        "pytest-pythonpath>=0.7.3",
-        "pytest-cov>=2.7.1",
         "hacking>=1.1.0",
-        "mock>=2.0.0",
-        "autopep8>=1.3.3",
-        "jsondiff>=1.2.0",
         "flake8>=3.7.8",
         "flake8-docstrings>=1.3.1"
     ]}

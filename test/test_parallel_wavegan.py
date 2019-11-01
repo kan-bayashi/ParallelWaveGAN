@@ -61,9 +61,9 @@ def make_discriminator_args(**kwargs):
 def make_mutli_reso_stft_loss_args(**kwargs):
     defaults = dict(
         fft_sizes=[64, 128, 256],
-        shift_sizes=[32, 64, 128],
-        window_lengths=[48, 96, 192],
-        window_type='hann_window',
+        hop_sizes=[32, 64, 128],
+        win_lengths=[48, 96, 192],
+        window='hann_window',
     )
     defaults.update(kwargs)
     return defaults
