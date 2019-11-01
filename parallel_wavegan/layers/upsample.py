@@ -6,6 +6,8 @@ This code is modified from https://github.com/r9y9/wavenet_vocoder.
 
 """
 
+import logging
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -51,8 +53,7 @@ class UpsampleNetwork(torch.nn.Module):
                  upsample_activation="none",
                  upsample_activation_params={},
                  mode="nearest",
-                 freq_axis_kernel_size=1,
-                 use_weight_norm=True,
+                 freq_axis_kernel_size=1
                  ):
         """Initialize upsampling network module.
 
@@ -62,7 +63,6 @@ class UpsampleNetwork(torch.nn.Module):
             upsample_activation_params (dict): Arguments for specified activation function.
             mode (str): Interpolation mode.
             freq_axis_kernel_size (int): Kernel size in the direction of frequency axis.
-            use_weight_norm (bool): Whether to apply weight normalization.
 
         """
         super(UpsampleNetwork, self).__init__()
@@ -78,8 +78,6 @@ class UpsampleNetwork(torch.nn.Module):
             kernel_size = (freq_axis_kernel_size, scale * 2 + 1)
             padding = (freq_axis_padding, scale)
             conv = Conv2d(1, 1, kernel_size=kernel_size, padding=padding, bias=False)
-            if use_weight_norm:
-                conv = torch.nn.utils.weight_norm(conv)
             self.up_layers += [conv]
 
             # nonlinear
@@ -100,9 +98,7 @@ class UpsampleNetwork(torch.nn.Module):
         c = c.unsqueeze(1)  # (B, 1, C, T)
         for f in self.up_layers:
             c = f(c)
-        c = c.squeeze(1)  # (B, C, T')
-
-        return c
+        return c.squeeze(1)  # (B, C, T')
 
 
 class ConvInUpsampleNetwork(torch.nn.Module):
@@ -115,8 +111,7 @@ class ConvInUpsampleNetwork(torch.nn.Module):
                  mode="nearest",
                  freq_axis_kernel_size=1,
                  aux_channels=80,
-                 aux_context_window=0,
-                 use_weight_norm=True,
+                 aux_context_window=0
                  ):
         """Initialize convolution + upsampling network module.
 
@@ -126,21 +121,22 @@ class ConvInUpsampleNetwork(torch.nn.Module):
             upsample_activation_params (dict): Arguments for specified activation function.
             mode (str): Interpolation mode.
             freq_axis_kernel_size (int): Kernel size in the direction of frequency axis.
+            aux_channels (int): Number of channels of pre-convolutional layer.
             aux_context_window (int): Context window size of the pre-convolutional layer.
-            use_weight_norm (bool): Whether to apply weight normalization.
 
         """
         super(ConvInUpsampleNetwork, self).__init__()
         # To capture wide-context information in conditional features
         kernel_size = 2 * aux_context_window + 1
         # NOTE(kan-bayashi): Here do not use padding because the input is already padded
-        conv_in = Conv1d(aux_channels, aux_channels, kernel_size=kernel_size, bias=False)
-        if use_weight_norm:
-            conv_in = torch.nn.utils.weight_norm(conv_in)
-        self.conv_in = conv_in
+        self.conv_in = Conv1d(aux_channels, aux_channels, kernel_size=kernel_size, bias=False)
         self.upsample = UpsampleNetwork(
-            upsample_scales, upsample_activation, upsample_activation_params,
-            mode, freq_axis_kernel_size, use_weight_norm)
+            upsample_scales=upsample_scales,
+            upsample_activation=upsample_activation,
+            upsample_activation_params=upsample_activation_params,
+            mode=mode,
+            freq_axis_kernel_size=freq_axis_kernel_size,
+        )
 
     def forward(self, c):
         """Calculate forward propagation.
@@ -156,6 +152,4 @@ class ConvInUpsampleNetwork(torch.nn.Module):
             The length of inputs considers the context window size.
 
         """
-        c = self.upsample(self.conv_in(c))
-
-        return c
+        return self.upsample(self.conv_in(c))

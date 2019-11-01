@@ -45,12 +45,11 @@ class ResidualBlock(torch.nn.Module):
                  gate_channels=128,
                  skip_channels=64,
                  aux_channels=80,
-                 dropout=1 - 0.95,
+                 dropout=0.0,
                  padding=None,
                  dilation=1,
                  causal=False,
-                 bias=True,
-                 use_weight_norm=True,
+                 bias=True
                  ):
         """Initialize ResidualBlock module.
 
@@ -65,7 +64,6 @@ class ResidualBlock(torch.nn.Module):
             dilation (int): Dilation factor.
             causal (bool): Whether to use causal or non-causal convolution.
             bias (bool): Whether to add bias parameter in convolution layers.
-            use_weight_norm (bool): Whether to apply weight normalization.
 
         """
         super(ResidualBlock, self).__init__()
@@ -78,29 +76,21 @@ class ResidualBlock(torch.nn.Module):
                 assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
                 padding = (kernel_size - 1) // 2 * dilation
         self.causal = causal
-        self.use_weight_norm = use_weight_norm
 
         # dilation conv
-        self.conv = self._apply_weight_norm(
-            Conv1d(residual_channels, gate_channels, kernel_size,
-                   padding=padding, dilation=dilation, bias=bias))
+        self.conv = Conv1d(residual_channels, gate_channels, kernel_size,
+                           padding=padding, dilation=dilation, bias=bias)
 
         # local conditioning
         if aux_channels > 0:
-            self.conv1x1_aux = self._apply_weight_norm(Conv1d1x1(aux_channels, gate_channels, bias=False))
+            self.conv1x1_aux = Conv1d1x1(aux_channels, gate_channels, bias=False)
         else:
             self.conv1x1_aux = None
 
         # conv output is split into two groups
         gate_out_channels = gate_channels // 2
-        self.conv1x1_out = self._apply_weight_norm(Conv1d1x1(gate_out_channels, residual_channels, bias=bias))
-        self.conv1x1_skip = self._apply_weight_norm(Conv1d1x1(gate_out_channels, skip_channels, bias=bias))
-
-    def _apply_weight_norm(self, module):
-        if self.use_weight_norm:
-            return torch.nn.utils.weight_norm(module)
-        else:
-            return module
+        self.conv1x1_out = Conv1d1x1(gate_out_channels, residual_channels, bias=bias)
+        self.conv1x1_skip = Conv1d1x1(gate_out_channels, skip_channels, bias=bias)
 
     def forward(self, x, c):
         """Calculate forward propagation.

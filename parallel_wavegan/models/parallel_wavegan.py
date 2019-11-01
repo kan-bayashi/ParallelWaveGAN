@@ -5,6 +5,7 @@
 
 """Parallel WaveGAN Modules."""
 
+import logging
 import math
 
 import torch
@@ -29,7 +30,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                  skip_channels=64,
                  aux_channels=80,
                  aux_context_window=2,
-                 dropout=1 - 0.95,
+                 dropout=0.0,
                  use_weight_norm=True,
                  upsample_conditional_features=True,
                  upsample_net="ConvInUpsampleNetwork",
@@ -43,22 +44,21 @@ class ParallelWaveGANGenerator(torch.nn.Module):
         self.layers = layers
         self.stacks = stacks
         self.kernel_size = kernel_size
-        self.use_weight_norm = True
 
         # check the number of layers and stacks
         assert layers % stacks == 0
         layers_per_stack = layers // stacks
 
         # define first convolution
-        self.first_conv = self._apply_weight_norm(Conv1d1x1(in_channels, residual_channels, bias=True))
+        self.first_conv = Conv1d1x1(in_channels, residual_channels, bias=True)
 
         # define conv + upsampling network
         if upsample_conditional_features:
-            self.upsample_net = getattr(upsample, upsample_net)(
-                aux_channels=aux_channels,
-                aux_context_window=aux_context_window,
-                use_weight_norm=use_weight_norm,
-                **upsample_params)
+            upsample_params.update({
+                "aux_channels": aux_channels,
+                "aux_context_window": aux_context_window,
+            })
+            self.upsample_net = getattr(upsample, upsample_net)(**upsample_params)
         else:
             self.upsample_net = None
 
@@ -74,7 +74,6 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                 aux_channels=aux_channels,
                 dilation=dilation,
                 dropout=dropout,
-                use_weight_norm=use_weight_norm,
                 bias=True,  # NOTE: magenda uses bias, but musyoku doesn't
                 causal=False,
             )
@@ -83,10 +82,14 @@ class ParallelWaveGANGenerator(torch.nn.Module):
         # define output layers
         self.last_conv_layers = torch.nn.ModuleList([
             torch.nn.ReLU(inplace=True),
-            self._apply_weight_norm(Conv1d1x1(skip_channels, skip_channels, bias=True)),
+            Conv1d1x1(skip_channels, skip_channels, bias=True),
             torch.nn.ReLU(inplace=True),
-            self._apply_weight_norm(Conv1d1x1(skip_channels, out_channels, bias=True)),
+            Conv1d1x1(skip_channels, out_channels, bias=True),
         ])
+
+        # apply weight norm
+        if use_weight_norm:
+            self.apply_weight_norm()
 
     def forward(self, x, c):
         """Calculate forward propagation.
@@ -125,16 +128,19 @@ class ParallelWaveGANGenerator(torch.nn.Module):
         """Remove weight normalization module from all of the layers."""
         def _remove_weight_norm(m):
             try:
+                logging.debug(f"weight norm is removed from {m}.")
                 torch.nn.utils.remove_weight_norm(m)
             except ValueError:  # this module didn't have weight norm
                 return
         self.apply(_remove_weight_norm)
 
-    def _apply_weight_norm(self, module):
-        if self.use_weight_norm:
-            return torch.nn.utils.weight_norm(module)
-        else:
-            return module
+    def apply_weight_norm(self):
+        """Apply weight normalization module from all of the layers."""
+        def _apply_weight_norm(m):
+            if isinstance(m, torch.nn.Conv1d) or isinstance(m, torch.nn.Conv2d):
+                torch.nn.utils.weight_norm(m)
+                logging.debug(f"weight norm is applied to {m}.")
+        self.apply(_apply_weight_norm)
 
     @staticmethod
     def _get_receptive_field_size(layers, stacks, kernel_size,
@@ -167,7 +173,6 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
         """Initialize Parallel WaveGAN Discriminator module."""
         super(ParallelWaveGANDiscriminator, self).__init__()
         assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
-        self.use_weight_norm = True
         self.conv_layers = torch.nn.ModuleList()
         conv_in_channels = in_channels
         for i in range(layers - 1):
@@ -178,18 +183,21 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
                 conv_in_channels = conv_channels
             padding = (kernel_size - 1) // 2 * dilation
             conv_layer = [
-                self._apply_weight_norm(Conv1d(
-                    conv_in_channels, conv_channels,
-                    kernel_size=kernel_size, padding=padding,
-                    dilation=dilation, bias=bias)),
+                Conv1d(conv_in_channels, conv_channels,
+                       kernel_size=kernel_size, padding=padding,
+                       dilation=dilation, bias=bias),
                 getattr(torch.nn, nonlinear_activation)(inplace=True, **nonlinear_activation_params)
             ]
             self.conv_layers += conv_layer
         padding = (kernel_size - 1) // 2
-        last_conv_layer = self._apply_weight_norm(Conv1d(
+        last_conv_layer = Conv1d(
             conv_in_channels, out_channels,
-            kernel_size=kernel_size, padding=padding, bias=bias))
+            kernel_size=kernel_size, padding=padding, bias=bias)
         self.conv_layers += [last_conv_layer]
+
+        # apply weight norm
+        if use_weight_norm:
+            self.apply_weight_norm()
 
     def forward(self, x):
         """Calculate forward propagation.
@@ -205,17 +213,21 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
             x = f(x)
         return x
 
+    def apply_weight_norm(self):
+        """Apply weight normalization module from all of the layers."""
+        def _apply_weight_norm(m):
+            if isinstance(m, torch.nn.Conv1d) or isinstance(m, torch.nn.Conv2d):
+                torch.nn.utils.weight_norm(m)
+                logging.debug(f"weight norm is applied to {m}.")
+        self.apply(_apply_weight_norm)
+
     def remove_weight_norm(self):
         """Remove weight normalization module from all of the layers."""
         def _remove_weight_norm(m):
             try:
+                logging.debug(f"weight norm is removed from {m}.")
                 torch.nn.utils.remove_weight_norm(m)
             except ValueError:  # this module didn't have weight norm
                 return
         self.apply(_remove_weight_norm)
 
-    def _apply_weight_norm(self, module):
-        if self.use_weight_norm:
-            return torch.nn.utils.weight_norm(module)
-        else:
-            return module
