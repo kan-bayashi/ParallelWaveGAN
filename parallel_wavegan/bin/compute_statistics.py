@@ -78,11 +78,11 @@ def main():
         scaler.partial_fit(mel)
 
     if config["format"] == "hdf5":
-        write_hdf5(os.path.join(args.rootdir, "stats.h5"), "mean", scaler.mean_.astype(np.float32))
-        write_hdf5(os.path.join(args.rootdir, "stats.h5"), "scale", scaler.scale_.astype(np.float32))
+        write_hdf5(os.path.join(args.dumpdir, "stats.h5"), "mean", scaler.mean_.astype(np.float32))
+        write_hdf5(os.path.join(args.dumpdir, "stats.h5"), "scale", scaler.scale_.astype(np.float32))
     else:
         stats = np.stack([scaler.mean_, scaler.scale_], axis=0)
-        np.save(os.path.join(args.rootdir, "stats.npy"), stats.astype(np.float32), allow_pickle=False)
+        np.save(os.path.join(args.dumpdir, "stats.npy"), stats.astype(np.float32), allow_pickle=False)
 
 
 if __name__ == "__main__":
