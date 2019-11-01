@@ -61,7 +61,7 @@ def main():
                         help="Kaldi-style segments file.")
     parser.add_argument("--rootdir", default=None, type=str,
                         help="Directory including wav files.")
-    parser.add_argument("--outdir", default=None, type=str,
+    parser.add_argument("--dumpdir", default=None, type=str,
                         help="Direcotry to save checkpoints.")
     parser.add_argument("--config", default="hparam.yml", type=str,
                         help="Yaml format configuration file.")
@@ -98,8 +98,8 @@ def main():
                               return_filename=True)
 
     # check directly existence
-    if not os.path.exists(args.outdir):
-        os.makedirs(args.outdir, exist_ok=True)
+    if not os.path.exists(args.dumpdir):
+        os.makedirs(args.dumpdir, exist_ok=True)
 
     # define function for parallel processing
     def _process_single_file(name, data):
@@ -153,12 +153,12 @@ def main():
 
         # save
         if config["format"] == "hdf5":
-            write_hdf5(os.path.join(args.outdir, f"{utt_id}.h5"), "wave", x.astype(np.float32))
-            write_hdf5(os.path.join(args.outdir, f"{utt_id}.h5"), "feats", feats.astype(np.float32))
+            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"), "wave", x.astype(np.float32))
+            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"), "feats", feats.astype(np.float32))
         elif config["format"] == "npy":
-            np.save(os.path.join(args.outdir, f"{utt_id}-wave.npy"),
+            np.save(os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
                     x.astype(np.float32), allow_pickle=False)
-            np.save(os.path.join(args.outdir, f"{utt_id}-feats.npy"),
+            np.save(os.path.join(args.dumpdir, f"{utt_id}-feats.npy"),
                     feats.astype(np.float32), allow_pickle=False)
         else:
             raise ValueError("support only hdf5 or npy format.")
