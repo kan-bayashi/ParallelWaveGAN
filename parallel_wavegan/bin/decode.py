@@ -72,7 +72,7 @@ def main():
     model = ParallelWaveGANGenerator(**config["generator_params"])
     model.load_state_dict(torch.load(args.checkpoint, map_location="cpu")["model"]["generator"])
     model.remove_weight_norm()
-    model = model.to(device)
+    model = model.eval().to(device)
     logging.info(f"loaded model parameters from {args.checkpoint}.")
 
     # generate
