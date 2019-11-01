@@ -28,6 +28,7 @@ requirements = {
         "matplotlib>=3.1.0",
         "PyYAML>=3.12",
         "tqdm>=4.26.1",
+        "kaldiio>=2.14.1",
     ],
     "setup": [
         "numpy",
