@@ -20,7 +20,7 @@ if LooseVersion(pip.__version__) < LooseVersion("19"):
 
 requirements = {
     "install": [
-        "torch==1.1",  # Installation from anaconda is recommended for PyTorch
+        "torch>=1.0.1",  # Installation from anaconda is recommended for PyTorch
         "setuptools>=38.5.1",
         "librosa>=0.7.0",
         "soundfile>=0.10.2",
