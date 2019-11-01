@@ -10,7 +10,7 @@ generator_params:
     skip_channels: 64
     aux_channels: 80
     aux_context_window: 2
-    dropout: 0.05
+    dropout: 0.0
     use_weight_norm: true
     upsample_conditional_features: true
     upsample_net: "ConvInUpsampleNetwork"
@@ -47,21 +47,23 @@ hop_size: 256
 
 # data loader setting
 batch_size: 8
-batch_max_steps: 19200  # make sure divible by hop_size
+batch_max_steps: 25600  # make sure divible by hop_size
 pin_memory: true
 num_workers: 8
-remove_short_samples: false
+remove_short_samples: true
 
 # optimizer setting
 generator_optimizer_params:
     lr: 0.0001
-    eps: 0.000001
+    eps: 1.0e-6
+    weight_decay: 0.0
 generator_scheduler_params:
     step_size: 200000
     gamma: 0.5
 discriminator_optimizer_params:
     lr: 0.00005
-    eps: 0.000001
+    eps: 1.0e-6
+    weight_decay: 0.0
 discriminator_scheduler_params:
     step_size: 200000
     gamma: 0.5
