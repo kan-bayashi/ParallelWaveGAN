@@ -9,7 +9,7 @@ jobs:
       max-parallel: 10
       matrix:
         python-version: [3.6, 3.7]
-        pytorch-version: [1.0.1, 1.1]
+        pytorch-version: [1.0.1, 1.1, 1.2, 1.3]
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v1
