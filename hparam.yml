@@ -11,6 +11,7 @@ num_mels: 80
 fmin: 80
 fmax: 7600
 global_gain_scale: 1.0
+format: "hdf5"
 
 # generator setting
 generator_params:
