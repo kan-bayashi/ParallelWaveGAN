@@ -97,8 +97,9 @@ def main():
         c = torch.FloatTensor(c).unsqueeze(0).transpose(2, 1).to(device)
         with torch.no_grad():
             y = model(z, c)
-        write_path = os.path.join(config["outdir"], os.path.basename(feat_path).replace(".npy", "_gen.wav"))
-        sf.write(write_path, y.view(-1).cpu().numpy(), config["sampling_rate"], "PCM_16")
+        utt_id = os.path.splitext(os.path.basename(feat_path))[0]
+        sf.write(os.path.join(config["outdir"], f"{utt_id}_gen.wav"),
+                 y.view(-1).cpu().numpy(), config["sampling_rate"], "PCM_16")
 
 
 if __name__ == "__main__":
