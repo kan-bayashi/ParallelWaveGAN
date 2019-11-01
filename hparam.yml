@@ -1,3 +1,17 @@
+# This is the hyperparameter configuration file for Parallel WaveGAN.
+# Please make sure the subset of parameters are used for each process.
+
+# feature setting
+sampling_rate: 22050
+fft_size: 1024
+hop_size: 256
+win_length: null
+window: "hann"
+num_mels: 80
+fmin: 80
+fmax: 7600
+global_gain_scale: 1.0
+
 # generator setting
 generator_params:
     in_channels: 1
@@ -39,11 +53,6 @@ stft_loss_params:
 
 # Adversarial loss setting
 lambda_adv: 4.0
-
-# feature setting
-sampling_rate: 22050
-fft_size: 1024
-hop_size: 256
 
 # data loader setting
 batch_size: 8
