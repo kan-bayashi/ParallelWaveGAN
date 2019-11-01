@@ -230,4 +230,3 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
             except ValueError:  # this module didn't have weight norm
                 return
         self.apply(_remove_weight_norm)
-

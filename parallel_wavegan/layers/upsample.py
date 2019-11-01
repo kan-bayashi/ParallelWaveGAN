@@ -6,8 +6,6 @@ This code is modified from https://github.com/r9y9/wavenet_vocoder.
 
 """
 
-import logging
-
 import numpy as np
 import torch
 import torch.nn.functional as F
