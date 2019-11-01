@@ -33,9 +33,9 @@ discriminator_params:
 # STFT loss setting
 stft_loss_params:
     fft_sizes: [1024, 2048, 512]
-    shift_sizes: [120, 240, 50]
-    window_lengths: [600, 1200, 240]
-    window_type: "hann_window"
+    hop_sizes: [120, 240, 50]
+    win_lengths: [600, 1200, 240]
+    window: "hann_window"
 
 # Adversarial loss setting
 lambda_adv: 4.0
