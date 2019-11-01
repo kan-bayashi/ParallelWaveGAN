@@ -87,16 +87,15 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
 fi
 
 if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
-    echo "Stage 2: Network decoding"
+    echo "Stage 3: Network decoding"
     [ ! -n "${checkpoint}" ] && checkpoint=$(find ${expdir} -name "*.pkl" | xargs ls -t | head -n 1)
     outdir=${expdir}/wav/$(basename ${checkpoint} .pkl)
     for name in dev eval; do
         decode.py \
             --config ${config} \
-            --dumpdir ${dumpdir}/train_nodev/norm \
+            --dumpdir ${dumpdir}/${name}/norm \
             --checkpoint ${checkpoint} \
-            --outdir ${outdir} \
-            --resume ${resume} \
+            --outdir ${outdir}/${name} \
             --verbose ${verbose}
     done
     echo "successfully finished decoding."
