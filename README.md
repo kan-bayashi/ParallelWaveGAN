@@ -28,6 +28,13 @@ make
 source venv/bin/activate
 ```
 
+## Run
+
+```bash
+cd egs/ljspeech/voc1
+./run.sh
+```
+
 ## TODO
 
 - [x] implement generator
@@ -42,8 +49,9 @@ source venv/bin/activate
     - [x] resume function
     - [x] intermediate result checker
 - [x] implement decoding script
+- [x] implement pre-processing scripts
+- [x] implement recipe
 - [ ] train model and check the performance
-- [ ] implement pre-processing scripts (or reuse @r9y9's scripts?)
 
 ## References
 

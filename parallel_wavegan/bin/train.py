@@ -412,7 +412,7 @@ def main():
                         help="Direcotry including development data.")
     parser.add_argument("--outdir", default=None, type=str,
                         help="Direcotry to save checkpoints.")
-    parser.add_argument("--resume", default=None, type=str,
+    parser.add_argument("--resume", default=None, type=str, nargs="?",
                         help="Checkpoint file path to resume training.")
     parser.add_argument("--config", default="hparam.yml", type=str,
                         help="Yaml format configuration file.")
