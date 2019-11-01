@@ -63,7 +63,7 @@ def main():
 
     # get dataset
     if config["format"] == "hdf5":
-        mel_query = "*.h5", "*.h5"
+        mel_query = "*.h5"
         mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
     elif config["format"] == "npy":
         mel_query = "*-feats.npy"
