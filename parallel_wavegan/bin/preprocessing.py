@@ -38,7 +38,24 @@ def logmelfilterbank(audio,
                      fmax=None,
                      eps=1e-10,
                      ):
-    """Compute log-Mel filterbank feature."""
+    """Compute log-Mel filterbank feature.
+
+    Args:
+        audio (ndarray): Audio signal (T,).
+        sampling_rate (int): Sampling rate.
+        fft_size (int): FFT size.
+        hop_size (int): Hop size.
+        win_length (int): Window length. If set to None, it will be the same as fft_size.
+        window (str): Window function type.
+        num_mels (int): Number of mel basis.
+        fmin (int): Minimum frequency in mel basis calculation.
+        fmax (int): Maximum frequency in mel basis calculation.
+        eps (float): Epsilon value to avoid inf in log calculation.
+
+    Returns:
+        ndarray: Log Mel filterbank feature (#frames, num_mels).
+
+    """
     # get amplitude spectrogram
     x_stft = librosa.stft(audio, n_fft=fft_size, hop_length=hop_size,
                           win_length=win_length, window=window, pad_mode="reflect")
@@ -54,7 +71,8 @@ def logmelfilterbank(audio,
 
 def main():
     """Run preprocessing process."""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Preprocess audio and then extract features.")
     parser.add_argument("--wavscp", default=None, type=str,
                         help="Kaldi-style wav.scp file.")
     parser.add_argument("--segments", default=None, type=str,
