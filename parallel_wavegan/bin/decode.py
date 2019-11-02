@@ -24,7 +24,8 @@ from parallel_wavegan.utils import read_hdf5
 
 def main():
     """Run decoding process."""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Decode dumped features with trained Parallel WaveGAN Generator.")
     parser.add_argument("--dumpdir", default=None, type=str,
                         help="Directory including feature files.")
     parser.add_argument("--outdir", default=None, type=str,
