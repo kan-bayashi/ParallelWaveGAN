@@ -15,12 +15,14 @@ eval_set="eval"
 # shellcheck disable=SC1091
 . parse_options.sh || exit 1;
 
-db=$1
+db_root=$1
 data_dir=$2
 
 # check arguments
 if [ $# != 2 ]; then
     echo "Usage: $0 [Options] <db> <data_dir>"
+    echo "e.g.: $0 downloads/LJSpeech-1.1 data"
+    echo ""
     echo "Options:"
     echo "    --num_dev: number of development uttreances (default=250)."
     echo "    --num_eval: number of evaluation uttreances (default=250)."
@@ -44,7 +46,7 @@ scp="${data_dir}/all/wav.scp"
 [ -e "${scp}" ] && rm "${scp}"
 
 # make all scp
-find "${db}" -follow -name "*.wav" | sort | while read -r filename;do
+find "${db_root}" -follow -name "*.wav" | sort | while read -r filename;do
     id=$(basename "${filename}" | sed -e "s/\.[^\.]*$//g")
     echo "${id} ${filename}" >> "${scp}"
 done
