@@ -31,9 +31,9 @@ def main():
                         help="Kaldi-style feats.scp file.")
     parser.add_argument("--dumpdir", default=None, type=str,
                         help="Directory including feature files.")
-    parser.add_argument("--outdir", default=None, type=str,
+    parser.add_argument("--outdir", default=None, type=str, required=True,
                         help="Direcotry to save generated speech.")
-    parser.add_argument("--checkpoint", default=None, type=str,
+    parser.add_argument("--checkpoint", default=None, type=str, required=True,
                         help="Checkpoint file.")
     parser.add_argument("--config", default=None, type=str,
                         help="Yaml format configuration file.")
@@ -66,7 +66,8 @@ def main():
     config.update(vars(args))
 
     # check arguments
-    if args.featscp is not None and args.dumpdir is not None:
+    if (args.featscp is not None and args.dumpdir is not None) or \
+            (args.featscp is None and args.dumpdir is None):
         raise ValueError("Please specify either dumpdir or featscp.")
 
     # get dataset

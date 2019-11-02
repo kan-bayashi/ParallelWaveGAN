@@ -30,13 +30,13 @@ def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
         description="Normalize dumped raw features.")
-    parser.add_argument("--rootdir", default=None, type=str,
+    parser.add_argument("--rootdir", default=None, type=str, required=True,
                         help="Direcotry including feature files to be normalized.")
-    parser.add_argument("--dumpdir", default=None, type=str,
+    parser.add_argument("--dumpdir", default=None, type=str, required=True,
                         help="Direcotry to dump normalized feature files.")
-    parser.add_argument("--stats", default=None, type=str,
+    parser.add_argument("--stats", default=None, type=str, required=True,
                         help="Statistics file.")
-    parser.add_argument("--config", default="hparam.yml", type=str,
+    parser.add_argument("--config", default="hparam.yml", type=str, required=True,
                         help="Yaml format configuration file.")
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level (higher is more logging)")

@@ -79,9 +79,9 @@ def main():
                         help="Kaldi-style segments file.")
     parser.add_argument("--rootdir", default=None, type=str,
                         help="Directory including wav files.")
-    parser.add_argument("--dumpdir", default=None, type=str,
+    parser.add_argument("--dumpdir", default=None, type=str, required=True,
                         help="Direcotry to dump feature files.")
-    parser.add_argument("--config", default="hparam.yml", type=str,
+    parser.add_argument("--config", default="hparam.yml", type=str, required=True,
                         help="Yaml format configuration file.")
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level (higher is more logging)")
@@ -107,7 +107,8 @@ def main():
     config.update(vars(args))
 
     # check arguments
-    if args.wavscp is not None and args.rootdir is not None:
+    if (args.wavscp is not None and args.rootdir is not None) or \
+            (args.wavscp is None and args.rootdir is None):
         raise ValueError("Please specify either rootdir or wavscp.")
 
     # get dataset
