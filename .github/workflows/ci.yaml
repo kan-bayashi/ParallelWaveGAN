@@ -30,7 +30,7 @@ jobs:
       - name: ShellCheck
         run: |
           export PATH=shellcheck-stable:$PATH
-          find egs -name "*.sh" | xargs shellcheck -x --shell=bash
+          find egs -name "*.sh" | while read line; do shellcheck -x --shell=bash -P $(dirname $line) ${line}; done
       - name: Flake8
         run: |
           flake8 parallel_wavegan
