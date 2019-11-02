@@ -37,7 +37,7 @@ cd egs/ljspeech/voc1
 ./run.sh
 ```
 
-The training is on going. Please check the #1.  
+The training is on going. Please check the (https://github.com/kan-bayashi/ParallelWaveGAN/issues/1).  
 Once I finished the training, I will upload samples and pre-pretrained model.
 
 ## TODO
