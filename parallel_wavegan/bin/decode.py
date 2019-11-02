@@ -10,6 +10,7 @@ import argparse
 import logging
 import os
 
+import kaldiio
 import numpy as np
 import soundfile as sf
 import torch
@@ -26,6 +27,8 @@ def main():
     """Run decoding process."""
     parser = argparse.ArgumentParser(
         description="Decode dumped features with trained Parallel WaveGAN Generator.")
+    parser.add_argument("--featscp", default=None, type=str,
+                        help="Kaldi-style feats.scp file.")
     parser.add_argument("--dumpdir", default=None, type=str,
                         help="Directory including feature files.")
     parser.add_argument("--outdir", default=None, type=str,
@@ -63,20 +66,24 @@ def main():
     config.update(vars(args))
 
     # get dataset
-    if config["format"] == "hdf5":
-        mel_query = "*.h5"
-        mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
-    elif config["format"] == "npy":
-        mel_query = "*-feats.npy"
-        mel_load_fn = np.load
+    if args.featscp is None:
+        if config["format"] == "hdf5":
+            mel_query = "*.h5"
+            mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+        elif config["format"] == "npy":
+            mel_query = "*-feats.npy"
+            mel_load_fn = np.load
+        else:
+            raise ValueError("support only hdf5 or npy format.")
+        dataset = MelDataset(
+            args.dumpdir,
+            mel_query=mel_query,
+            mel_load_fn=mel_load_fn,
+            return_filename=True)
+        logging.info(f"the number of features to be decoded = {len(dataset)}.")
     else:
-        raise ValueError("support only hdf5 or npy format.")
-    dataset = MelDataset(
-        args.dumpdir,
-        mel_query=mel_query,
-        mel_load_fn=mel_load_fn,
-        return_filename=True)
-    logging.info(f"the number of features to be decoded = {len(dataset)}.")
+        dataset = kaldiio.ReadHelper(f"scp:{args.featscp}")
+        logging.info(f"the feature loaded from {args.featscp}.")
 
     # setup
     if torch.cuda.is_available():
