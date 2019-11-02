@@ -91,7 +91,7 @@ def main():
     # generate
     pad_size = (config["generator_params"]["aux_context_window"],
                 config["generator_params"]["aux_context_window"])
-    for feat_path, c in tqdm(dataset):
+    for feat_path, c in tqdm(dataset, desc="[decode]"):
         z = torch.randn(1, 1, c.shape[0] * config["hop_size"]).to(device)
         c = np.pad(c, (pad_size, (0, 0)), "edge")
         c = torch.FloatTensor(c).unsqueeze(0).transpose(2, 1).to(device)
