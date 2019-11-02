@@ -33,7 +33,7 @@ os.environ["MPL_BACKEND"] = "Agg"
 
 
 class Trainer(object):
-    """Customized trainer module."""
+    """Customized trainer module for Parallel WaveGAN training."""
 
     def __init__(self,
                  steps,
@@ -46,7 +46,20 @@ class Trainer(object):
                  config,
                  device=torch.device("cpu"),
                  ):
-        """Initialize trainer."""
+        """Initialize trainer.
+
+        Args:
+            steps (int): Initial global steps.
+            epochs (int): Initial global epochs.
+            data_loader (dict): Dict of data loaders. It must contrain "train" and "dev" loaders.
+            model (dict): Dict of models. It must contrain "generator" and "discriminator" models.
+            criterion (dict): Dict of criterions. It must contrain "stft" and "mse" criterions.
+            optimizer (dict): Dict of optimizers. It must contrain "generator" and "discriminator" optimizers.
+            scheduler (dict): Dict of schedulers. It must contrain "generator" and "discriminator" schedulers.
+            config (dict): Config dict loaded from yaml format configuration file.
+            device (torch.deive): Pytorch device instance.
+
+        """
         self.steps = steps
         self.epochs = epochs
         self.data_loader = data_loader
@@ -78,7 +91,12 @@ class Trainer(object):
         logging.info("finished training.")
 
     def save_checkpoint(self, checkpoint_path):
-        """Save checkpoint."""
+        """Save checkpoint.
+
+        Args:
+            checkpoint_path (str): Checkpoint path to be saved.
+
+        """
         state_dict = {
             "model": {
                 "generator": self.model["generator"].state_dict(),
@@ -100,7 +118,12 @@ class Trainer(object):
         torch.save(state_dict, checkpoint_path)
 
     def load_checkpoint(self, checkpoint_path):
-        """Load checkpoint."""
+        """Load checkpoint.
+
+        Args:
+            checkpoint_path (str): Checkpoint path to be loaded.
+
+        """
         state_dict = torch.load(checkpoint_path)
         self.steps = state_dict["steps"]
         self.epochs = state_dict["epochs"]
@@ -332,7 +355,14 @@ class Collater(object):
                  hop_size=256,
                  aux_context_window=2
                  ):
-        """Initialize customized collater."""
+        """Initialize customized collater for PyTorch DataLoader.
+
+        Args:
+            batch_max_steps (int): The maximum length of input signal in batch.
+            hop_size (int): Hop size of auxiliary features.
+            aux_context_window (int): Context window size for auxiliary feature conv.
+
+        """
         if batch_max_steps % hop_size != 0:
             batch_max_steps += -(batch_max_steps % hop_size)
         assert batch_max_steps % hop_size == 0
@@ -349,7 +379,7 @@ class Collater(object):
 
         Returns:
             Tensor: Gaussian noise batch (B, 1, T).
-            Tensor: Auxiliary feature batch (B, C, T").
+            Tensor: Auxiliary feature batch (B, C, T'), where T = (T' - 2 * aux_context_window) * hop_size
             Tensor: Target signal batch (B, 1, T).
             LongTensor: Input length batch (B,)
 
@@ -406,7 +436,7 @@ class Collater(object):
 
 def main():
     """Run training process."""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Train Parallel WaveGAN.")
     parser.add_argument("--train-dumpdir", default=None, type=str,
                         help="Directory including trainning data.")
     parser.add_argument("--dev-dumpdir", default=None, type=str,
