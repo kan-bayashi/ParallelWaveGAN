@@ -23,7 +23,8 @@ from parallel_wavegan.utils import write_hdf5
 
 def main():
     """Run preprocessing process."""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Compute mean and variance of dumped raw features.")
     parser.add_argument("--rootdir", default=None, type=str,
                         help="Direcotry including feature files.")
     parser.add_argument("--dumpdir", default=None, type=str,

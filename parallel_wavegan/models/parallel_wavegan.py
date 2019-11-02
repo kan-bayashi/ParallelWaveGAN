@@ -36,7 +36,27 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                  upsample_net="ConvInUpsampleNetwork",
                  upsample_params={"upsample_scales": [4, 4, 4, 4]},
                  ):
-        """Initialize Parallel WaveGAN Generator module."""
+        """Initialize Parallel WaveGAN Generator module.
+
+        Args:
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of output channels.
+            kernel_size (int): Kernel size of dilated convolution.
+            layers (int): Number of residual block layers.
+            stacks (int): Number of stacks i.e., dilation cycles.
+            residual_channels (int): Number of channels in residual conv.
+            gate_channels (int):  Number of channels in gated conv.
+            skip_channels (int): Number of channels in skip conv.
+            aux_channels (int): Number of channels for auxiliary feature conv.
+            aux_context_window (int): Context window size for auxiliary feature.
+            dropout (float): Dropout rate. 0.0 means no dropout applied.
+            use_weight_norm (bool): Whether to use weight norm.
+                If set to true, it will be applied to all of the conv layers.
+            upsample_conditional_features (bool): Whether to use upsampling network.
+            upsample_net (str): Upsampling network architecture.
+            upsample_params (dict): Upsampling network parameters.
+
+        """
         super(ParallelWaveGANGenerator, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -170,7 +190,21 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
                  bias=True,
                  use_weight_norm=True,
                  ):
-        """Initialize Parallel WaveGAN Discriminator module."""
+        """Initialize Parallel WaveGAN Discriminator module.
+
+        Args:
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of output channels.
+            kernel_size (int): Number of output channels.
+            layers (int): Number of conv layers.
+            conv_channels (int): Number of chnn layers.
+            nonlinear_activation (str): Nonlinear function after each conv.
+            nonlinear_activation_params (dict): Nonlinear function parameters
+            bias (int): Whether to use bias parameter in conv.
+            use_weight_norm (bool) Whether to use weight norm.
+                If set to true, it will be applied to all of the conv layers.
+
+        """
         super(ParallelWaveGANDiscriminator, self).__init__()
         assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
         self.conv_layers = torch.nn.ModuleList()

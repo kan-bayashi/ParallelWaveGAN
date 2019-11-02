@@ -28,7 +28,8 @@ os.environ["OMP_NUM_THREADS"] = "1"
 
 def main():
     """Run preprocessing process."""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Normalize dumped raw features.")
     parser.add_argument("--rootdir", default=None, type=str,
                         help="Direcotry including feature files to be normalized.")
     parser.add_argument("--dumpdir", default=None, type=str,

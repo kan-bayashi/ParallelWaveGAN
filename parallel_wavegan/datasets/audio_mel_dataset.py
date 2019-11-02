@@ -3,7 +3,7 @@
 # Copyright 2019 Tomoki Hayashi
 #  MIT License (https://opensource.org/licenses/MIT)
 
-"""Dataset related classes."""
+"""Dataset modules."""
 
 import logging
 
@@ -12,22 +12,35 @@ import numpy as np
 from torch.utils.data import Dataset
 
 from parallel_wavegan.utils import find_files
+from parallel_wavegan.utils import read_hdf5
 
 
 class AudioMelDataset(Dataset):
-    """PyTorch compatible dataset."""
+    """PyTorch compatible audio and mel dataset."""
 
     def __init__(self,
                  root_dir,
-                 audio_query="*-wave.npy",
-                 mel_query="*-feats.npy",
+                 audio_query="*.h5",
+                 mel_query="*.h5",
+                 audio_load_fn=lambda x: read_hdf5(x, "wave"),
+                 mel_load_fn=lambda x: read_hdf5(x, "feats"),
                  audio_length_threshold=None,
                  mel_length_threshold=None,
-                 audio_load_fn=np.load,
-                 mel_load_fn=np.load,
                  return_filename=False,
                  ):
-        """Initialize pytorch dataset."""
+        """Initialize dataset.
+
+        Args:
+            root_dir (str): Root directory including dumped files.
+            audio_query (str): Query to find audio files in root_dir.
+            mel_query (str): Query to find feature files in root_dir.
+            audio_load_fn (func): Function to load audio file.
+            mel_load_fn (func): Function to load feature file.
+            audio_length_threshold (int): Threshold to remove short audio files.
+            mel_length_threshold (int): Threshold to remove short feature files.
+            return_filename (bool): Whether to return the filename with arrays.
+
+        """
         # find all of audio and mel files
         audio_files = sorted(find_files(root_dir, audio_query))
         mel_files = sorted(find_files(root_dir, mel_query))
@@ -68,8 +81,10 @@ class AudioMelDataset(Dataset):
             idx (int): Index of the item.
 
         Returns:
+            str: Audio filename (only in return_filename = True).
+            str: Feature filename (only in return_filename = True).
             ndarray: Audio signal (T,).
-            ndarray: Mel spec feature (T', C).
+            ndarray: Feature (T', C).
 
         """
         audio = self.audio_load_fn(self.audio_files[idx])
@@ -81,12 +96,17 @@ class AudioMelDataset(Dataset):
             return audio, mel
 
     def __len__(self):
-        """Return dataset length."""
+        """Return dataset length.
+
+        Returns:
+            int: The length of dataset.
+
+        """
         return len(self.audio_files)
 
 
 class AudioDataset(Dataset):
-    """PyTorch compatible dataset."""
+    """PyTorch compatible audio dataset."""
 
     def __init__(self,
                  root_dir,
@@ -95,7 +115,16 @@ class AudioDataset(Dataset):
                  audio_load_fn=np.load,
                  return_filename=False,
                  ):
-        """Initialize pytorch dataset."""
+        """Initialize dataset.
+
+        Args:
+            root_dir (str): Root directory including dumped files.
+            audio_query (str): Query to find audio files in root_dir.
+            audio_load_fn (func): Function to load audio file.
+            audio_length_threshold (int): Threshold to remove short audio files.
+            return_filename (bool): Whether to return the filename with arrays.
+
+        """
         # find all of audio and mel files
         audio_files = sorted(find_files(root_dir, audio_query))
 
@@ -122,8 +151,8 @@ class AudioDataset(Dataset):
             idx (int): Index of the item.
 
         Returns:
-            ndarray: Audio signal (T,).
-            ndarray: Mel spec feature (T', C).
+            str: Filename (only in return_filename = True).
+            ndarray: Audio (T,).
 
         """
         audio = self.audio_load_fn(self.audio_files[idx])
@@ -134,12 +163,17 @@ class AudioDataset(Dataset):
             return audio
 
     def __len__(self):
-        """Return dataset length."""
+        """Return dataset length.
+
+        Returns:
+            int: The length of dataset.
+
+        """
         return len(self.audio_files)
 
 
 class MelDataset(Dataset):
-    """PyTorch compatible dataset."""
+    """PyTorch compatible mel dataset."""
 
     def __init__(self,
                  root_dir,
@@ -148,7 +182,16 @@ class MelDataset(Dataset):
                  mel_load_fn=np.load,
                  return_filename=False,
                  ):
-        """Initialize pytorch dataset."""
+        """Initialize dataset.
+
+        Args:
+            root_dir (str): Root directory including dumped files.
+            mel_query (str): Query to find feature files in root_dir.
+            mel_load_fn (func): Function to load feature file.
+            mel_length_threshold (int): Threshold to remove short feature files.
+            return_filename (bool): Whether to return the filename with arrays.
+
+        """
         # find all of the mel files
         mel_files = sorted(find_files(root_dir, mel_query))
 
@@ -175,8 +218,8 @@ class MelDataset(Dataset):
             idx (int): Index of the item.
 
         Returns:
-            str: Filename.
-            ndarray: Mel spec feature (T', C).
+            str: Filename (only in return_filename = True).
+            ndarray: Feature (T', C).
 
         """
         if self.return_filename:
@@ -185,5 +228,10 @@ class MelDataset(Dataset):
             return self.mel_load_fn(self.mel_files[idx])
 
     def __len__(self):
-        """Return dataset length."""
+        """Return dataset length.
+
+        Returns:
+            int: The length of dataset.
+
+        """
         return len(self.mel_files)
