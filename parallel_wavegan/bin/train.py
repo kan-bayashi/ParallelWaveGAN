@@ -172,8 +172,11 @@ class Trainer(object):
             # calculate discriminator loss
             p = self.model["discriminator"](y.unsqueeze(1)).squeeze(1)
             p_ = self.model["discriminator"](y_.unsqueeze(1).detach()).squeeze(1)
-            dis_loss = self.criterion["mse"](p, p.new_ones(p.size())) + \
-                self.criterion["mse"](p_, p_.new_zeros(p_.size()))
+            real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
+            fake_loss = self.criterion["mse"](p_, p_.new_zeros(p_.size()))
+            dis_loss = real_loss + fake_loss
+            self.total_train_loss["real_loss"] += real_loss.item()
+            self.total_train_loss["fake_loss"] += fake_loss.item()
             self.total_train_loss["discriminator_loss"] += dis_loss.item()
 
             # update discriminator
