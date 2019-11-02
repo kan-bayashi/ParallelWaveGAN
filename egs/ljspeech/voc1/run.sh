@@ -29,6 +29,10 @@ checkpoint=""
 # shellcheck disable=SC1091
 . parse_options.sh || exit 1;
 
+train_set="train_nodev"
+dev_set="dev"
+eval_set="eval"
+
 set -euo pipefail
 
 if [ "${stage}" -le -1 ] && [ "${stop_stage}" -ge -1 ]; then
@@ -38,7 +42,11 @@ fi
 
 if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"
-    local/data_prep.sh "${download_dir}/LJSpeech-1.1" data
+    local/data_prep.sh \
+        --train_set "${train_set}" \
+        --dev_set "${dev_set}" \
+        --eval_set "${eval_set}" \
+        "${download_dir}/LJSpeech-1.1" data
 fi
 
 if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
