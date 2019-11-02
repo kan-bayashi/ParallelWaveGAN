@@ -106,6 +106,10 @@ def main():
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
 
+    # check arguments
+    if args.wavscp is not None and args.rootdir is not None:
+        raise ValueError("Please specify either rootdir or wavscp.")
+
     # get dataset
     if args.wavscp is not None:
         dataset = kaldiio.ReadHelper(f"scp:{args.wavscp}",

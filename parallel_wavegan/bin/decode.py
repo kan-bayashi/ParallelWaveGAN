@@ -65,6 +65,10 @@ def main():
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
 
+    # check arguments
+    if args.featscp is not None and args.dumpdir is not None:
+        raise ValueError("Please specify either dumpdir or featscp.")
+
     # get dataset
     if args.featscp is None:
         if config["format"] == "hdf5":
