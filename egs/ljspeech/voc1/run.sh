@@ -57,9 +57,9 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
         echo "successfully finished feature extraction of ${name} set."
     ) &
     pids+=($!)
+    done
     i=0; for pid in "${pids[@]}"; do wait ${pid} || ((++i)); done
     [ ${i} -gt 0 ] && echo "$0: ${i} background jobs are failed." && false
-    done
     echo "successfully finished feature extraction."
 
     # calculate statistics for normalization
@@ -87,9 +87,9 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
         echo "successfully finished normalization of ${name} set."
     ) &
     pids+=($!)
+    done
     i=0; for pid in "${pids[@]}"; do wait ${pid} || ((++i)); done
     [ ${i} -gt 0 ] && echo "$0: ${i} background jobs are failed." && false
-    done
     echo "successfully finished normalization."
 fi
 
@@ -126,11 +126,12 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
                 --checkpoint ${checkpoint} \
                 --outdir ${outdir}/${name} \
                 --verbose ${verbose}
+        echo "successfully finished decoding of ${name} set."
     ) &
     pids+=($!)
+    done
     i=0; for pid in "${pids[@]}"; do wait ${pid} || ((++i)); done
     [ ${i} -gt 0 ] && echo "$0: ${i} background jobs are failed." && false
-    done
     echo "successfully finished decoding."
 fi
 echo "finished."
