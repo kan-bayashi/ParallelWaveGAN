@@ -27,9 +27,9 @@ jobs:
           # install shell check
           wget https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz
           tar -xvf shellcheck-stable.linux.x86_64.tar.xz
-          export PATH=shellcheck-stable:$PATH
       - name: ShellCheck
         run: |
+          export PATH=shellcheck-stable:$PATH
           find egs -name "*.sh" | xargs shellcheck -x --shell=bash
       - name: Flake8
         run: |
