@@ -18,15 +18,22 @@ jobs:
           architecture: 'x64'
       - name: Install dependencies
         run: |
+          # install python modules
           python -m pip install --upgrade pip
           pip install -q -U numpy
           pip install -q torch==${{ matrix.pytorch-version }} -f https://download.pytorch.org/whl/cpu/stable
           pip install -q -e .
           pip install -q -e .[test]
-      - name: Linter
+          # install shell check
+          wget https://storage.googleapis.com/shellcheck/shellcheck-stable.linux.x86_64.tar.xz
+          tar -xvf shellcheck-stable.linux.x86_64.tar.xz
+          export PATH=shellcheck-stable:$PATH
+      - name: ShellCheck
+        run: |
+          find egs -name "*.sh" | xargs shellcheck -x --shell=bash
+      - name: Flake8
         run: |
           flake8 parallel_wavegan
       - name: Pytest
         run: |
           pytest test
-
