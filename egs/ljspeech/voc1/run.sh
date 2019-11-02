@@ -108,7 +108,6 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
         [ ! -e ${outdir}/${name} ] && mkdir -p ${outdir}/${name}
         ${cuda_cmd} --gpu 1 ${outdir}/decode.log \
             decode.py \
-                --config ${config} \
                 --dumpdir ${dumpdir}/${name}/norm \
                 --checkpoint ${checkpoint} \
                 --outdir ${outdir}/${name} \
