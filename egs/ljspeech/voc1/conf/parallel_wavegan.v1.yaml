@@ -41,9 +41,9 @@ generator_params:
     dropout: 0.0          # Dropout rate. 0.0 means no dropout applied.
     use_weight_norm: true # Whether to use weight norm.
                           # If set to true, it will be applied to all of the conv layers.
-    upsample_net: "ConvInUpsampleNetwork" # upsampling network architecture.
-    upsample_params:                      # upsampling network parameters.
-        upsample_scales: [4, 4, 4, 4]     # upsampling scales. Prodcut of these must be the same as hop size.
+    upsample_net: "ConvInUpsampleNetwork" # Upsampling network architecture.
+    upsample_params:                      # Upsampling network parameters.
+        upsample_scales: [4, 4, 4, 4]     # Upsampling scales. Prodcut of these must be the same as hop size.
 
 ###########################################################
 #       DISCRIMINATOR NETWORK ARCHITECTURE SETTING        #
