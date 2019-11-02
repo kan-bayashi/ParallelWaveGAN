@@ -148,15 +148,15 @@ class Trainer(object):
             p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
             gen_loss = sc_loss + mag_loss + self.config["lambda_adv"] * adv_loss
-            self.total_train_loss["adversarial_loss"] += adv_loss.item()
-            self.total_train_loss["spectral_convergenge_loss"] += sc_loss.item()
-            self.total_train_loss["log_stft_magnitude_loss"] += mag_loss.item()
-            self.total_train_loss["generator_loss"] += gen_loss.item()
+            self.total_train_loss["train/adversarial_loss"] += adv_loss.item()
+            self.total_train_loss["train/spectral_convergenge_loss"] += sc_loss.item()
+            self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
+            self.total_train_loss["train/generator_loss"] += gen_loss.item()
         else:
             gen_loss = sc_loss + mag_loss
-            self.total_train_loss["spectral_convergenge_loss"] += sc_loss.item()
-            self.total_train_loss["log_stft_magnitude_loss"] += mag_loss.item()
-            self.total_train_loss["generator_loss"] += gen_loss.item()
+            self.total_train_loss["train/spectral_convergenge_loss"] += sc_loss.item()
+            self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
+            self.total_train_loss["train/generator_loss"] += gen_loss.item()
 
         # update generator
         self.optimizer["generator"].zero_grad()
@@ -175,9 +175,9 @@ class Trainer(object):
             real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
             fake_loss = self.criterion["mse"](p_, p_.new_zeros(p_.size()))
             dis_loss = real_loss + fake_loss
-            self.total_train_loss["real_loss"] += real_loss.item()
-            self.total_train_loss["fake_loss"] += fake_loss.item()
-            self.total_train_loss["discriminator_loss"] += dis_loss.item()
+            self.total_train_loss["train/real_loss"] += real_loss.item()
+            self.total_train_loss["train/fake_loss"] += fake_loss.item()
+            self.total_train_loss["train/discriminator_loss"] += dis_loss.item()
 
             # update discriminator
             self.optimizer["discriminator"].zero_grad()
@@ -233,15 +233,18 @@ class Trainer(object):
         # train discriminator
         p = self.model["discriminator"](y.unsqueeze(1)).squeeze(1)
         p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
-        dis_loss = self.criterion["mse"](p, p.new_ones(p.size())) + \
-            self.criterion["mse"](p_, p_.new_zeros(p_.size()))
+        real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
+        fake_loss = self.criterion["mse"](p_, p_.new_zeros(p_.size()))
+        dis_loss = real_loss + fake_loss
 
         # add to total eval loss
-        self.total_eval_loss["validation/adversarial_loss"] += adv_loss.item()
-        self.total_eval_loss["validation/spectral_convergenge_loss"] += sc_loss.item()
-        self.total_eval_loss["validation/log_stft_magnitude_loss"] += mag_loss.item()
-        self.total_eval_loss["validation/generator_loss"] += gen_loss.item()
-        self.total_eval_loss["validation/discriminator_loss"] += dis_loss.item()
+        self.total_eval_loss["eval/adversarial_loss"] += adv_loss.item()
+        self.total_eval_loss["eval/spectral_convergenge_loss"] += sc_loss.item()
+        self.total_eval_loss["eval/log_stft_magnitude_loss"] += mag_loss.item()
+        self.total_eval_loss["eval/generator_loss"] += gen_loss.item()
+        self.total_eval_loss["eval/real_loss"] += real_loss.item()
+        self.total_eval_loss["eval/fake_loss"] += fake_loss.item()
+        self.total_eval_loss["eval/discriminator_loss"] += dis_loss.item()
 
     def _eval_epoch(self):
         """Evaluate model one epoch."""
