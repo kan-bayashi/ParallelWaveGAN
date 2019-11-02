@@ -43,7 +43,9 @@ fi
 if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     echo "Stage 1: Feature extraction"
     # extract raw features
+    pids=()
     for name in train_nodev dev eval; do
+    (
         [ ! -e ${dumpdir}/${name}/raw ] && mkdir -p ${dumpdir}/${name}/raw
         ${train_cmd} --num-threads ${nj} ${dumpdir}/${name}/raw/preprocessing.log \
             preprocessing.py \
@@ -53,6 +55,10 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
                 --n_jobs ${nj} \
                 --verbose ${verbose}
         echo "successfully finished feature extraction of ${name} set."
+    ) &
+    pids+=($!)
+    i=0; for pid in "${pids[@]}"; do wait ${pid} || ((++i)); done
+    [ ${i} -gt 0 ] && echo "$0: ${i} background jobs are failed." && false
     done
     echo "successfully finished feature extraction."
 
@@ -66,7 +72,9 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     echo "successfully finished calculation of statistics."
 
     # normalize and dump them
+    pids=()
     for name in train_nodev dev eval; do
+    (
         [ ! -e ${dumpdir}/${name}/norm ] && mkdir -p ${dumpdir}/${name}/norm
         ${train_cmd} --num-threads ${nj} ${dumpdir}/${name}/norm/normalize.log \
             normalize.py \
@@ -77,6 +85,10 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
                 --n_jobs ${nj} \
                 --verbose ${verbose}
         echo "successfully finished normalization of ${name} set."
+    ) &
+    pids+=($!)
+    i=0; for pid in "${pids[@]}"; do wait ${pid} || ((++i)); done
+    [ ${i} -gt 0 ] && echo "$0: ${i} background jobs are failed." && false
     done
     echo "successfully finished normalization."
 fi
@@ -104,7 +116,9 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     echo "Stage 3: Network decoding"
     [ ! -n "${checkpoint}" ] && checkpoint=$(find ${expdir} -name "*.pkl" | xargs ls -t | head -n 1)
     outdir=${expdir}/wav/$(basename ${checkpoint} .pkl)
+    pids=()
     for name in dev eval; do
+    (
         [ ! -e ${outdir}/${name} ] && mkdir -p ${outdir}/${name}
         ${cuda_cmd} --gpu 1 ${outdir}/decode.log \
             decode.py \
@@ -112,6 +126,10 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
                 --checkpoint ${checkpoint} \
                 --outdir ${outdir}/${name} \
                 --verbose ${verbose}
+    ) &
+    pids+=($!)
+    i=0; for pid in "${pids[@]}"; do wait ${pid} || ((++i)); done
+    [ ${i} -gt 0 ] && echo "$0: ${i} background jobs are failed." && false
     done
     echo "successfully finished decoding."
 fi
