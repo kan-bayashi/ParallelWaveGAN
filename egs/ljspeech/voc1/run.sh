@@ -120,7 +120,7 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     for name in dev eval; do
     (
         [ ! -e ${outdir}/${name} ] && mkdir -p ${outdir}/${name}
-        ${cuda_cmd} --gpu 1 ${outdir}/decode.log \
+        ${cuda_cmd} --gpu 1 ${outdir}/${name}/decode.log \
             decode.py \
                 --dumpdir ${dumpdir}/${name}/norm \
                 --checkpoint ${checkpoint} \
