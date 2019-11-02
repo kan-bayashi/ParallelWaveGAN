@@ -103,7 +103,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp/train_ljspeech_$(basename "${config}" .yml)"
+    expdir="exp/train_ljspeech_$(basename "${config}" .yaml)"
 else
     expdir="exp/train_ljspeech_${tag}"
 fi
