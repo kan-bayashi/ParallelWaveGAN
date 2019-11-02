@@ -14,6 +14,10 @@ def stft(x, fft_size, hop_size, win_length, window):
 
     Args:
         x (Tensor): Input signal tensor (B, T).
+        fft_size (int): FFT size.
+        hop_size (int): Hop size.
+        win_length (int): Window length.
+        window (str): Window function type.
 
     Returns:
         Tensor: Magnitude spectrogram (B, #frames, fft_size // 2 + 1).
@@ -42,7 +46,7 @@ class SpectralConvergengeLoss(torch.nn.Module):
             y_mag (Tensor): Magnitude spectrogram of groundtruth signal (B, #frames, #freq_bins).
 
         Returns:
-            Tensor: Spectral convergence loss values.
+            Tensor: Spectral convergence loss value.
 
         """
         return torch.norm(y_mag - x_mag, p="fro") / torch.norm(y_mag, p="fro")
@@ -63,7 +67,7 @@ class LogSTFTMagnitudeLoss(torch.nn.Module):
             y_mag (Tensor): Magnitude spectrogram of groundtruth signal (B, #frames, #freq_bins).
 
         Returns:
-            Tensor: Log STFT magnitude loss values.
+            Tensor: Log STFT magnitude loss value.
 
         """
         return F.l1_loss(torch.log(y_mag), torch.log(x_mag))
@@ -90,7 +94,8 @@ class STFTLoss(torch.nn.Module):
             y (Tensor): Groundtruth signal (B, T).
 
         Returns:
-            Tensor: STFT loss values.
+            Tensor: Spectral convergence loss value.
+            Tensor: Log STFT magnitude loss value.
 
         """
         x_mag = stft(x, self.fft_size, self.shift_size, self.win_length, self.window)
@@ -109,7 +114,15 @@ class MultiResolutionSTFTLoss(torch.nn.Module):
                  hop_sizes=[120, 240, 50],
                  win_lengths=[600, 1200, 240],
                  window="hann_window"):
-        """Initialize Multi resolution STFT loss module."""
+        """Initialize Multi resolution STFT loss module.
+
+        Args:
+            fft_sizes (list): List of FFT sizes.
+            hop_sizes (list): List of hop sizes.
+            win_lengths (list): List of window lengths.
+            window (str): Window function type.
+
+        """
         super(MultiResolutionSTFTLoss, self).__init__()
         assert len(fft_sizes) == len(hop_sizes) == len(win_lengths)
         self.stft_losses = torch.nn.ModuleList()
@@ -124,7 +137,8 @@ class MultiResolutionSTFTLoss(torch.nn.Module):
             y (Tensor): Groundtruth signal (B, T).
 
         Returns:
-            Tensor: Mutli resolution STFT loss values.
+            Tensor: Multi resolution spectral convergence loss value.
+            Tensor: Multi resolution log STFT magnitude loss value.
 
         """
         sc_loss = 0.0
