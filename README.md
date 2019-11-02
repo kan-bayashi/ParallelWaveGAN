@@ -1,6 +1,6 @@
 # Parallel WaveGAN implementation with Pytorch
 
-This repository provides Parallel WaveGAN implementation with Pytorch.  
+This repository provides **UNOFFICIAL** Parallel WaveGAN implementation with Pytorch.  
 Now under construction.
 
 ## Requirements
@@ -30,10 +30,15 @@ source venv/bin/activate
 
 ## Run
 
+Currently this repository provides LJSPeech dataset recipe.
+
 ```bash
 cd egs/ljspeech/voc1
 ./run.sh
 ```
+
+The training is on going. Please check the (https://github.com/kan-bayashi/ParallelWaveGAN/issues/1).  
+Once I finished the training, I will upload samples and pre-pretrained model.
 
 ## TODO
 
@@ -50,7 +55,13 @@ cd egs/ljspeech/voc1
     - [x] intermediate result checker
 - [x] implement decoding script
 - [x] implement pre-processing scripts
-- [x] implement recipe
+    - [x] audio preprocessing
+    - [x] feature extraction
+    - [x] normalization
+- [x] implement several recipes
+    - [x] ljspeech
+    - [ ] jsut
+    - [ ] csmsc
 - [ ] train model and check the performance
 
 ## References
