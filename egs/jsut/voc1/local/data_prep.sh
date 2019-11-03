@@ -65,12 +65,12 @@ done
 num_all=$(wc -l < "${scp}")
 num_deveval=$((num_dev + num_eval))
 num_train=$((num_all - num_deveval))
-head -n "${num_train}" "${scp}" > "${data_dir}/${train_set}/wav.scp"
-tail -n "${num_deveval}" "${scp}" | head -n "${num_dev}" > "${data_dir}/${dev_set}/wav.scp"
-tail -n "${num_deveval}" "${scp}" | tail -n "${num_eval}" > "${data_dir}/${eval_set}/wav.scp"
-head -n "${num_train}" "${segments}" > "${data_dir}/${train_set}/segments"
-tail -n "${num_deveval}" "${segments}" | head -n "${num_dev}" > "${data_dir}/${dev_set}/segments"
-tail -n "${num_deveval}" "${segments}" | tail -n "${num_eval}" > "${data_dir}/${eval_set}/segments"
+tail -n "${num_train}" "${scp}" > "${data_dir}/${train_set}/wav.scp"
+head -n "${num_deveval}" "${scp}" | tail -n "${num_dev}" > "${data_dir}/${dev_set}/wav.scp"
+head -n "${num_deveval}" "${scp}" | head -n "${num_eval}" > "${data_dir}/${eval_set}/wav.scp"
+tail -n "${num_train}" "${segments}" > "${data_dir}/${train_set}/segments"
+head -n "${num_deveval}" "${segments}" | tail -n "${num_dev}" > "${data_dir}/${dev_set}/segments"
+head -n "${num_deveval}" "${segments}" | head -n "${num_eval}" > "${data_dir}/${eval_set}/segments"
 
 # remove all
 rm -rf "${data_dir}/all"
