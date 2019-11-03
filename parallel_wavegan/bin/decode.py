@@ -126,5 +126,6 @@ def main():
     # report average RTF
     logging.info(f"finished generation of {idx} utterances (RTF = {total_rtf / idx:.03f}).")
 
+
 if __name__ == "__main__":
     main()
