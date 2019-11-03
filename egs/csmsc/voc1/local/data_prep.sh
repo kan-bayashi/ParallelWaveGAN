@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
-# Copyright 2019 Nagoya University (Tomoki Hayashi)
-#  Apache 2.0  (http://www.apache.org/licenses/LICENSE-2.0)
+# Copyright 2019 Tomoki Hayashi
+#  MIT License (https://opensource.org/licenses/MIT)
 
 # shellcheck disable=SC1091
 . ./path.sh || exit 1;
