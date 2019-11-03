@@ -12,6 +12,7 @@ import os
 
 from collections import defaultdict
 
+import matplotlib
 import numpy as np
 import soundfile as sf
 import torch
@@ -29,7 +30,7 @@ from parallel_wavegan.optimizers import RAdam
 from parallel_wavegan.utils import read_hdf5
 
 # set to avoid matplotlib error in CLI environment
-os.environ["MPL_BACKEND"] = "Agg"
+matplotlib.use("Agg")
 
 
 class Trainer(object):
