@@ -89,6 +89,7 @@ The training is still on going. Please check the (https://github.com/kan-bayashi
 
 - [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
 - [r9y9/wavenet_vocoder](https://github.com/r9y9/wavenet_vocoder)
+- [LiyuanLucasLiu/RAdam](https://github.com/LiyuanLucasLiu/RAdam)
 
 ## Acknowledgement
 
