@@ -7,8 +7,8 @@
 . ./path.sh || exit 1;
 
 fs=24000
-num_dev=100
-num_eval=100
+num_dev=250
+num_eval=250
 train_set="train_nodev"
 dev_set="dev"
 eval_set="eval"
