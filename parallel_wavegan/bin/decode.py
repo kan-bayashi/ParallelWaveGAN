@@ -28,7 +28,7 @@ def main():
     """Run decoding process."""
     parser = argparse.ArgumentParser(
         description="Decode dumped features with trained Parallel WaveGAN Generator.")
-    parser.add_argument("--featscp", default=None, type=str,
+    parser.add_argument("--scp", default=None, type=str,
                         help="Kaldi-style feats.scp file.")
     parser.add_argument("--dumpdir", default=None, type=str,
                         help="Directory including feature files.")
@@ -67,12 +67,12 @@ def main():
     config.update(vars(args))
 
     # check arguments
-    if (args.featscp is not None and args.dumpdir is not None) or \
-            (args.featscp is None and args.dumpdir is None):
-        raise ValueError("Please specify either dumpdir or featscp.")
+    if (args.scp is not None and args.dumpdir is not None) or \
+            (args.scp is None and args.dumpdir is None):
+        raise ValueError("Please specify either dumpdir or scp.")
 
     # get dataset
-    if args.featscp is None:
+    if args.scp is None:
         if config["format"] == "hdf5":
             mel_query = "*.h5"
             mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
@@ -88,8 +88,8 @@ def main():
             return_filename=True)
         logging.info(f"the number of features to be decoded = {len(dataset)}.")
     else:
-        dataset = kaldiio.ReadHelper(f"scp:{args.featscp}")
-        logging.info(f"the feature loaded from {args.featscp}.")
+        dataset = kaldiio.ReadHelper(f"scp:{args.scp}")
+        logging.info(f"the feature loaded from {args.scp}.")
 
     # setup
     if torch.cuda.is_available():

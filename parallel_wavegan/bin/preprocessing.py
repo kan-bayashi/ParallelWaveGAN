@@ -73,7 +73,7 @@ def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
         description="Preprocess audio and then extract features.")
-    parser.add_argument("--wavscp", default=None, type=str,
+    parser.add_argument("--scp", default=None, type=str,
                         help="Kaldi-style wav.scp file.")
     parser.add_argument("--segments", default=None, type=str,
                         help="Kaldi-style segments file.")
@@ -107,13 +107,13 @@ def main():
     config.update(vars(args))
 
     # check arguments
-    if (args.wavscp is not None and args.rootdir is not None) or \
-            (args.wavscp is None and args.rootdir is None):
-        raise ValueError("Please specify either rootdir or wavscp.")
+    if (args.scp is not None and args.rootdir is not None) or \
+            (args.scp is None and args.rootdir is None):
+        raise ValueError("Please specify either rootdir or scp.")
 
     # get dataset
-    if args.wavscp is not None:
-        dataset = kaldiio.ReadHelper(f"scp:{args.wavscp}",
+    if args.scp is not None:
+        dataset = kaldiio.ReadHelper(f"scp:{args.scp}",
                                      segments=args.segments)
     else:
         dataset = AudioDataset(args.rootdir, "*.wav",
@@ -127,7 +127,7 @@ def main():
     # define function for parallel processing
     def _process_single_file(data):
         # parse inputs
-        if args.wavscp is not None:
+        if args.scp is not None:
             utt_id, (fs, audio) = data
             audio = audio.astype(np.float32)
             audio /= (1 << (16 - 1))  # assume that wav is PCM 16 bit

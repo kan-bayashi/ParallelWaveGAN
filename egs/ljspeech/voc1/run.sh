@@ -59,7 +59,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
         ${train_cmd} --num-threads "${nj}" "${dumpdir}/${name}/raw/preprocessing.log" \
             preprocessing.py \
                 --config "${conf}" \
-                --wavscp "data/${name}/wav.scp" \
+                --scp "data/${name}/wav.scp" \
                 --dumpdir "${dumpdir}/${name}/raw" \
                 --n_jobs "${nj}" \
                 --verbose "${verbose}"

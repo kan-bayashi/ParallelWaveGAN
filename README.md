@@ -43,7 +43,13 @@ $ source venv/bin/activate
 ## Run
 
 This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).  
-Currently, the recipe with [LJSpeech dataset](https://keithito.com/LJ-Speech-Dataset/) is provided.
+Currently, three recipes are supported.
+
+- [LJSpeech](https://keithito.com/LJ-Speech-Dataset/): English female speaker
+- [JSUT](https://sites.google.com/site/shinnosuketakamichi/publication/jsut): Japanese female speaker
+- [CSMSC](https://www.data-baker.com/open_source.html): Mandarin female speaker
+
+To run the recipe, please follow the below instruction.
 
 ```bash
 # Let us move on the recipe directory
@@ -60,30 +66,6 @@ All of the hyperparameters is written in a single yaml format configuration file
 Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
 
 The training is still on going. Please check the (https://github.com/kan-bayashi/ParallelWaveGAN/issues/1).
-
-## TODO
-
-- [x] implement generator
-- [x] implement discriminator
-- [x] implement STFT-based losss
-- [x] implement training script
-    - [x] data loader
-    - [x] yaml style configuration
-    - [x] optimizer
-    - [x] lr schedular
-    - [x] trainer
-    - [x] resume function
-    - [x] intermediate result checker
-- [x] implement decoding script
-- [x] implement pre-processing scripts
-    - [x] audio preprocessing
-    - [x] feature extraction
-    - [x] normalization
-- [x] implement several recipes
-    - [x] ljspeech
-    - [x] jsut
-    - [x] csmsc
-- [ ] train model and check the performance
 
 ## References
 
