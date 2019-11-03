@@ -81,8 +81,8 @@ The training is still on going. Please check the (https://github.com/kan-bayashi
     - [x] normalization
 - [x] implement several recipes
     - [x] ljspeech
-    - [ ] jsut
-    - [ ] csmsc
+    - [x] jsut
+    - [x] csmsc
 - [ ] train model and check the performance
 
 ## References
