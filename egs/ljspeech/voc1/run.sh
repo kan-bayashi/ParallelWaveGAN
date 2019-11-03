@@ -103,9 +103,9 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp/train_ljspeech_$(basename "${conf}" .yaml)"
+    expdir="exp/${train_set}_ljspeech_$(basename "${conf}" .yaml)"
 else
-    expdir="exp/train_ljspeech_${tag}"
+    expdir="exp/${train_set}_ljspeech_${tag}"
 fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
