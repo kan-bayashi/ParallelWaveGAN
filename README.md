@@ -4,10 +4,10 @@ This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs
 
 ![](https://user-images.githubusercontent.com/22779813/68081503-4b8fcf00-fe52-11e9-8791-e02851220355.png)
 
-> The figure is from [Parallel WaveGAN paper](https://arxiv.org/abs/1910.11480).
-
 The goal of this repository is to provide the real-time neural vocoder which is compatible with [ESPnet-TTS](https://github.com/espnet/espnet).  
 Audio samples and pretrained models will be available at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).
+
+> Source of the figure: https://arxiv.org/pdf/1910.11480.pdf
 
 ## Requirements
 
