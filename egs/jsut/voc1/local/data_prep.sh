@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 # Copyright 2019 Tomoki Hayashi
 #  MIT License (https://opensource.org/licenses/MIT)
@@ -7,8 +7,8 @@
 . ./path.sh || exit 1;
 
 fs=24000
-num_dev=100
-num_eval=100
+num_dev=250
+num_eval=250
 train_set="train_nodev"
 dev_set="dev"
 eval_set="eval"
@@ -19,7 +19,6 @@ eval_set="eval"
 db_root=$1
 data_dir=$2
 
-# check arguments
 if [ $# != 2 ]; then
     echo "Usage: $0 [Options] <db_root> <data_dir>"
     echo "e.g.: $0 downloads/CSMSC"
@@ -46,17 +45,19 @@ segments="${data_dir}/all/segments"
 [ -e "${scp}" ] && rm "${scp}"
 [ -e "${segments}" ] && rm "${segments}"
 
-# make wav.scp
-find "${db_root}/Wave" -name "*.wav" -follow | sort | while read -r filename;do
-    id="$(basename "${filename}" .wav)"
+# make scp
+find "${db_root}" -follow -name "*.wav" | sort | while read -r filename; do
+    id=$(basename "${filename}" | sed -e "s/\.[^\.]*$//g")
     echo "${id} cat ${filename} | sox -t wav - -c 1 -b 16 -t wav - rate ${fs} |" >> "${scp}"
 done
 
 # make segments
-find "${db_root}/PhoneLabeling" -name "*.interval" -follow | sort | while read -r filename;do
-    id="$(basename "${filename}" .interval)"
-    start_sec=$(tail -n +14 "${filename}" | head -n 1)
-    end_sec=$(head -n -2 "${filename}" | tail -n 1)
+find "${db_root}" -name "*.lab" -follow | sort | while read -r filename;do
+    id=$(basename "${filename}" | sed -e "s/\.[^\.]*$//g")
+    start_nsec=$(head -n 1 "${filename}" | cut -d " " -f 2)
+    end_nsec=$(tail -n 1 "${filename}" | cut -d " " -f 1)
+    start_sec=$(echo "${start_nsec}*0.0000001" | bc | sed "s/^\./0./")
+    end_sec=$(echo "${end_nsec}*0.0000001" | bc | sed "s/^\./0./")
     echo "${id} ${id} ${start_sec} ${end_sec}" >> "${segments}"
 done
 
