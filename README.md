@@ -4,6 +4,8 @@ This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs
 
 ![](https://user-images.githubusercontent.com/22779813/68081503-4b8fcf00-fe52-11e9-8791-e02851220355.png)
 
+> The figure is from [Parallel WaveGAN paper](https://arxiv.org/abs/1910.11480).
+
 The goal of this repository is to provide the real-time neural vocoder which is compatible with [ESPnet-TTS](https://github.com/espnet/espnet).  
 Audio samples and pretrained models will be available at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).
 
@@ -85,14 +87,14 @@ The training is still on going. Please check the (https://github.com/kan-bayashi
 
 ## References
 
-- [Parallel WaveGAN: A fast waveform generation model based on generative adversarial networks with multi-resolution spectrogram](https://arxiv.org/abs/1910.11480)
+- [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
 - [r9y9/wavenet_vocoder](https://github.com/r9y9/wavenet_vocoder)
 
 ## Acknowledgement
 
-The author would like to thank Ryuichi Yamamoto (@r9y9) for his great repository, paper and valuable discussions.
+The author would like to thank Ryuichi Yamamoto ([@r9y9](https://github.com/r9y9)) for his great repository, paper and valuable discussions.
 
 ## Author
 
-Tomoki Hayashi (@kan-bayashi)  
+Tomoki Hayashi ([@kan-bayashi](https://github.com/kan-bayashi))  
 E-mail: `hayashi.tomoki<at>g.sp.m.is.nagoya-u.ac.jp`
