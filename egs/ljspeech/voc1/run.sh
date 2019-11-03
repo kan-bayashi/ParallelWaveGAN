@@ -29,7 +29,7 @@ checkpoint=""
 # shellcheck disable=SC1091
 . parse_options.sh || exit 1;
 
-train_set="${train_set}"
+train_set="train_nodev"
 dev_set="dev"
 eval_set="eval"
 
