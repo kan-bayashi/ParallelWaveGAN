@@ -52,7 +52,7 @@ find "${db_root}/Wave" -name "*.wav" -follow | sort | while read -r filename;do
     echo "${id} cat ${filename} | sox -t wav - -c 1 -b 16 -t wav - rate ${fs} |" >> "${scp}"
 done
 
-# make text and segments
+# make segments
 find "${db_root}/PhoneLabeling" -name "*.interval" -follow | sort | while read -r filename;do
     id="$(basename "${filename}" .interval)"
     start_sec=$(tail -n +14 "${filename}" | head -n 1)
