@@ -8,8 +8,8 @@
 
 import argparse
 import logging
-import time
 import os
+import time
 
 import kaldiio
 import numpy as np
