@@ -4,7 +4,7 @@ This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs
 
 ![](https://user-images.githubusercontent.com/22779813/68081503-4b8fcf00-fe52-11e9-8791-e02851220355.png)
 
-The goal of this repository is to provide the real-time neural vocoder which is compatible with [ESPnet-TTS](https://github.com/espnet/espnet).
+The goal of this repository is to provide the real-time neural vocoder which is compatible with [ESPnet-TTS](https://github.com/espnet/espnet).  
 Audio samples and pretrained models will be available at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).
 
 ## Requirements
@@ -40,7 +40,7 @@ $ source venv/bin/activate
 
 ## Run
 
-This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).
+This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).  
 Currently, the recipe with [LJSpeech dataset](https://keithito.com/LJ-Speech-Dataset/) is provided.
 
 ```bash
@@ -54,7 +54,7 @@ $ ./run.sh
 $ ./run.sh --stage 2 --stop_stage 2
 ```
 
-All of the hyperparameters is written in a single yaml format configuration file.
+All of the hyperparameters is written in a single yaml format configuration file.  
 Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
 
 The training is still on going. Please check the (https://github.com/kan-bayashi/ParallelWaveGAN/issues/1).
@@ -90,7 +90,7 @@ The training is still on going. Please check the (https://github.com/kan-bayashi
 
 ## Acknowledgement
 
-The author would like to thank Ryuichi Yamamoto (@r9y9) for his great repository, paper and valuable discussion.
+The author would like to thank Ryuichi Yamamoto (@r9y9) for his great repository, paper and valuable discussions.
 
 ## Author
 
