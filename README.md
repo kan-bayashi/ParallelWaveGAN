@@ -43,7 +43,13 @@ $ source venv/bin/activate
 ## Run
 
 This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).  
-Currently, the recipe with [LJSpeech dataset](https://keithito.com/LJ-Speech-Dataset/) is provided.
+Currently, three recipes are supported.
+
+- [LJSpeech](https://keithito.com/LJ-Speech-Dataset/): English female speaker
+- [JSUT](https://sites.google.com/site/shinnosuketakamichi/publication/jsut): Japanese female speaker
+- [CSMSC](https://www.data-baker.com/open_source.html): Mandarin female speaker
+
+To run the recipe, please follow the below instruction.
 
 ```bash
 # Let us move on the recipe directory
