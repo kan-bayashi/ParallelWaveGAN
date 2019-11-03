@@ -53,7 +53,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     echo "Stage 1: Feature extraction"
     # extract raw features
     pids=()
-    for name in train_nodev dev eval; do
+    for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         ${train_cmd} --num-threads "${nj}" "${dumpdir}/${name}/raw/preprocessing.log" \
@@ -72,23 +72,23 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     echo "successfully finished feature extraction."
 
     # calculate statistics for normalization
-    ${train_cmd} "${dumpdir}/train_nodev/compute_statistics.log" \
+    ${train_cmd} "${dumpdir}/${train_set}/compute_statistics.log" \
         compute_statistics.py \
             --config "${config}" \
-            --rootdir "${dumpdir}/train_nodev/raw" \
-            --dumpdir "${dumpdir}/train_nodev" \
+            --rootdir "${dumpdir}/${train_set}/raw" \
+            --dumpdir "${dumpdir}/${train_set}" \
             --verbose "${verbose}"
     echo "successfully finished calculation of statistics."
 
     # normalize and dump them
     pids=()
-    for name in train_nodev dev eval; do
+    for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/norm" ] && mkdir -p "${dumpdir}/${name}/norm"
         ${train_cmd} --num-threads "${nj}" "${dumpdir}/${name}/norm/normalize.log" \
             normalize.py \
                 --config "${config}" \
-                --stats "${dumpdir}/train_nodev/stats.h5" \
+                --stats "${dumpdir}/${train_set}/stats.h5" \
                 --rootdir "${dumpdir}/${name}/raw" \
                 --dumpdir "${dumpdir}/${name}/norm" \
                 --n_jobs "${nj}" \
@@ -113,8 +113,8 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     ${cuda_cmd} --gpu 1 "${expdir}/train.log" \
         train.py \
             --config "${config}" \
-            --train-dumpdir "${dumpdir}/train_nodev/norm" \
-            --dev-dumpdir "${dumpdir}/dev/norm" \
+            --train-dumpdir "${dumpdir}/${train_set}/norm" \
+            --dev-dumpdir "${dumpdir}/${dev_set}/norm" \
             --outdir "${expdir}" \
             --resume "${resume}" \
             --verbose "${verbose}"
@@ -126,7 +126,7 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
     [ -z "${checkpoint}" ] && checkpoint="$(find "${expdir}" -name "*.pkl" -print0 | xargs -0 ls -t | head -n 1)"
     outdir="${expdir}/wav/$(basename "${checkpoint}" .pkl)"
     pids=()
-    for name in dev eval; do
+    for name in "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
         ${cuda_cmd} --gpu 1 "${outdir}/${name}/decode.log" \

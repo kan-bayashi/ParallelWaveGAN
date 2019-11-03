@@ -9,6 +9,7 @@
 import argparse
 import logging
 import os
+import time
 
 import kaldiio
 import numpy as np
@@ -101,18 +102,29 @@ def main():
     model = model.eval().to(device)
     logging.info(f"loaded model parameters from {args.checkpoint}.")
 
-    # generate
+    # start generation
     pad_size = (config["generator_params"]["aux_context_window"],
                 config["generator_params"]["aux_context_window"])
-    for feat_path, c in tqdm(dataset, desc="[decode]"):
-        z = torch.randn(1, 1, c.shape[0] * config["hop_size"]).to(device)
-        c = np.pad(c, (pad_size, (0, 0)), "edge")
-        c = torch.FloatTensor(c).unsqueeze(0).transpose(2, 1).to(device)
-        with torch.no_grad():
-            y = model(z, c)
-        utt_id = os.path.splitext(os.path.basename(feat_path))[0]
-        sf.write(os.path.join(config["outdir"], f"{utt_id}_gen.wav"),
-                 y.view(-1).cpu().numpy(), config["sampling_rate"], "PCM_16")
+    total_rtf = 0.0
+    with torch.no_grad(), tqdm(dataset, desc="[decode]") as pbar:
+        for idx, (feat_path, c) in enumerate(pbar, 1):
+            # generate each utterance
+            z = torch.randn(1, 1, c.shape[0] * config["hop_size"]).to(device)
+            c = np.pad(c, (pad_size, (0, 0)), "edge")
+            c = torch.FloatTensor(c).unsqueeze(0).transpose(2, 1).to(device)
+            start = time.time()
+            y = model(z, c).view(-1).cpu().numpy()
+            rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
+            pbar.set_postfix({"RTF": rtf})
+            total_rtf += rtf
+
+            # save as PCM 16 bit wav file
+            utt_id = os.path.splitext(os.path.basename(feat_path))[0]
+            sf.write(os.path.join(config["outdir"], f"{utt_id}_gen.wav"),
+                     y, config["sampling_rate"], "PCM_16")
+
+    # report average RTF
+    logging.info(f"finished generation of {idx} utterances (RTF = {total_rtf / idx:.03f}).")
 
 
 if __name__ == "__main__":
