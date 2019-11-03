@@ -445,7 +445,7 @@ def main():
                         help="Direcotry including development data.")
     parser.add_argument("--outdir", default=None, type=str, required=True,
                         help="Direcotry to save checkpoints.")
-    parser.add_argument("--resume", default=None, type=str, nargs="?",
+    parser.add_argument("--resume", default="", type=str, nargs="?",
                         help="Checkpoint file path to resume training.")
     parser.add_argument("--config", default="hparam.yml", type=str, required=True,
                         help="Yaml format configuration file.")
@@ -584,7 +584,7 @@ def main():
     )
 
     # resume from checkpoint
-    if args.resume is not None:
+    if len(args.resume) != 0:
         trainer.load_checkpoint(args.resume)
         logging.info(f"resumed from {args.resume}.")
 
