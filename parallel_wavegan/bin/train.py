@@ -144,19 +144,15 @@ class Trainer(object):
         y_ = self.model["generator"](z, c)
         y, y_ = y.squeeze(1), y_.squeeze(1)
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
+        gen_loss = sc_loss + mag_loss
         if self.steps > self.config["discriminator_train_start_steps"]:
             p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
-            gen_loss = sc_loss + mag_loss + self.config["lambda_adv"] * adv_loss
+            gen_loss += self.config["lambda_adv"] * adv_loss
             self.total_train_loss["train/adversarial_loss"] += adv_loss.item()
-            self.total_train_loss["train/spectral_convergenge_loss"] += sc_loss.item()
-            self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
-            self.total_train_loss["train/generator_loss"] += gen_loss.item()
-        else:
-            gen_loss = sc_loss + mag_loss
-            self.total_train_loss["train/spectral_convergenge_loss"] += sc_loss.item()
-            self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
-            self.total_train_loss["train/generator_loss"] += gen_loss.item()
+        self.total_train_loss["train/spectral_convergenge_loss"] += sc_loss.item()
+        self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
+        self.total_train_loss["train/generator_loss"] += gen_loss.item()
 
         # update generator
         self.optimizer["generator"].zero_grad()
@@ -449,7 +445,7 @@ def main():
                         help="Direcotry including development data.")
     parser.add_argument("--outdir", default=None, type=str, required=True,
                         help="Direcotry to save checkpoints.")
-    parser.add_argument("--resume", default=None, type=str, nargs="?",
+    parser.add_argument("--resume", default="", type=str, nargs="?",
                         help="Checkpoint file path to resume training.")
     parser.add_argument("--config", default="hparam.yml", type=str, required=True,
                         help="Yaml format configuration file.")
@@ -588,7 +584,7 @@ def main():
     )
 
     # resume from checkpoint
-    if args.resume is not None:
+    if len(args.resume) != 0:
         trainer.load_checkpoint(args.resume)
         logging.info(f"resumed from {args.resume}.")
 

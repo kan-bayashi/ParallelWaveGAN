@@ -12,8 +12,8 @@ stop_stage=100
 verbose=1
 nj=16
 
-# config
-config=conf/parallel_wavegan.v1.yaml
+# NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
+conf=conf/parallel_wavegan.v1.yaml
 
 # directory path setting
 download_dir=downloads
@@ -58,7 +58,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         ${train_cmd} --num-threads "${nj}" "${dumpdir}/${name}/raw/preprocessing.log" \
             preprocessing.py \
-                --config "${config}" \
+                --config "${conf}" \
                 --wavscp "data/${name}/wav.scp" \
                 --dumpdir "${dumpdir}/${name}/raw" \
                 --n_jobs "${nj}" \
@@ -74,7 +74,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     # calculate statistics for normalization
     ${train_cmd} "${dumpdir}/${train_set}/compute_statistics.log" \
         compute_statistics.py \
-            --config "${config}" \
+            --config "${conf}" \
             --rootdir "${dumpdir}/${train_set}/raw" \
             --dumpdir "${dumpdir}/${train_set}" \
             --verbose "${verbose}"
@@ -87,7 +87,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
         [ ! -e "${dumpdir}/${name}/norm" ] && mkdir -p "${dumpdir}/${name}/norm"
         ${train_cmd} --num-threads "${nj}" "${dumpdir}/${name}/norm/normalize.log" \
             normalize.py \
-                --config "${config}" \
+                --config "${conf}" \
                 --stats "${dumpdir}/${train_set}/stats.h5" \
                 --rootdir "${dumpdir}/${name}/raw" \
                 --dumpdir "${dumpdir}/${name}/norm" \
@@ -103,7 +103,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp/train_ljspeech_$(basename "${config}" .yaml)"
+    expdir="exp/train_ljspeech_$(basename "${conf}" .yaml)"
 else
     expdir="exp/train_ljspeech_${tag}"
 fi
@@ -112,7 +112,7 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     [ ! -e "${expdir}" ] && mkdir -p "${expdir}"
     ${cuda_cmd} --gpu 1 "${expdir}/train.log" \
         train.py \
-            --config "${config}" \
+            --config "${conf}" \
             --train-dumpdir "${dumpdir}/${train_set}/norm" \
             --dev-dumpdir "${dumpdir}/${dev_set}/norm" \
             --outdir "${expdir}" \
