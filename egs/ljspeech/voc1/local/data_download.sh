@@ -21,7 +21,7 @@ if [ ! -e "${download_dir}/LJSpeech-1.1" ]; then
     tar -vxf ./*.tar.bz2
     rm ./*.tar.bz2
     cd "${cwd}"
-    echo "successfully prepared data."
+    echo "successfully downloaded data."
 else
     echo "already exists. skipped."
 fi
