@@ -67,30 +67,6 @@ Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/
 
 The training is still on going. Please check the (https://github.com/kan-bayashi/ParallelWaveGAN/issues/1).
 
-## TODO
-
-- [x] implement generator
-- [x] implement discriminator
-- [x] implement STFT-based losss
-- [x] implement training script
-    - [x] data loader
-    - [x] yaml style configuration
-    - [x] optimizer
-    - [x] lr schedular
-    - [x] trainer
-    - [x] resume function
-    - [x] intermediate result checker
-- [x] implement decoding script
-- [x] implement pre-processing scripts
-    - [x] audio preprocessing
-    - [x] feature extraction
-    - [x] normalization
-- [x] implement several recipes
-    - [x] ljspeech
-    - [x] jsut
-    - [x] csmsc
-- [ ] train model and check the performance
-
 ## References
 
 - [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
