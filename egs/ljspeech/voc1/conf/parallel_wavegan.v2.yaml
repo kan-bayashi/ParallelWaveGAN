@@ -2,6 +2,7 @@
 # Please make sure this is adjusted for the LJSpeech dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
 # This configuration requires 12 GB GPU memory and takes ~3 days on TITAN V.
+# Compared to v1, this configuration starts to train discriminator from first step.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -109,11 +110,11 @@ discriminator_grad_norm: 1 # Discriminator's gradient norm.
 ###########################################################
 #                    INTERVAL SETTING                     #
 ###########################################################
-discriminator_train_start_steps: 100000 # Number of steps to start to train discriminator.
-train_max_steps: 400000                 # Number of training steps.
-save_interval_steps: 5000               # Interval steps to save checkpoint.
-eval_interval_steps: 1000               # Interval steps to evaluate the network.
-log_interval_steps: 100                 # Interval steps to record the training log.
+discriminator_train_start_steps: 1 # Number of steps to start to train discriminator.
+train_max_steps: 400000            # Number of training steps.
+save_interval_steps: 5000          # Interval steps to save checkpoint.
+eval_interval_steps: 1000          # Interval steps to evaluate the network.
+log_interval_steps: 100            # Interval steps to record the training log.
 
 ###########################################################
 #                     OTHER SETTING                       #
