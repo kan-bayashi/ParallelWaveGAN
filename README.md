@@ -44,7 +44,7 @@ $ source venv/bin/activate
 ## Run
 
 This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).  
-Currently, three recipes are supported.
+Currently, four recipes are supported.
 
 - [CMU Arctic](http://www.festvox.org/cmu_arctic/): English speakers
 - [LJSpeech](https://keithito.com/LJ-Speech-Dataset/): English female speaker
