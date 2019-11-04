@@ -63,6 +63,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
             parallel-wavegan-preprocess \
                 --config "${conf}" \
                 --scp "data/${name}/wav.scp" \
+                --segments "data/${name}/segments" \
                 --dumpdir "${dumpdir}/${name}/raw" \
                 --n_jobs "${nj}" \
                 --verbose "${verbose}"
