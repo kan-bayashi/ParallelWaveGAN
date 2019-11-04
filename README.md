@@ -1,5 +1,7 @@
 # Parallel WaveGAN implementation with Pytorch
 
+[![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/)![](https://img.shields.io/pypi/l/parallel-wavegan)
+
 This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480) implementation with Pytorch.
 
 ![](https://user-images.githubusercontent.com/22779813/68081503-4b8fcf00-fe52-11e9-8791-e02851220355.png)
