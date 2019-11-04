@@ -60,9 +60,17 @@ $ cd egs/ljspeech/voc1
 # Run the recipe from scratch
 $ ./run.sh
 
+# You can change config via command line
+$ ./run.sh --conf <your_customized_yaml_config>
+
 # You can select the stage to start and stop
 $ ./run.sh --stage 2 --stop_stage 2
+
+# If you want to specify the gpu
+$ CUDA_VISIBLE_DEVICES=1 ./run.sh --stage 2
 ```
+
+The integration with job schedulers such as [slurm](https://slurm.schedmd.com/documentation.html) can be done via `cmd.sh` and  `conf/slurm.conf`. If you want to use it, please check [this page](https://kaldi-asr.org/doc/queue.html).
 
 All of the hyperparameters is written in a single yaml format configuration file.  
 Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
@@ -77,7 +85,7 @@ $ tensorboard --logdir exp
 
 ![](https://user-images.githubusercontent.com/22779813/68100080-58bbc500-ff09-11e9-9945-c835186fd7c2.png)
 
-The decoding speed is RTF = 0.015 with TITAN V, much faster than the real-time.
+The decoding speed is RTF = 0.016 with TITAN V, much faster than the real-time.
 
 ```bash
 [decode]: 100%|██████████| 250/250 [00:30<00:00,  8.31it/s, RTF=0.0156]
