@@ -67,7 +67,8 @@ All of the hyperparameters is written in a single yaml format configuration file
 Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
 
 ## Results
-You can listen to the samples and download pretrained models at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).
+You can listen to the samples and download pretrained models at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).  
+
 The training is still on going. Please check the latest progress at https://github.com/kan-bayashi/ParallelWaveGAN/issues/1.
 
 ## References
