@@ -7,7 +7,6 @@ This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs
 ![](https://user-images.githubusercontent.com/22779813/68081503-4b8fcf00-fe52-11e9-8791-e02851220355.png)
 
 The goal of this repository is to provide the real-time neural vocoder which is compatible with [ESPnet-TTS](https://github.com/espnet/espnet).  
-Audio samples and pretrained models will be available at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).
 
 > Source of the figure: https://arxiv.org/pdf/1910.11480.pdf
 
@@ -67,7 +66,10 @@ $ ./run.sh --stage 2 --stop_stage 2
 All of the hyperparameters is written in a single yaml format configuration file.  
 Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
 
-The training is still on going. Please check the (https://github.com/kan-bayashi/ParallelWaveGAN/issues/1).
+## Results
+
+You can listen to the samples and download pretrained models at [our google drive](https://drive.google.com/open?id=1dJMJNmvzcnjM38-5zuzcKK9L6Z8hlSIM).  
+The training is still on going. Please check the latest progress at https://github.com/kan-bayashi/ParallelWaveGAN/issues/1.
 
 ## References
 
