@@ -70,7 +70,8 @@ $ ./run.sh --stage 2 --stop_stage 2
 $ CUDA_VISIBLE_DEVICES=1 ./run.sh --stage 2
 ```
 
-The integration with job schedulers such as [slurm](https://slurm.schedmd.com/documentation.html) can be done via `cmd.sh` and  `conf/slurm.conf`. If you want to use it, please check [this page](https://kaldi-asr.org/doc/queue.html).
+The integration with job schedulers such as [slurm](https://slurm.schedmd.com/documentation.html) can be done via `cmd.sh` and  `conf/slurm.conf`.  
+If you want to use it, please check [this page](https://kaldi-asr.org/doc/queue.html).
 
 All of the hyperparameters is written in a single yaml format configuration file.  
 Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
