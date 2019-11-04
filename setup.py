@@ -40,16 +40,16 @@ requirements = {
         "hacking>=1.1.0",
         "flake8>=3.7.8",
         "flake8-docstrings>=1.3.1"
-    ],
+    ]
 }
 entry_points = {
-    'console_scripts': [
-        'parallel-wavegan-preprocess=parallel_wavegan.bin.preprocess:main',
-        'parallel-wavegan-compute-statistics=parallel_wavegan.bin.compute_statistics:main',
-        'parallel-wavegan-normalize=parallel_wavegan.bin.normalize:main',
-        'parallel-wavegan-train=parallel_wavegan.bin.train:main',
-        'parallel-wavegan-decode=parallel_wavegan.bin.decode:main',
-    ],
+    "console_scripts": [
+        "parallel-wavegan-preprocess=parallel_wavegan.bin.preprocess:main",
+        "parallel-wavegan-compute-statistics=parallel_wavegan.bin.compute_statistics:main",
+        "parallel-wavegan-normalize=parallel_wavegan.bin.normalize:main",
+        "parallel-wavegan-train=parallel_wavegan.bin.train:main",
+        "parallel-wavegan-decode=parallel_wavegan.bin.decode:main",
+    ]
 }
 
 install_requires = requirements["install"]
@@ -63,9 +63,11 @@ setup(name="parallel_wavegan",
       version="0.1.0",
       url="http://github.com/kan-bayashi/ParalellWaveGAN",
       author="Tomoki Hayashi",
+      author_email="hayashi.tomoki@g.sp.m.is.nagoya-u.ac.jp",
       description="Parallel WaveGAN implementation",
       long_description=open(os.path.join(dirname, "README.md"),
                             encoding="utf-8").read(),
+      long_description_content_type="text/markdown",
       license="MIT License",
       packages=find_packages(include=["parallel_wavegan*"]),
       install_requires=install_requires,
@@ -77,6 +79,6 @@ setup(name="parallel_wavegan",
           "Programming Language :: Python :: 3",
           "Intended Audience :: Science/Research",
           "Operating System :: POSIX :: Linux",
-          "License :: OSI Approved :: MIT Software License",
+          "License :: OSI Approved :: MIT License",
           "Topic :: Software Development :: Libraries :: Python Modules"],
       )
