@@ -22,7 +22,7 @@ data_dir=$2
 # check arguments
 if [ $# != 2 ]; then
     echo "Usage: $0 [Options] <db_root> <data_dir>"
-    echo "e.g.: $0 downloads/CSMSC"
+    echo "e.g.: $0 downloads/CSMSC data"
     echo ""
     echo "Options:"
     echo "    --num_dev: number of development uttreances (default=250)."
