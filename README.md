@@ -66,6 +66,23 @@ $ ./run.sh --stage 2 --stop_stage 2
 All of the hyperparameters is written in a single yaml format configuration file.  
 Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
 
+The training requires ~3 days with a single GPU (TITAN V).  
+The speed of the training is 0.5 seconds per an iteration, in total ~ 200000 sec (= 2.31 days).  
+You can monitor the training progress via tensorboard.
+
+```bash
+$ tensorboard --logdir exp
+```
+
+![](https://user-images.githubusercontent.com/22779813/68100080-58bbc500-ff09-11e9-9945-c835186fd7c2.png)
+
+The decoding speed is RTF = 0.015 with TITAN V, much faster than the real-time.
+
+```bash
+[decode]: 100%|██████████| 250/250 [00:30<00:00,  8.31it/s, RTF=0.0156]
+2019-11-03 09:07:40,480 (decode:127) INFO: finished generation of 250 utterances (RTF = 0.016).
+```
+
 ## Results
 You can listen to the samples and download pretrained models at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).  
 
