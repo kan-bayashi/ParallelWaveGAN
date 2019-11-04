@@ -27,19 +27,21 @@ from parallel_wavegan.utils import read_hdf5
 def main():
     """Run decoding process."""
     parser = argparse.ArgumentParser(
-        description="Decode dumped features with trained Parallel WaveGAN Generator.")
+        description="Decode dumped features with trained Parallel WaveGAN Generator "
+                    "(See detail in parallel_wavegan/bin/decode.py).")
     parser.add_argument("--scp", default=None, type=str,
-                        help="Kaldi-style feats.scp file.")
+                        help="kaldi-style feats.scp file. you need to specify either scp or dumpdir.")
     parser.add_argument("--dumpdir", default=None, type=str,
-                        help="Directory including feature files.")
-    parser.add_argument("--outdir", default=None, type=str, required=True,
-                        help="Direcotry to save generated speech.")
-    parser.add_argument("--checkpoint", default=None, type=str, required=True,
-                        help="Checkpoint file.")
+                        help="directory including feature files. you need to specify either scp or dumpdir.")
+    parser.add_argument("--outdir", type=str, required=True,
+                        help="direcotry to save generated speech.")
+    parser.add_argument("--checkpoint", type=str, required=True,
+                        help="checkpoint file to be loaded.")
     parser.add_argument("--config", default=None, type=str,
-                        help="Yaml format configuration file.")
+                        help="yaml format configuration file. if not explicitly provided, "
+                             "it will be searched in the checkpoint direcotry. (default=None)")
     parser.add_argument("--verbose", type=int, default=1,
-                        help="logging level (higher is more logging)")
+                        help="logging level. higher is more logging. (default=1)")
     args = parser.parse_args()
 
     # set logger

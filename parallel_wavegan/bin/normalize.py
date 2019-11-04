@@ -29,19 +29,19 @@ os.environ["OMP_NUM_THREADS"] = "1"
 def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
-        description="Normalize dumped raw features.")
-    parser.add_argument("--rootdir", default=None, type=str, required=True,
-                        help="Direcotry including feature files to be normalized.")
-    parser.add_argument("--dumpdir", default=None, type=str, required=True,
-                        help="Direcotry to dump normalized feature files.")
-    parser.add_argument("--stats", default=None, type=str, required=True,
-                        help="Statistics file.")
-    parser.add_argument("--config", default="hparam.yml", type=str, required=True,
-                        help="Yaml format configuration file.")
-    parser.add_argument("--verbose", type=int, default=1,
-                        help="logging level (higher is more logging)")
+        description="Normalize dumped raw features (See detail in parallel_wavegan/bin/normalize.py).")
+    parser.add_argument("--rootdir", type=str, required=True,
+                        help="direcotry including feature files to be normalized.")
+    parser.add_argument("--dumpdir", type=str, required=True,
+                        help="direcotry to dump normalized feature files.")
+    parser.add_argument("--stats", type=str, required=True,
+                        help="statistics file.")
+    parser.add_argument("--config", type=str, required=True,
+                        help="yaml format configuration file.")
     parser.add_argument("--n_jobs", type=int, default=16,
-                        help="Number of parallel jobs.")
+                        help="number of parallel jobs. (default=16)")
+    parser.add_argument("--verbose", type=int, default=1,
+                        help="logging level. higher is more logging. (default=1)")
     args = parser.parse_args()
 
     # set logger

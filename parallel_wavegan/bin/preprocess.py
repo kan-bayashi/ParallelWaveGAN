@@ -72,21 +72,21 @@ def logmelfilterbank(audio,
 def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
-        description="Preprocess audio and then extract features.")
+        description="Preprocess audio and then extract features (See detail in parallel_wavegan/bin/preprocess.py).")
     parser.add_argument("--scp", default=None, type=str,
-                        help="Kaldi-style wav.scp file.")
+                        help="kaldi-style wav.scp file. you need to specify either scp or rootdir.")
     parser.add_argument("--segments", default=None, type=str,
-                        help="Kaldi-style segments file.")
+                        help="kaldi-style segments file. if use, you must to specify both scp and segments.")
     parser.add_argument("--rootdir", default=None, type=str,
-                        help="Directory including wav files.")
-    parser.add_argument("--dumpdir", default=None, type=str, required=True,
-                        help="Direcotry to dump feature files.")
-    parser.add_argument("--config", default="hparam.yml", type=str, required=True,
-                        help="Yaml format configuration file.")
-    parser.add_argument("--verbose", type=int, default=1,
-                        help="logging level (higher is more logging)")
+                        help="directory including wav files. you need to specify either scp or rootdir.")
+    parser.add_argument("--dumpdir", type=str, required=True,
+                        help="direcotry to dump feature files.")
+    parser.add_argument("--config", type=str, required=True,
+                        help="yaml format configuration file.")
     parser.add_argument("--n_jobs", type=int, default=16,
-                        help="Number of parallel jobs.")
+                        help="number of parallel jobs. (default=16)")
+    parser.add_argument("--verbose", type=int, default=1,
+                        help="logging level. higher is more logging. (default=1)")
     args = parser.parse_args()
 
     # set logger
