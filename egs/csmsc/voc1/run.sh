@@ -57,7 +57,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         ${train_cmd} --num-threads "${nj}" "${dumpdir}/${name}/raw/preprocessing.log" \
-            preprocessing.py \
+            parallel-wavegan-preprocess \
                 --config "${conf}" \
                 --scp "data/${name}/wav.scp" \
                 --segments "data/${name}/segments" \
@@ -74,7 +74,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
 
     # calculate statistics for normalization
     ${train_cmd} "${dumpdir}/${train_set}/compute_statistics.log" \
-        compute_statistics.py \
+        parallel-wavegan-compute-statistics \
             --config "${conf}" \
             --rootdir "${dumpdir}/${train_set}/raw" \
             --dumpdir "${dumpdir}/${train_set}" \
@@ -87,7 +87,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     (
         [ ! -e "${dumpdir}/${name}/norm" ] && mkdir -p "${dumpdir}/${name}/norm"
         ${train_cmd} --num-threads "${nj}" "${dumpdir}/${name}/norm/normalize.log" \
-            normalize.py \
+            parallel-wavegan-normalize \
                 --config "${conf}" \
                 --stats "${dumpdir}/${train_set}/stats.h5" \
                 --rootdir "${dumpdir}/${name}/raw" \
@@ -112,7 +112,7 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
     [ ! -e "${expdir}" ] && mkdir -p "${expdir}"
     ${cuda_cmd} --gpu 1 "${expdir}/train.log" \
-        train.py \
+        parallel-wavegan-train \
             --config "${conf}" \
             --train-dumpdir "${dumpdir}/${train_set}/norm" \
             --dev-dumpdir "${dumpdir}/${dev_set}/norm" \
@@ -131,7 +131,7 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
     (
         [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
         ${cuda_cmd} --gpu 1 "${outdir}/${name}/decode.log" \
-            decode.py \
+            parallel-wavegan-decode \
                 --dumpdir "${dumpdir}/${name}/norm" \
                 --checkpoint "${checkpoint}" \
                 --outdir "${outdir}/${name}" \
