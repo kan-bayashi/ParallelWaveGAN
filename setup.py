@@ -77,6 +77,6 @@ setup(name="parallel_wavegan",
           "Programming Language :: Python :: 3",
           "Intended Audience :: Science/Research",
           "Operating System :: POSIX :: Linux",
-          "License :: OSI Approved :: Apache Software License",
+          "License :: OSI Approved :: MIT Software License",
           "Topic :: Software Development :: Libraries :: Python Modules"],
       )
