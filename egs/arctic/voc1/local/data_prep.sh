@@ -80,7 +80,7 @@ find "${db_root}/lab" -name "*.lab" -follow | sort | while read -r filename; do
             break
         fi
     done < <(tail -n +2 "$filename" | tac)
-    echo "${spk}_$(basename "${filename}" .lab) ${spk}_$(basename "${filename} ".lab) ${start} ${end}" >> "${segments}"
+    echo "${spk}_$(basename "${filename}" .lab) ${spk}_$(basename "${filename}" .lab) ${start} ${end}" >> "${segments}"
 done
 
 # split
