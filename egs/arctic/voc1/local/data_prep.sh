@@ -49,8 +49,8 @@ for name in all "${train_set}" "${dev_set}" "${eval_set}"; do
 done
 
 # set filenames
-scp="${data_dir}/wav.scp"
-segments="${data_dir}/segments"
+scp="${data_dir}/all/wav.scp"
+segments="${data_dir}/all/segments"
 
 # check file existence
 [ -e "${scp}" ] && rm "${scp}"
