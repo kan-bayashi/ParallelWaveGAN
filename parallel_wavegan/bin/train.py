@@ -439,19 +439,20 @@ class Collater(object):
 
 def main():
     """Run training process."""
-    parser = argparse.ArgumentParser(description="Train Parallel WaveGAN.")
-    parser.add_argument("--train-dumpdir", default=None, type=str, required=True,
+    parser = argparse.ArgumentParser(
+        description="Train Parallel WaveGAN (See in detail parallel_wavegan/bin/train.py).")
+    parser.add_argument("--train-dumpdir", type=str, required=True,
                         help="Directory including trainning data.")
-    parser.add_argument("--dev-dumpdir", default=None, type=str, required=True,
+    parser.add_argument("--dev-dumpdir", type=str, required=True,
                         help="Direcotry including development data.")
-    parser.add_argument("--outdir", default=None, type=str, required=True,
+    parser.add_argument("--outdir", type=str, required=True,
                         help="Direcotry to save checkpoints.")
-    parser.add_argument("--resume", default="", type=str, nargs="?",
-                        help="Checkpoint file path to resume training.")
-    parser.add_argument("--config", default="hparam.yml", type=str, required=True,
+    parser.add_argument("--config", type=str, required=True,
                         help="Yaml format configuration file.")
+    parser.add_argument("--resume", default="", type=str, nargs="?",
+                        help="Checkpoint file path to resume training. (default=\"\")")
     parser.add_argument("--verbose", type=int, default=1,
-                        help="logging level (higher is more logging)")
+                        help="Logging level. Higher is more logging. (default=1)")
     args = parser.parse_args()
 
     # set logger
