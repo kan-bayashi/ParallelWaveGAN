@@ -1,0 +1,8 @@
+baseURL = "https://kan-bayashi.github.io/ParallelWaveGAN/"
+languageCode = "en-us"
+title = "Unofficial Parallel WaveGAN Implementation Demo"
+theme = "paper"
+
+[params]
+  AuthorName = "Tomoki Hayashi"
+  GithubUser = "kan-bayashi"
