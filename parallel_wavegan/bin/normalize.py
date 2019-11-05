@@ -31,9 +31,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Normalize dumped raw features (See detail in parallel_wavegan/bin/normalize.py).")
     parser.add_argument("--rootdir", type=str, required=True,
-                        help="direcotry including feature files to be normalized.")
+                        help="directory including feature files to be normalized.")
     parser.add_argument("--dumpdir", type=str, required=True,
-                        help="direcotry to dump normalized feature files.")
+                        help="directory to dump normalized feature files.")
     parser.add_argument("--stats", type=str, required=True,
                         help="statistics file.")
     parser.add_argument("--config", type=str, required=True,
@@ -61,7 +61,7 @@ def main():
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
 
-    # check direcotry existence
+    # check directory existence
     if not os.path.exists(args.dumpdir):
         os.makedirs(args.dumpdir)
 

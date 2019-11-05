@@ -444,9 +444,9 @@ def main():
     parser.add_argument("--train-dumpdir", type=str, required=True,
                         help="directory including trainning data.")
     parser.add_argument("--dev-dumpdir", type=str, required=True,
-                        help="direcotry including development data.")
+                        help="directory including development data.")
     parser.add_argument("--outdir", type=str, required=True,
-                        help="direcotry to save checkpoints.")
+                        help="directory to save checkpoints.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
     parser.add_argument("--resume", default="", type=str, nargs="?",

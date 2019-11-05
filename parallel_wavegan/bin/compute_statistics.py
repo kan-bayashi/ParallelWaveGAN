@@ -27,12 +27,12 @@ def main():
         description="Compute mean and variance of dumped raw features "
                     "(See detail in parallel_wavegan/bin/compute_statistics.py).")
     parser.add_argument("--rootdir", type=str, required=True,
-                        help="direcotry including feature files.")
+                        help="directory including feature files.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
     parser.add_argument("--dumpdir", default=None, type=str,
-                        help="direcotry to save statistics. if not provided, "
-                             "stats will be saved in the above root direcotry. (default=None)")
+                        help="directory to save statistics. if not provided, "
+                             "stats will be saved in the above root directory. (default=None)")
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level. higher is more logging. (default=1)")
     args = parser.parse_args()
@@ -54,7 +54,7 @@ def main():
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
 
-    # check direcotry existence
+    # check directory existence
     if args.dumpdir is None:
         args.dumpdir = os.path.dirname(args.rootdir)
     if not os.path.exists(args.dumpdir):
