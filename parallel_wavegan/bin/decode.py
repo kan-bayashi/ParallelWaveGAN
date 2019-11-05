@@ -56,7 +56,7 @@ def main():
             level=logging.WARN, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
         logging.warning("skip DEBUG/INFO messages")
 
-    # check direcotry existence
+    # check directory existence
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir)
 
