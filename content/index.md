@@ -41,9 +41,6 @@ Here is the comparison in the analysis-synthesis condition.
 |<audio controls="" ><source src="wav/ljspeech/raw/LJ050-0033.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0033.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0033.wav"/></audio>|
 
 
-## TTS samples (English)
-
-
 ## References
 
 - [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
