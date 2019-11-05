@@ -80,7 +80,7 @@ def main():
     parser.add_argument("--rootdir", default=None, type=str,
                         help="directory including wav files. you need to specify either scp or rootdir.")
     parser.add_argument("--dumpdir", type=str, required=True,
-                        help="direcotry to dump feature files.")
+                        help="directory to dump feature files.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
     parser.add_argument("--n_jobs", type=int, default=16,

@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 
 class Conv1d(torch.nn.Conv1d):
-    """Conv1d module with customized intialization."""
+    """Conv1d module with customized initialization."""
 
     def __init__(self, *args, **kwargs):
         """Initialize Conv1d module."""
@@ -27,7 +27,7 @@ class Conv1d(torch.nn.Conv1d):
 
 
 class Conv1d1x1(Conv1d):
-    """1x1 Conv1d with customized intialization."""
+    """1x1 Conv1d with customized initialization."""
 
     def __init__(self, in_channels, out_channels, bias):
         """Initialize 1x1 Conv1d module."""

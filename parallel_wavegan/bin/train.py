@@ -151,7 +151,7 @@ class Trainer(object):
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
             gen_loss += self.config["lambda_adv"] * adv_loss
             self.total_train_loss["train/adversarial_loss"] += adv_loss.item()
-        self.total_train_loss["train/spectral_convergenge_loss"] += sc_loss.item()
+        self.total_train_loss["train/spectral_convergence_loss"] += sc_loss.item()
         self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
         self.total_train_loss["train/generator_loss"] += gen_loss.item()
 
@@ -236,7 +236,7 @@ class Trainer(object):
 
         # add to total eval loss
         self.total_eval_loss["eval/adversarial_loss"] += adv_loss.item()
-        self.total_eval_loss["eval/spectral_convergenge_loss"] += sc_loss.item()
+        self.total_eval_loss["eval/spectral_convergence_loss"] += sc_loss.item()
         self.total_eval_loss["eval/log_stft_magnitude_loss"] += mag_loss.item()
         self.total_eval_loss["eval/generator_loss"] += gen_loss.item()
         self.total_eval_loss["eval/real_loss"] += real_loss.item()
@@ -407,7 +407,7 @@ class Collater(object):
             new_batch.append((x, c))
         batch = new_batch
 
-        # Make padded target signale batch
+        # Make padded target signal batch
         xlens = [len(b[0]) for b in batch]
         max_olen = max(xlens)
         y_batch = np.array([self._pad_2darray(b[0].reshape(-1, 1), max_olen) for b in batch], dtype=np.float32)
@@ -419,7 +419,7 @@ class Collater(object):
         c_batch = np.array([self._pad_2darray(b[1], max_clen) for b in batch], dtype=np.float32)
         c_batch = torch.FloatTensor(c_batch).transpose(2, 1)
 
-        # Make input noise signale batch
+        # Make input noise signal batch
         z_batch = torch.randn(y_batch.size())
 
         # Make the list of the length of input signals
@@ -444,9 +444,9 @@ def main():
     parser.add_argument("--train-dumpdir", type=str, required=True,
                         help="directory including trainning data.")
     parser.add_argument("--dev-dumpdir", type=str, required=True,
-                        help="direcotry including development data.")
+                        help="directory including development data.")
     parser.add_argument("--outdir", type=str, required=True,
-                        help="direcotry to save checkpoints.")
+                        help="directory to save checkpoints.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
     parser.add_argument("--resume", default="", type=str, nargs="?",
@@ -467,7 +467,7 @@ def main():
             level=logging.WARN, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
         logging.warning('skip DEBUG/INFO messages')
 
-    # check direcotry existence
+    # check directory existence
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir)
 
