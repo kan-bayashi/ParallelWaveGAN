@@ -45,7 +45,7 @@ class Stretch2d(torch.nn.Module):
 
 
 class Conv2d(torch.nn.Conv2d):
-    """Conv2d module with customized intialization."""
+    """Conv2d module with customized initialization."""
 
     def __init__(self, *args, **kwargs):
         """Initialize Conv2d module."""
