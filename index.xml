@@ -20,7 +20,7 @@
       <description>Unofficial Parallel WaveGAN implementation demo This is the demonstration page of UNOFFICIAL Parallel WaveGAN implementation.
 Github: https://github.com/kan-bayashi/ParallelWaveGAN
 Audio samples (English) Here is the comparison in the analysis-synthesis condition.
- Groundtruth: Target speech Parallel WaveGAN (official): Official samples provided in the official demo HP. Parallel WaveGAN (ours): Our samples based this config.     Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)           TTS samples (English) References  Parallel WaveGAN Official Parallel WaveGAN demo  Author Tomoki Hayashi</description>
+ Groundtruth: Target speech Parallel WaveGAN (official): Official samples provided in the official demo HP. Parallel WaveGAN (ours): Our samples based this config.     Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)           References  Parallel WaveGAN Official Parallel WaveGAN demo  Author Tomoki Hayashi</description>
     </item>
     
   </channel>
