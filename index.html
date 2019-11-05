@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title> - Unofficial Parallel WaveGAN Implementation Demo</title>
+    
+    <meta name="description" content="Unofficial Parallel WaveGAN implementation demo This is the demonstration page of UNOFFICIAL Parallel WaveGAN implementation.
+Github: https://github.com/kan-bayashi/ParallelWaveGAN
+Audio samples (English) Here is the comparison in the analysis-synthesis condition.
+ Groundtruth: Target speech Parallel WaveGAN (official): Official samples provided in the official demo HP. Parallel WaveGAN (ours): Our samples based this config.     Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)           TTS samples (English) References  Parallel WaveGAN Official Parallel WaveGAN demo  Author Tomoki Hayashi">
+    <meta name="author" content="">
+    
+    <link href="https://kan-bayashi.github.io/ParallelWaveGAN/an-old-hope.min.css" rel="stylesheet">
+    <link href="https://kan-bayashi.github.io/ParallelWaveGAN/style.css" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" href="https://kan-bayashi.github.io/ParallelWaveGAN/apple-touch-icon.png">
+    <link rel="icon" href="https://kan-bayashi.github.io/ParallelWaveGAN/favicon.ico">
+    
+    <meta name="generator" content="Hugo 0.59.0" />
+    
+    <link rel="alternate" type="application/atom+xml" href="https://kan-bayashi.github.io/ParallelWaveGAN/index.xml" title="Unofficial Parallel WaveGAN Implementation Demo">
+    
+    
+    
+    <script>
+      function setTheme() {
+        const time = new Date();
+
+        const prev = localStorage.getItem('date');
+        const date = String(time.getMonth() + 1) + '.' + String(time.getDate());
+
+        const now = time.getTime();
+        let sunrise;
+        let sunset;
+
+        function setBodyClass() {
+          if (now > sunrise && now < sunset) return;
+          document.body.classList.add('dark');
+        }
+
+        if (date !== prev) {
+          fetch('https://api.ipgeolocation.io/astronomy?apiKey=5ed37d85103e4defa5df4c5298ed5215')
+            .then(res => res.json())
+            .then(data => {
+              sunrise = data.sunrise.split(':').map(Number);
+              sunset = data.sunset.split(':').map(Number);
+            })
+            .catch(() => {
+              sunrise = [7, 0];
+              sunset = [19, 0];
+            })
+            .finally(() => {
+              sunrise = time.setHours(sunrise[0], sunrise[1], 0);
+              sunset = time.setHours(sunset[0], sunset[1], 0);
+              setBodyClass();
+              localStorage.setItem('sunrise', sunrise);
+              localStorage.setItem('sunset', sunset);
+            });
+          localStorage.setItem('date', date);
+        } else {
+          sunrise = Number(localStorage.getItem('sunrise'));
+          sunset = Number(localStorage.getItem('sunset'));
+          setBodyClass();
+        }
+      }
+    </script>
+  </head>
+  <body class="single">
+    <script>
+      setTheme();
+    </script>
+    <header class="header">
+      <nav class="nav">
+        
+        <p class="logo"><a href="https://kan-bayashi.github.io/ParallelWaveGAN/">Unofficial Parallel WaveGAN Implementation Demo</a></p>
+        
+        
+      </nav>
+    </header>
+    <main class="main">
+
+
+<article class="post-single">
+  <header class="post-header">
+    <h1 class="post-title"></h1>
+    <div class="post-meta">November 5, 2019</div>
+  </header>
+  <div class="post-content">
+
+<h1 id="unofficial-parallel-wavegan-implementation-demo">Unofficial Parallel WaveGAN implementation demo</h1>
+
+<p>This is the demonstration page of <strong>UNOFFICIAL</strong> Parallel WaveGAN implementation.</p>
+
+<p>Github: <a href="https://github.com/kan-bayashi/ParallelWaveGAN">https://github.com/kan-bayashi/ParallelWaveGAN</a></p>
+
+<h2 id="audio-samples-english">Audio samples (English)</h2>
+
+<p>Here is the comparison in the analysis-synthesis condition.</p>
+
+<ul>
+<li>Groundtruth: Target speech</li>
+<li>Parallel WaveGAN (official): Official samples provided in <a href="https://r9y9.github.io/demos/projects/icassp2020">the official demo HP</a>.</li>
+<li>Parallel WaveGAN (ours): Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml">this config</a>.</li>
+</ul>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (official)</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0029.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0029.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0029.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (official)</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0030.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0030.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0030.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (official)</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0031.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0031.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0031.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (official)</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0032.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0032.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0032.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (official)</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0033.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0033.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0033.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="tts-samples-english">TTS samples (English)</h2>
+
+<h2 id="references">References</h2>
+
+<ul>
+<li><a href="https://arxiv.org/abs/1910.11480">Parallel WaveGAN</a></li>
+<li><a href="https://r9y9.github.io/demos/projects/icassp2020">Official Parallel WaveGAN demo</a></li>
+</ul>
+
+<h2 id="author">Author</h2>
+
+<p>Tomoki Hayashi<br />
+e-mail: hayashi.tomoki@g.sp.m.is.nagoya-u.ac.jp</p>
+</div>
+  
+  
+  
+  
+  
+</article>
+
+</main>
+<footer class="footer">
+  <span>&copy; 2019 <a href="https://kan-bayashi.github.io/ParallelWaveGAN/">Unofficial Parallel WaveGAN Implementation Demo</a></span>
+  <span>&middot;</span>
+  <span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️</span>
+  <span>&middot;</span>
+  <span>Theme️ <a href="https://github.com/nanxiaobei/hugo-paper" rel="noopener" target="_blank">Paper</a></span>
+</footer>
+<script src="https://kan-bayashi.github.io/ParallelWaveGAN/highlight.min.js"></script>
+<script>
+  hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
+
