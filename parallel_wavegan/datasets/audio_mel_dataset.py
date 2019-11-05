@@ -75,7 +75,7 @@ class AudioMelDataset(Dataset):
         self.return_filename = return_filename
 
     def __getitem__(self, idx):
-        """Get specifed idx items.
+        """Get specified idx items.
 
         Args:
             idx (int): Index of the item.
@@ -145,7 +145,7 @@ class AudioDataset(Dataset):
         self.return_filename = return_filename
 
     def __getitem__(self, idx):
-        """Get specifed idx items.
+        """Get specified idx items.
 
         Args:
             idx (int): Index of the item.
@@ -212,7 +212,7 @@ class MelDataset(Dataset):
         self.return_filename = return_filename
 
     def __getitem__(self, idx):
-        """Get specifed idx items.
+        """Get specified idx items.
 
         Args:
             idx (int): Index of the item.
