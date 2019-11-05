@@ -253,7 +253,8 @@ class Trainer(object):
         # calculate loss for each batch
         for eval_steps_per_epoch, batch in enumerate(tqdm(self.data_loader["dev"], desc="[eval]"), 1):
             # eval one step
-            self._eval_step(batch)
+            with torch.no_grad():
+                self._eval_step(batch)
 
             # save intermediate result
             if eval_steps_per_epoch == 1:
