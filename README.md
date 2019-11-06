@@ -1,6 +1,6 @@
 # Parallel WaveGAN implementation with Pytorch
 
-![](https://img.shields.io/pypi/l/parallel-wavegan?color=green) [![](https://img.shields.io/pypi/v/parallel-wavegan?color=blue)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/github/last-commit/kan-bayashi/ParallelWaveGAN?color=red)
+![](https://github.com/kan-bayashi/ParallelWaveGAN/workflows/CI/badge.svg) [![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/pypi/pyversions/parallel-wavegan) ![](https://img.shields.io/pypi/l/parallel-wavegan)
 
 This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480) implementation with Pytorch.
 
