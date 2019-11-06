@@ -1,6 +1,6 @@
-![](https://img.shields.io/pypi/l/parallel-wavegan?color=green) [![](https://img.shields.io/pypi/v/parallel-wavegan?color=blue)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/github/last-commit/kan-bayashi/ParallelWaveGAN?color=red)
-
 # Parallel WaveGAN implementation with Pytorch
+
+![](https://img.shields.io/pypi/l/parallel-wavegan?color=green) [![](https://img.shields.io/pypi/v/parallel-wavegan?color=blue)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/github/last-commit/kan-bayashi/ParallelWaveGAN?color=red)
 
 This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480) implementation with Pytorch.
 
@@ -93,6 +93,13 @@ The decoding speed is RTF = 0.016 with TITAN V, much faster than the real-time.
 ```bash
 [decode]: 100%|██████████| 250/250 [00:30<00:00,  8.31it/s, RTF=0.0156]
 2019-11-03 09:07:40,480 (decode:127) INFO: finished generation of 250 utterances (RTF = 0.016).
+```
+
+Even on the CPU (Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz 16 threads), it can generate less than the real-time.
+
+```bash
+[decode]: 100%|██████████| 250/250 [22:16<00:00,  5.35s/it, RTF=0.841]
+2019-11-06 09:04:56,697 (decode:129) INFO: finished generation of 250 utterances (RTF = 0.734).
 ```
 
 ## Results
