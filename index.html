@@ -9,8 +9,9 @@
     
     <meta name="description" content="Unofficial Parallel WaveGAN implementation demo This is the demonstration page of UNOFFICIAL Parallel WaveGAN implementation.
 Github: https://github.com/kan-bayashi/ParallelWaveGAN
-Audio samples (English) Here is the comparison in the analysis-synthesis condition.
- Groundtruth: Target speech Parallel WaveGAN (official): Official samples provided in the official demo HP. Parallel WaveGAN (ours): Our samples based this config.     Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)              Groundtruth ParallelWaveGAN (official) ParallelWaveGAN (ours)           References  Parallel WaveGAN Official Parallel WaveGAN demo  Author Tomoki Hayashi">
+Audio samples (English) Here is the comparison in the analysis-synthesis condition using LJSpeech dataset.
+Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.
+ Groundtruth: Target speech Parallel WaveGAN (official): Official samples provided in the official demo HP. Parallel WaveGAN (ours): Our samples based this config.">
     <meta name="author" content="">
     
     <link href="https://kan-bayashi.github.io/ParallelWaveGAN/an-old-hope.min.css" rel="stylesheet">
@@ -98,7 +99,8 @@ Audio samples (English) Here is the comparison in the analysis-synthesis conditi
 
 <h2 id="audio-samples-english">Audio samples (English)</h2>
 
-<p>Here is the comparison in the analysis-synthesis condition.</p>
+<p>Here is the comparison in the analysis-synthesis condition using <a href="https://keithito.com/LJ-Speech-Dataset/">LJSpeech dataset</a>.<br />
+Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.</p>
 
 <ul>
 <li>Groundtruth: Target speech</li>
@@ -192,6 +194,122 @@ Audio samples (English) Here is the comparison in the analysis-synthesis conditi
 <td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0033.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0033.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0033.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="audio-samples-japanese">Audio samples (Japanese)</h2>
+
+<p>Audio sampels trained on <a href="https://sites.google.com/site/shinnosuketakamichi/publication/jsut">JSUT dataset</a>.<br />
+Note that groundtruth samples are 48 kHz and we downsampled to 24 kHz and we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.</p>
+
+<ul>
+<li>Groundtruth: Target speech</li>
+<li>Parallel WaveGAN (ours): Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jsut/voc1/conf/parallel_wavegan.v1.yaml">this config</a>.</li>
+</ul>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/jsut/raw/BASIC5000_0001.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/jsut/kan-bayashi_wavegan.v1/BASIC5000_0001.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/jsut/raw/BASIC5000_0002.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/jsut/kan-bayashi_wavegan.v1/BASIC5000_0002.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/jsut/raw/BASIC5000_0003.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/jsut/kan-bayashi_wavegan.v1/BASIC5000_0003.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="audio-samples-mandarin">Audio samples (Mandarin)</h2>
+
+<p>Audio sampels trained on <a href="https://www.data-baker.com/open_source.html">CSMSC dataset</a>.<br />
+Note that groundtruth samples are 48 kHz and we downsampled to 24 kHz and we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.</p>
+
+<ul>
+<li>Groundtruth: Target speech</li>
+<li>Parallel WaveGAN (ours): Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csmsc/voc1/conf/parallel_wavegan.v1.yaml">this config</a>.</li>
+</ul>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/csmsc/raw/009901.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/csmsc/kan-bayashi_wavegan.v1/009901.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/csmsc/raw/009902.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/csmsc/kan-bayashi_wavegan.v1/009902.wav"/></audio></td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>Groundtruth</th>
+<th>ParallelWaveGAN (ours)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/csmsc/raw/009903.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/csmsc/kan-bayashi_wavegan.v1/009903.wav"/></audio></td>
 </tr>
 </tbody>
 </table>
