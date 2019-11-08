@@ -79,6 +79,7 @@ class AudioMelDataset(Dataset):
         self.return_filename = return_filename
         self.allow_cache = allow_cache
         if allow_cache:
+            # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
             self.manager = Manager()
             self.caches = self.manager.list()
             self.caches += [() for _ in range(len(audio_files))]
@@ -163,6 +164,7 @@ class AudioDataset(Dataset):
         self.return_filename = return_filename
         self.allow_cache = allow_cache
         if allow_cache:
+            # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
             self.manager = Manager()
             self.caches = self.manager.list()
             self.caches += [() for _ in range(len(audio_files))]
@@ -244,6 +246,7 @@ class MelDataset(Dataset):
         self.return_filename = return_filename
         self.allow_cache = allow_cache
         if allow_cache:
+            # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
             self.manager = Manager()
             self.caches = self.manager.list()
             self.caches += [() for _ in range(len(mel_files))]
