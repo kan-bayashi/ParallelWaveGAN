@@ -7,6 +7,8 @@
 
 import logging
 
+from multiprocessing import Manager
+
 import numpy as np
 
 from torch.utils.data import Dataset
@@ -77,7 +79,9 @@ class AudioMelDataset(Dataset):
         self.return_filename = return_filename
         self.allow_cache = allow_cache
         if allow_cache:
-            self.caches = [() for _ in range(len(audio_files))]
+            self.manager = Manager()
+            self.caches = self.manager.list()
+            self.caches += [() for _ in range(len(audio_files))]
 
     def __getitem__(self, idx):
         """Get specified idx items.
@@ -159,7 +163,9 @@ class AudioDataset(Dataset):
         self.return_filename = return_filename
         self.allow_cache = allow_cache
         if allow_cache:
-            self.caches = [() for _ in range(len(audio_files))]
+            self.manager = Manager()
+            self.caches = self.manager.list()
+            self.caches += [() for _ in range(len(audio_files))]
 
     def __getitem__(self, idx):
         """Get specified idx items.
@@ -238,7 +244,9 @@ class MelDataset(Dataset):
         self.return_filename = return_filename
         self.allow_cache = allow_cache
         if allow_cache:
-            self.caches = [() for _ in range(len(mel_files))]
+            self.manager = Manager()
+            self.caches = self.manager.list()
+            self.caches += [() for _ in range(len(mel_files))]
 
     def __getitem__(self, idx):
         """Get specified idx items.
