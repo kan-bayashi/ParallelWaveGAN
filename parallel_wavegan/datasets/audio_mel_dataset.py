@@ -27,7 +27,7 @@ class AudioMelDataset(Dataset):
                  audio_length_threshold=None,
                  mel_length_threshold=None,
                  return_filename=False,
-                 allow_cache=True,
+                 allow_cache=False,
                  ):
         """Initialize dataset.
 
@@ -126,7 +126,7 @@ class AudioDataset(Dataset):
                  audio_length_threshold=None,
                  audio_load_fn=np.load,
                  return_filename=False,
-                 allow_cache=True,
+                 allow_cache=False,
                  ):
         """Initialize dataset.
 
@@ -205,7 +205,7 @@ class MelDataset(Dataset):
                  mel_length_threshold=None,
                  mel_load_fn=np.load,
                  return_filename=False,
-                 allow_cache=True,
+                 allow_cache=False,
                  ):
         """Initialize dataset.
 
