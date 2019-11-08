@@ -7,6 +7,8 @@
 
 import logging
 
+from multiprocessing import Manager
+
 import numpy as np
 
 from torch.utils.data import Dataset
@@ -27,6 +29,7 @@ class AudioMelDataset(Dataset):
                  audio_length_threshold=None,
                  mel_length_threshold=None,
                  return_filename=False,
+                 allow_cache=False,
                  ):
         """Initialize dataset.
 
@@ -39,6 +42,7 @@ class AudioMelDataset(Dataset):
             audio_length_threshold (int): Threshold to remove short audio files.
             mel_length_threshold (int): Threshold to remove short feature files.
             return_filename (bool): Whether to return the filename with arrays.
+            allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
         # find all of audio and mel files
@@ -50,16 +54,16 @@ class AudioMelDataset(Dataset):
             audio_lengths = [audio_load_fn(f).shape[0] for f in audio_files]
             idxs = [idx for idx in range(len(audio_files)) if audio_lengths[idx] > audio_length_threshold]
             if len(audio_files) != len(idxs):
-                logging.info(f"some files are filtered by audio length threshold "
-                             f"({len(audio_files)} -> {len(idxs)}).")
+                logging.warning(f"some files are filtered by audio length threshold "
+                                f"({len(audio_files)} -> {len(idxs)}).")
             audio_files = [audio_files[idx] for idx in idxs]
             mel_files = [mel_files[idx] for idx in idxs]
         if mel_length_threshold is not None:
             mel_lengths = [mel_load_fn(f).shape[0] for f in mel_files]
             idxs = [idx for idx in range(len(mel_files)) if mel_lengths[idx] > mel_length_threshold]
             if len(mel_files) != len(idxs):
-                logging.info(f"some files are filtered by mel length threshold "
-                             f"({len(mel_files)} -> {len(idxs)}).")
+                logging.warning(f"some files are filtered by mel length threshold "
+                                f"({len(mel_files)} -> {len(idxs)}).")
             audio_files = [audio_files[idx] for idx in idxs]
             mel_files = [mel_files[idx] for idx in idxs]
 
@@ -73,6 +77,12 @@ class AudioMelDataset(Dataset):
         self.audio_load_fn = audio_load_fn
         self.mel_load_fn = mel_load_fn
         self.return_filename = return_filename
+        self.allow_cache = allow_cache
+        if allow_cache:
+            # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
+            self.manager = Manager()
+            self.caches = self.manager.list()
+            self.caches += [() for _ in range(len(audio_files))]
 
     def __getitem__(self, idx):
         """Get specified idx items.
@@ -87,12 +97,19 @@ class AudioMelDataset(Dataset):
             ndarray: Feature (T', C).
 
         """
+        if self.allow_cache and len(self.caches[idx]) != 0:
+            return self.caches[idx]
+
         audio = self.audio_load_fn(self.audio_files[idx])
         mel = self.mel_load_fn(self.mel_files[idx])
 
         if self.return_filename:
+            if self.allow_cache:
+                self.caches[idx] = self.audio_files[idx], self.mel_files[idx], audio, mel
             return self.audio_files[idx], self.mel_files[idx], audio, mel
         else:
+            if self.allow_cache:
+                self.caches[idx] = audio, mel
             return audio, mel
 
     def __len__(self):
@@ -114,6 +131,7 @@ class AudioDataset(Dataset):
                  audio_length_threshold=None,
                  audio_load_fn=np.load,
                  return_filename=False,
+                 allow_cache=False,
                  ):
         """Initialize dataset.
 
@@ -123,6 +141,7 @@ class AudioDataset(Dataset):
             audio_load_fn (func): Function to load audio file.
             audio_length_threshold (int): Threshold to remove short audio files.
             return_filename (bool): Whether to return the filename with arrays.
+            allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
         # find all of audio and mel files
@@ -133,8 +152,8 @@ class AudioDataset(Dataset):
             audio_lengths = [audio_load_fn(f).shape[0] for f in audio_files]
             idxs = [idx for idx in range(len(audio_files)) if audio_lengths[idx] > audio_length_threshold]
             if len(audio_files) != len(idxs):
-                logging.info(f"some files are filtered by audio length threshold "
-                             f"({len(audio_files)} -> {len(idxs)}).")
+                logging.waning(f"some files are filtered by audio length threshold "
+                               f"({len(audio_files)} -> {len(idxs)}).")
             audio_files = [audio_files[idx] for idx in idxs]
 
         # assert the number of files
@@ -143,6 +162,12 @@ class AudioDataset(Dataset):
         self.audio_files = audio_files
         self.audio_load_fn = audio_load_fn
         self.return_filename = return_filename
+        self.allow_cache = allow_cache
+        if allow_cache:
+            # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
+            self.manager = Manager()
+            self.caches = self.manager.list()
+            self.caches += [() for _ in range(len(audio_files))]
 
     def __getitem__(self, idx):
         """Get specified idx items.
@@ -155,11 +180,18 @@ class AudioDataset(Dataset):
             ndarray: Audio (T,).
 
         """
+        if self.allow_cache and len(self.caches[idx]) != 0:
+            return self.caches[idx]
+
         audio = self.audio_load_fn(self.audio_files[idx])
 
         if self.return_filename:
+            if self.allow_cache:
+                self.caches[idx] = self.audio_files[idx], audio
             return self.audio_files[idx], audio
         else:
+            if self.allow_cache:
+                self.caches[idx] = audio
             return audio
 
     def __len__(self):
@@ -181,6 +213,7 @@ class MelDataset(Dataset):
                  mel_length_threshold=None,
                  mel_load_fn=np.load,
                  return_filename=False,
+                 allow_cache=False,
                  ):
         """Initialize dataset.
 
@@ -190,6 +223,7 @@ class MelDataset(Dataset):
             mel_load_fn (func): Function to load feature file.
             mel_length_threshold (int): Threshold to remove short feature files.
             return_filename (bool): Whether to return the filename with arrays.
+            allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
         # find all of the mel files
@@ -200,8 +234,8 @@ class MelDataset(Dataset):
             mel_lengths = [mel_load_fn(f).shape[0] for f in mel_files]
             idxs = [idx for idx in range(len(mel_files)) if mel_lengths[idx] > mel_length_threshold]
             if len(mel_files) != len(idxs):
-                logging.info(f"some files are filtered by mel length threshold "
-                             f"({len(mel_files)} -> {len(idxs)}).")
+                logging.warning(f"some files are filtered by mel length threshold "
+                                f"({len(mel_files)} -> {len(idxs)}).")
             mel_files = [mel_files[idx] for idx in idxs]
 
         # assert the number of files
@@ -210,6 +244,12 @@ class MelDataset(Dataset):
         self.mel_files = mel_files
         self.mel_load_fn = mel_load_fn
         self.return_filename = return_filename
+        self.allow_cache = allow_cache
+        if allow_cache:
+            # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
+            self.manager = Manager()
+            self.caches = self.manager.list()
+            self.caches += [() for _ in range(len(mel_files))]
 
     def __getitem__(self, idx):
         """Get specified idx items.
@@ -222,10 +262,18 @@ class MelDataset(Dataset):
             ndarray: Feature (T', C).
 
         """
+        if self.allow_cache and len(self.caches[idx]) != 0:
+            return self.caches[idx]
+
+        mel = self.mel_load_fn(self.mel_files[idx])
         if self.return_filename:
-            return self.mel_files[idx], self.mel_load_fn(self.mel_files[idx])
+            if self.allow_cache:
+                self.caches[idx] = self.mel_files[idx], mel
+            return self.mel_files[idx], mel
         else:
-            return self.mel_load_fn(self.mel_files[idx])
+            if self.allow_cache:
+                self.caches[idx] = mel
+            return mel
 
     def __len__(self):
         """Return dataset length.
