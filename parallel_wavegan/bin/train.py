@@ -505,6 +505,7 @@ def main():
             audio_load_fn=audio_load_fn,
             mel_load_fn=mel_load_fn,
             mel_length_threshold=mel_length_threshold,
+            allow_cache=config.get("allow_cache", False),
         ),
         "dev": AudioMelDataset(
             root_dir=args.dev_dumpdir,
@@ -512,7 +513,9 @@ def main():
             mel_query=mel_query,
             audio_load_fn=audio_load_fn,
             mel_load_fn=mel_load_fn,
-            mel_length_threshold=mel_length_threshold),
+            mel_length_threshold=mel_length_threshold,
+            allow_cache=config.get("allow_cache", False),
+        ),
     }
 
     # get data loader
