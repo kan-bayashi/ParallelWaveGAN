@@ -480,9 +480,9 @@ def main():
         torch.cuda.set_device(args.rank)
         # setup for distributed training
         # see example: https://github.com/NVIDIA/apex/tree/master/examples/simple/distributed
-        if 'WORLD_SIZE' in os.environ:
-            args.distributed = int(os.environ['WORLD_SIZE']) > 1
+        if "WORLD_SIZE" in os.environ:
             args.world_size = int(os.environ["WORLD_SIZE"])
+            args.distributed = args.world_size > 1
         if args.distributed:
             torch.distributed.init_process_group(backend="nccl", init_method="env://")
 
