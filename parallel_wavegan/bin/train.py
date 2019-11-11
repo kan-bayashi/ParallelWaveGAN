@@ -134,7 +134,7 @@ class Trainer(object):
             checkpoint_path (str): Checkpoint path to be loaded.
 
         """
-        state_dict = torch.load(checkpoint_path)
+        state_dict = torch.load(checkpoint_path, map_location="cpu")
         self.steps = state_dict["steps"]
         self.epochs = state_dict["epochs"]
         if self.config["distributed"]:
