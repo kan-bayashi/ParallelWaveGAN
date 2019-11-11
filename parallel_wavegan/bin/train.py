@@ -343,7 +343,7 @@ class Trainer(object):
         if self.steps % self.config["save_interval_steps"] == 0:
             self.save_checkpoint(
                 os.path.join(self.config["outdir"], f"checkpoint-{self.steps}steps.pkl"))
-            logging.info(f"saved checkpoint @ {self.steps} steps.")
+            logging.info(f"successfully saved checkpoint @ {self.steps} steps.")
 
     def _check_eval_interval(self):
         if self.steps % self.config["eval_interval_steps"] == 0:
@@ -646,7 +646,7 @@ def main():
     # resume from checkpoint
     if len(args.resume) != 0:
         trainer.load_checkpoint(args.resume)
-        logging.info(f"resumed from {args.resume}.")
+        logging.info(f"successfully resumed from {args.resume}.")
 
     # run training loop
     try:
