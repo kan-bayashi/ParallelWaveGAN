@@ -10,7 +10,8 @@
 stage=-1
 stop_stage=100
 verbose=1
-nj=16
+n_gpus=1
+n_jobs=16
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
 conf=conf/parallel_wavegan.v1.yaml
@@ -56,13 +57,13 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
-        ${train_cmd} --num-threads "${nj}" "${dumpdir}/${name}/raw/preprocessing.log" \
+        ${train_cmd} --num-threads "${n_jobs}" "${dumpdir}/${name}/raw/preprocessing.log" \
             parallel-wavegan-preprocess \
                 --config "${conf}" \
                 --scp "data/${name}/wav.scp" \
                 --segments "data/${name}/segments" \
                 --dumpdir "${dumpdir}/${name}/raw" \
-                --n_jobs "${nj}" \
+                --n_jobs "${n_jobs}" \
                 --verbose "${verbose}"
         echo "successfully finished feature extraction of ${name} set."
     ) &
@@ -86,13 +87,13 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/norm" ] && mkdir -p "${dumpdir}/${name}/norm"
-        ${train_cmd} --num-threads "${nj}" "${dumpdir}/${name}/norm/normalize.log" \
+        ${train_cmd} --num-threads "${n_jobs}" "${dumpdir}/${name}/norm/normalize.log" \
             parallel-wavegan-normalize \
                 --config "${conf}" \
                 --stats "${dumpdir}/${train_set}/stats.h5" \
                 --rootdir "${dumpdir}/${name}/raw" \
                 --dumpdir "${dumpdir}/${name}/norm" \
-                --n_jobs "${nj}" \
+                --n_jobs "${n_jobs}" \
                 --verbose "${verbose}"
         echo "successfully finished normalization of ${name} set."
     ) &
@@ -111,8 +112,13 @@ fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
     [ ! -e "${expdir}" ] && mkdir -p "${expdir}"
-    ${cuda_cmd} --gpu 1 "${expdir}/train.log" \
-        parallel-wavegan-train \
+    if [ "${n_gpus}" -gt 1 ]; then
+        train="python -m parallel_wavegan.distributed.launch --nproc_per_node ${n_gpus} -c parallel-wavegan-train"
+    else
+        train="parallel-wavegan-train"
+    fi
+    ${cuda_cmd} --gpu "${n_gpus}" "${expdir}/train.log" \
+        ${train} \
             --config "${conf}" \
             --train-dumpdir "${dumpdir}/${train_set}/norm" \
             --dev-dumpdir "${dumpdir}/${dev_set}/norm" \
@@ -130,7 +136,8 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
     for name in "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
-        ${cuda_cmd} --gpu 1 "${outdir}/${name}/decode.log" \
+        [ "${n_gpus}" -gt 1 ] && n_gpus=1
+        ${cuda_cmd} --gpu "${n_gpus}" "${outdir}/${name}/decode.log" \
             parallel-wavegan-decode \
                 --dumpdir "${dumpdir}/${name}/norm" \
                 --checkpoint "${checkpoint}" \

@@ -19,6 +19,7 @@ This repository is tested on Ubuntu 16.04 with a GPU Titan V.
 - Python 3.6+
 - Cuda 10.0
 - CuDNN 7+
+- NCCL 2+ (for distributed multi-gpu training)
 
 All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, and 1.3.
 
@@ -87,6 +88,18 @@ $ tensorboard --logdir exp
 ```
 
 ![](https://user-images.githubusercontent.com/22779813/68100080-58bbc500-ff09-11e9-9945-c835186fd7c2.png)
+
+If you want to accelerate the training, you can try distributed multi-gpu training based on apex.  
+First, you need to install apex. please follow the instruction (https://github.com/NVIDIA/apex).  
+After the installation, you can try distributed multi-gpu training via following command:
+
+```bash
+# in the case of the number of gpus = 8
+$ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" ./run.sh --stage 2 --n_gpus 8
+```
+
+In the case of distributed training, batch size will be automatically multiplied by the number of gpus.  
+Please be careful.
 
 The decoding speed is RTF = 0.016 with TITAN V, much faster than the real-time.
 
