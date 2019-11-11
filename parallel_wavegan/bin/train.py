@@ -139,7 +139,7 @@ class Trainer(object):
         self.epochs = state_dict["epochs"]
         if self.config["distributed"]:
             self.model["generator"].module.load_state_dict(state_dict["model"]["generator"])
-            self.model["discriminator"].moudle.load_state_dict(state_dict["model"]["discriminator"])
+            self.model["discriminator"].module.load_state_dict(state_dict["model"]["discriminator"])
         else:
             self.model["generator"].load_state_dict(state_dict["model"]["generator"])
             self.model["discriminator"].load_state_dict(state_dict["model"]["discriminator"])
@@ -468,28 +468,23 @@ def main():
                         help="checkpoint file path to resume training. (default=\"\")")
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level. higher is more logging. (default=1)")
-    parser.add_argument("--world-size", default=1, type=int,
-                        help="world size for distributed training.")
     parser.add_argument("--rank", "--local_rank", default=0, type=int,
-                        help="rank for distributed training.")
+                        help="rank for distributed training. no need to explictly specify. (default=0)")
     args = parser.parse_args()
 
     args.distributed = False
     if not torch.cuda.is_available():
         device = torch.device("cpu")
     else:
+        device = torch.device("cuda")
         torch.cuda.set_device(args.rank)
-        args.distributed = torch.cuda.device_count() > 1
+        # setup for distributed training
+        # see example: https://github.com/NVIDIA/apex/tree/master/examples/simple/distributed
+        if 'WORLD_SIZE' in os.environ:
+            args.distributed = int(os.environ['WORLD_SIZE']) > 1
+            args.world_size = int(os.environ["WORLD_SIZE"])
         if args.distributed:
-            # do initialization for distributed training
-            os.environ["MASTER_ADDR"] = "127.0.0.1"
-            os.environ["MASTER_PORT"] = "29501"
-            torch.distributed.init_process_group(
-                backend="nccl",
-                rank=args.rank,
-                world_size=args.world_size,
-                init_method="env://"
-            )
+            torch.distributed.init_process_group(backend="nccl", init_method="env://")
 
     # suppress logging for distributed training
     if args.rank != 0:
@@ -559,10 +554,6 @@ def main():
     }
 
     # get data loader
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
     collater = Collater(
         batch_max_steps=config["batch_max_steps"],
         hop_size=config["hop_size"],
@@ -634,7 +625,7 @@ def main():
         try:
             from apex.parallel import DistributedDataParallel
         except ImportError:
-            from torch.nn.parallel import DistributedDataParallel
+            raise ImportError("apex is not installed. please check https://github.com/NVIDIA/apex.")
         model["generator"] = DistributedDataParallel(model["generator"])
         model["discriminator"] = DistributedDataParallel(model["discriminator"])
     logging.info(model["generator"])
@@ -661,7 +652,7 @@ def main():
     # run training loop
     try:
         trainer.run()
-    finally:
+    except KeyboardInterrupt:
         trainer.save_checkpoint(
             os.path.join(config["outdir"], f"checkpoint-{trainer.steps}steps.pkl"))
         logging.info(f"successfully saved checkpoint @ {trainer.steps}steps.")
