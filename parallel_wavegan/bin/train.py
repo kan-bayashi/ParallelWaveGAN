@@ -469,7 +469,7 @@ def main():
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level. higher is more logging. (default=1)")
     parser.add_argument("--rank", "--local_rank", default=0, type=int,
-                        help="rank for distributed training. no need to explictly specify. (default=0)")
+                        help="rank for distributed training. no need to explictly specify.")
     args = parser.parse_args()
 
     args.distributed = False
