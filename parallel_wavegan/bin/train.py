@@ -30,7 +30,6 @@ from parallel_wavegan.models import ParallelWaveGANGenerator
 from parallel_wavegan.optimizers import RAdam
 from parallel_wavegan.utils import read_hdf5
 
-
 # set to avoid matplotlib error in CLI environment
 matplotlib.use("Agg")
 
