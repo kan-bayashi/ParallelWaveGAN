@@ -90,7 +90,7 @@ $ tensorboard --logdir exp
 ![](https://user-images.githubusercontent.com/22779813/68100080-58bbc500-ff09-11e9-9945-c835186fd7c2.png)
 
 If you want to accelerate the training, you can try distributed multi-gpu training based on apex.  
-First, you need to install apex. please follow the instruction of the apex https://github.com/NVIDIA/apex.
+First, you need to install apex. please follow the instruction (https://github.com/NVIDIA/apex).  
 After the installation, you can try distributed multi-gpu training via following command:
 
 ```bash
