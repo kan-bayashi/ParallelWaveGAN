@@ -101,10 +101,6 @@ class Trainer(object):
 
         """
         state_dict = {
-            "model": {
-                "generator": self.model["generator"].state_dict(),
-                "discriminator": self.model["discriminator"].state_dict(),
-            },
             "optimizer": {
                 "generator": self.optimizer["generator"].state_dict(),
                 "discriminator": self.optimizer["discriminator"].state_dict(),
@@ -116,6 +112,17 @@ class Trainer(object):
             "steps": self.steps,
             "epochs": self.epochs,
         }
+        if self.config["distributed"]:
+            state_dict["model"] = {
+                "generator": self.model["generator"].module.state_dict(),
+                "discriminator": self.model["discriminator"].module.state_dict(),
+            }
+        else:
+            state_dict["model"] = {
+                "generator": self.model["generator"].state_dict(),
+                "discriminator": self.model["discriminator"].state_dict(),
+            }
+
         if not os.path.exists(os.path.dirname(checkpoint_path)):
             os.makedirs(os.path.dirname(checkpoint_path))
         torch.save(state_dict, checkpoint_path)
@@ -130,8 +137,12 @@ class Trainer(object):
         state_dict = torch.load(checkpoint_path)
         self.steps = state_dict["steps"]
         self.epochs = state_dict["epochs"]
-        self.model["generator"].load_state_dict(state_dict["model"]["generator"])
-        self.model["discriminator"].load_state_dict(state_dict["model"]["discriminator"])
+        if self.config["distributed"]:
+            self.model["generator"].module.load_state_dict(state_dict["model"]["generator"])
+            self.model["discriminator"].moudle.load_state_dict(state_dict["model"]["discriminator"])
+        else:
+            self.model["generator"].load_state_dict(state_dict["model"]["generator"])
+            self.model["discriminator"].load_state_dict(state_dict["model"]["discriminator"])
         self.optimizer["generator"].load_state_dict(state_dict["optimizer"]["generator"])
         self.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
         self.scheduler["generator"].load_state_dict(state_dict["scheduler"]["generator"])
