@@ -28,3 +28,4 @@ egs/*/*/exp
 
 # tools related
 tools/venv/
+tools/apex/
