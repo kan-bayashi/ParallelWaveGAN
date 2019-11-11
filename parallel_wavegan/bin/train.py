@@ -21,13 +21,7 @@ import yaml
 
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
-
-try:
-    from apex.parallel import DistributedDataParallel
-except ImportError:
-    from torch.nn.parallel import DistributedDataParallel
 
 from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
@@ -35,6 +29,7 @@ from parallel_wavegan.models import ParallelWaveGANDiscriminator
 from parallel_wavegan.models import ParallelWaveGANGenerator
 from parallel_wavegan.optimizers import RAdam
 from parallel_wavegan.utils import read_hdf5
+
 
 # set to avoid matplotlib error in CLI environment
 matplotlib.use("Agg")
@@ -204,7 +199,7 @@ class Trainer(object):
             self._train_step(batch)
 
             # check interval
-            if self.config['rank'] == 0:
+            if self.config["rank"] == 0:
                 self._check_log_interval()
                 self._check_eval_interval()
                 self._check_save_interval()
@@ -462,13 +457,12 @@ def main():
                         help="checkpoint file path to resume training. (default=\"\")")
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level. higher is more logging. (default=1)")
-    # DISTRIBUTED
-    parser.add_argument("--world-size", default=1, type=int)
-    parser.add_argument("--rank", "--local_rank", default=0, type=int)
-    # END DISTRIBUTED
+    parser.add_argument("--world-size", default=1, type=int,
+                        help="world size for distributed training.")
+    parser.add_argument("--rank", "--local_rank", default=0, type=int,
+                        help="rank for distributed training.")
     args = parser.parse_args()
 
-    # DISTRIBUTED
     args.distributed = False
     if not torch.cuda.is_available():
         device = torch.device("cpu")
@@ -476,16 +470,19 @@ def main():
         torch.cuda.set_device(args.rank)
         args.distributed = torch.cuda.device_count() > 1
         if args.distributed:
-            os.environ['MASTER_ADDR'] = '127.0.0.1'
-            os.environ['MASTER_PORT'] = '29501'
-            torch.distributed.init_process_group(backend='nccl',
-                                                 rank=args.rank,
-                                                 world_size=args.world_size,
-                                                 init_method='env://')
-    # END DISTRIBUTED
+            # do initialization for distributed training
+            os.environ["MASTER_ADDR"] = "127.0.0.1"
+            os.environ["MASTER_PORT"] = "29501"
+            torch.distributed.init_process_group(
+                backend="nccl",
+                rank=args.rank,
+                world_size=args.world_size,
+                init_method="env://"
+            )
 
+    # suppress logging for distributed training
     if args.rank != 0:
-        sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, "w")
 
     # set logger
     if args.verbose > 1:
@@ -500,7 +497,7 @@ def main():
         logging.basicConfig(
             level=logging.WARN, stream=sys.stdout,
             format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
-        logging.warning('skip DEBUG/INFO messages')
+        logging.warning("skip DEBUG/INFO messages")
 
     # check directory existence
     if not os.path.exists(args.outdir):
@@ -539,8 +536,7 @@ def main():
             audio_load_fn=audio_load_fn,
             mel_load_fn=mel_load_fn,
             mel_length_threshold=mel_length_threshold,
-            allow_cache=config.get("allow_cache", False),  # keep compatibilty
-        ),
+            allow_cache=config.get("allow_cache", False)),  # keep compatibilty
         "dev": AudioMelDataset(
             root_dir=args.dev_dumpdir,
             audio_query=audio_query,
@@ -548,8 +544,7 @@ def main():
             audio_load_fn=audio_load_fn,
             mel_load_fn=mel_load_fn,
             mel_length_threshold=mel_length_threshold,
-            allow_cache=config.get("allow_cache", False),  # keep compatibilty
-        ),
+            allow_cache=config.get("allow_cache", False)),  # keep compatibilty
     }
 
     # get data loader
@@ -562,10 +557,20 @@ def main():
         hop_size=config["hop_size"],
         aux_context_window=config["generator_params"]["aux_context_window"],
     )
-    train_sampler = DistributedSampler(dataset['train'], args.world_size, args.rank, shuffle=True)\
-        if args.distributed else None
-    dev_sampler = DistributedSampler(dataset['dev'], args.world_size, args.rank, shuffle=False)\
-        if args.distributed else None
+    train_sampler, dev_sampler = None, None
+    if args.distributed:
+        # setup sampler for distributed training
+        from torch.utils.data.distributed import DistributedSampler
+        train_sampler = DistributedSampler(
+            dataset=dataset["train"],
+            num_replicas=args.world_size,
+            rank=args.rank,
+            shuffle=True)
+        dev_sampler = DistributedSampler(
+            dataset=dataset["dev"],
+            num_replicas=args.world_size,
+            rank=args.rank,
+            shuffle=False)
     data_loader = {
         "train": DataLoader(
             dataset=dataset["train"],
@@ -592,11 +597,6 @@ def main():
         "discriminator": ParallelWaveGANDiscriminator(
             **config["discriminator_params"]).to(device),
     }
-    # DISTRIBUTED
-    if args.distributed:
-        model['generator'] = DistributedDataParallel(model['generator'])
-        model['discriminator'] = DistributedDataParallel(model['discriminator'])
-    # END DISTRIBUTED
     criterion = {
         "stft": MultiResolutionSTFTLoss(
             **config["stft_loss_params"]).to(device),
@@ -618,6 +618,14 @@ def main():
             optimizer=optimizer["discriminator"],
             **config["discriminator_scheduler_params"]),
     }
+    if args.distributed:
+        # wrap model for distributed training
+        try:
+            from apex.parallel import DistributedDataParallel
+        except ImportError:
+            from torch.nn.parallel import DistributedDataParallel
+        model["generator"] = DistributedDataParallel(model["generator"])
+        model["discriminator"] = DistributedDataParallel(model["discriminator"])
     logging.info(model["generator"])
     logging.info(model["discriminator"])
 
