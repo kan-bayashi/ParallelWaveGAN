@@ -202,6 +202,7 @@ class Trainer(object):
         # update counts
         self.steps += 1
         self.tqdm.update(1)
+        self._check_train_finish()
 
     def _train_epoch(self):
         """Train model one epoch."""
@@ -214,7 +215,6 @@ class Trainer(object):
                 self._check_log_interval()
                 self._check_eval_interval()
                 self._check_save_interval()
-                self._check_train_finish()
 
             # check whether training is finished
             if self.finish_train:
