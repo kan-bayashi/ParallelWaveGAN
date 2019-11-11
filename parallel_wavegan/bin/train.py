@@ -9,6 +9,7 @@
 import argparse
 import logging
 import os
+import sys
 
 from collections import defaultdict
 
@@ -20,7 +21,13 @@ import yaml
 
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
+
+try:
+    from apex.parallel import DistributedDataParallel
+except ImportError:
+    from torch.nn.parallel import DistributedDataParallel
 
 from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
@@ -197,10 +204,11 @@ class Trainer(object):
             self._train_step(batch)
 
             # check interval
-            self._check_log_interval()
-            self._check_eval_interval()
-            self._check_save_interval()
-            self._check_train_finish()
+            if self.config['rank'] == 0:
+                self._check_log_interval()
+                self._check_eval_interval()
+                self._check_save_interval()
+                self._check_train_finish()
 
             # check whether training is finished
             if self.finish_train:
@@ -443,7 +451,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Train Parallel WaveGAN (See detail in parallel_wavegan/bin/train.py).")
     parser.add_argument("--train-dumpdir", type=str, required=True,
-                        help="directory including trainning data.")
+                        help="directory including training data.")
     parser.add_argument("--dev-dumpdir", type=str, required=True,
                         help="directory including development data.")
     parser.add_argument("--outdir", type=str, required=True,
@@ -454,18 +462,44 @@ def main():
                         help="checkpoint file path to resume training. (default=\"\")")
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level. higher is more logging. (default=1)")
+    # DISTRIBUTED
+    parser.add_argument("--world-size", default=1, type=int)
+    parser.add_argument("--rank", "--local_rank", default=0, type=int)
+    # END DISTRIBUTED
     args = parser.parse_args()
+
+    # DISTRIBUTED
+    args.distributed = False
+    if not torch.cuda.is_available():
+        device = torch.device("cpu")
+    else:
+        torch.cuda.set_device(args.rank)
+        args.distributed = torch.cuda.device_count() > 1
+        if args.distributed:
+            os.environ['MASTER_ADDR'] = '127.0.0.1'
+            os.environ['MASTER_PORT'] = '29501'
+            torch.distributed.init_process_group(backend='nccl',
+                                                 rank=args.rank,
+                                                 world_size=args.world_size,
+                                                 init_method='env://')
+    # END DISTRIBUTED
+
+    if args.rank != 0:
+        sys.stdout = open(os.devnull, 'w')
 
     # set logger
     if args.verbose > 1:
         logging.basicConfig(
-            level=logging.DEBUG, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+            level=logging.DEBUG, stream=sys.stdout,
+            format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
     elif args.verbose > 0:
         logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+            level=logging.INFO, stream=sys.stdout,
+            format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
     else:
         logging.basicConfig(
-            level=logging.WARN, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+            level=logging.WARN, stream=sys.stdout,
+            format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
         logging.warning('skip DEBUG/INFO messages')
 
     # check directory existence
@@ -528,20 +562,26 @@ def main():
         hop_size=config["hop_size"],
         aux_context_window=config["generator_params"]["aux_context_window"],
     )
+    train_sampler = DistributedSampler(dataset['train'], args.world_size, args.rank, shuffle=True)\
+        if args.distributed else None
+    dev_sampler = DistributedSampler(dataset['dev'], args.world_size, args.rank, shuffle=False)\
+        if args.distributed else None
     data_loader = {
         "train": DataLoader(
             dataset=dataset["train"],
-            shuffle=True,
+            shuffle=False if args.distributed else True,
             collate_fn=collater,
             batch_size=config["batch_size"],
             num_workers=config["num_workers"],
+            sampler=train_sampler,
             pin_memory=config["pin_memory"]),
         "dev": DataLoader(
             dataset=dataset["dev"],
-            shuffle=True,
+            shuffle=False if args.distributed else True,
             collate_fn=collater,
             batch_size=config["batch_size"],
             num_workers=config["num_workers"],
+            sampler=dev_sampler,
             pin_memory=config["pin_memory"]),
     }
 
@@ -552,6 +592,11 @@ def main():
         "discriminator": ParallelWaveGANDiscriminator(
             **config["discriminator_params"]).to(device),
     }
+    # DISTRIBUTED
+    if args.distributed:
+        model['generator'] = DistributedDataParallel(model['generator'])
+        model['discriminator'] = DistributedDataParallel(model['discriminator'])
+    # END DISTRIBUTED
     criterion = {
         "stft": MultiResolutionSTFTLoss(
             **config["stft_loss_params"]).to(device),
