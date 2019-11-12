@@ -34,8 +34,8 @@ You can select the installation method from two alternatives.
 $ git clone https://github.com/kan-bayashi/ParallelWaveGAN.git
 $ cd ParallelWaveGAN
 $ pip install -e .
-
-# if you want to use distributed training, please install apex manually by following https://github.com/NVIDIA/apex
+# If you want to use distributed training, please install
+# apex manually by following https://github.com/NVIDIA/apex
 $ ...
 ```
 Note that your cuda version must be exactly matched with the version used for pytorch binary to install apex.  
@@ -47,8 +47,8 @@ To install pytorch compiled with different cuda version, see `tools/Makefile`.
 $ git clone https://github.com/kan-bayashi/ParallelWaveGAN.git
 $ cd ParallelWaveGAN/tools
 $ make
-
-# if you want to use distributed training, additionally run following command to install apex.
+# If you want to use distributed training, please run following
+# command to install apex.
 $ make apex
 ```
 
@@ -98,7 +98,7 @@ $ tensorboard --logdir exp
 ![](https://user-images.githubusercontent.com/22779813/68100080-58bbc500-ff09-11e9-9945-c835186fd7c2.png)
 
 If you want to accelerate the training, you can try distributed multi-gpu training based on apex.  
-You need to install apex for distributed training. please make sure you already installed it.  
+You need to install apex for distributed training. Please make sure you already installed it.  
 Then you can run distributed multi-gpu training via following command:
 
 ```bash
