@@ -21,7 +21,7 @@ This repository is tested on Ubuntu 16.04 with a GPU Titan V.
 - CuDNN 7+
 - NCCL 2+ (for distributed multi-gpu training)
 
-All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, and 1.3.
+All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3 and 1.3.1.
 
 ## Setup
 
