@@ -21,7 +21,8 @@ This repository is tested on Ubuntu 16.04 with a GPU Titan V.
 - CuDNN 7+
 - NCCL 2+ (for distributed multi-gpu training)
 
-All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, and 1.3.
+Different cuda version should be working but not explicitly tested.  
+All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3 and 1.3.1.
 
 ## Setup
 
@@ -33,7 +34,12 @@ You can select the installation method from two alternatives.
 $ git clone https://github.com/kan-bayashi/ParallelWaveGAN.git
 $ cd ParallelWaveGAN
 $ pip install -e .
+# If you want to use distributed training, please install
+# apex manually by following https://github.com/NVIDIA/apex
+$ ...
 ```
+Note that your cuda version must be exactly matched with the version used for pytorch binary to install apex.  
+To install pytorch compiled with different cuda version, see `tools/Makefile`.
 
 ### B. Make virtualenv
 
@@ -41,7 +47,9 @@ $ pip install -e .
 $ git clone https://github.com/kan-bayashi/ParallelWaveGAN.git
 $ cd ParallelWaveGAN/tools
 $ make
-$ source venv/bin/activate
+# If you want to use distributed training, please run following
+# command to install apex.
+$ make apex
 ```
 
 ## Run
@@ -90,8 +98,8 @@ $ tensorboard --logdir exp
 ![](https://user-images.githubusercontent.com/22779813/68100080-58bbc500-ff09-11e9-9945-c835186fd7c2.png)
 
 If you want to accelerate the training, you can try distributed multi-gpu training based on apex.  
-First, you need to install apex. please follow the instruction (https://github.com/NVIDIA/apex).  
-After the installation, you can try distributed multi-gpu training via following command:
+You need to install apex for distributed training. Please make sure you already installed it.  
+Then you can run distributed multi-gpu training via following command:
 
 ```bash
 # in the case of the number of gpus = 8
