@@ -96,9 +96,6 @@ def main():
     # setup
     if torch.cuda.is_available():
         device = torch.device("cuda")
-        # effective when using fixed size inputs
-        # see https://discuss.pytorch.org/t/what-does-torch-backends-cudnn-benchmark-do/5936
-        torch.backends.cudnn.benchmark = True
     else:
         device = torch.device("cpu")
     model = ParallelWaveGANGenerator(**config["generator_params"])
