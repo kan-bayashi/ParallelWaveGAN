@@ -476,6 +476,9 @@ def main():
         device = torch.device("cpu")
     else:
         device = torch.device("cuda")
+        # effective when using fixed size inputs
+        # see https://discuss.pytorch.org/t/what-does-torch-backends-cudnn-benchmark-do/5936
+        torch.backends.cudnn.benchmark = True
         torch.cuda.set_device(args.rank)
         # setup for distributed training
         # see example: https://github.com/NVIDIA/apex/tree/master/examples/simple/distributed
