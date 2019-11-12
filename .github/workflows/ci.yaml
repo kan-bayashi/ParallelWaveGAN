@@ -21,7 +21,7 @@ jobs:
           # install python modules
           python -m pip install --upgrade pip
           pip install -q -U numpy
-          pip install -q torch==${{ matrix.pytorch-version }} -f https://download.pytorch.org/whl/cpu/stable
+          pip install -q torch==${{ matrix.pytorch-version }} -f https://download.pytorch.org/whl/cpu/stable.html
           pip install -q -e .
           pip install -q -e .[test]
           # install shell check
