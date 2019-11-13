@@ -33,9 +33,9 @@ checkpoint=""
 # shellcheck disable=SC1091
 . parse_options.sh || exit 1;
 
-train_set="train_nodev"
-dev_set="dev"
-eval_set="eval"
+train_set="train_nodev_${spk}"
+dev_set="dev_${spk}"
+eval_set="eval_${spk}"
 
 set -euo pipefail
 
@@ -108,13 +108,14 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp/${train_set}_arctic_${spk}_$(basename "${conf}" .yaml)"
+    expdir="exp/${train_set}_arctic_$(basename "${conf}" .yaml)"
 else
-    expdir="exp/${train_set}_arctic_${spk}_${tag}"
+    expdir="exp/${train_set}_arctic_${tag}"
 fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
     [ ! -e "${expdir}" ] && mkdir -p "${expdir}"
+    cp "${dumpdir}/${train_set}/stats.h5" "${expdir}"
     if [ "${n_gpus}" -gt 1 ]; then
         train="python -m parallel_wavegan.distributed.launch --nproc_per_node ${n_gpus} -c parallel-wavegan-train"
     else
