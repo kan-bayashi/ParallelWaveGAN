@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""Setup Parallel WaveGAN libarary."""
+
 import os
 import pip
 import sys
