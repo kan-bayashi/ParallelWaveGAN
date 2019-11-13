@@ -52,6 +52,9 @@ $ make
 $ make apex
 ```
 
+Note that we specify cuda version used to compile pytorch wheel.  
+If you want to use different cuda version, please check `tools/Makefile` to change the pytorch wheel to be installed.
+
 ## Run
 
 This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).  
@@ -159,8 +162,8 @@ $ ls sample/
 
 # Then perform feature extraction -> feature normalization -> sysnthesis
 $ parallel-wavegan-preprocess \
-	--rootdir sample \
 	--config pretrain_model/config.yml \
+	--rootdir sample \
 	--dumpdir dump/sample/raw
 $ parallel-wavegan-normalize \
 	--config pretrain_model/config.yml \
@@ -188,7 +191,7 @@ $ ls sample
   sample.wav    sample_gen.wav
 ```
 
-If you want to combine with E2E-TTS, i.e., Text2Mel models, please check [ESPnet-TTS](https://github.com/espnet/espnet#tts-demo).
+If you want to combine with E2E-TTS, i.e., Text2Mel models, please check [ESPnet / TTS demo](https://github.com/espnet/espnet#tts-demo).
 
 ## References
 
