@@ -115,6 +115,7 @@ fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
     [ ! -e "${expdir}" ] && mkdir -p "${expdir}"
+    cp "${dumpdir}/${train_set}/stats.h5" "${expdir}"
     if [ "${n_gpus}" -gt 1 ]; then
         train="python -m parallel_wavegan.distributed.launch --nproc_per_node ${n_gpus} -c parallel-wavegan-train"
     else
