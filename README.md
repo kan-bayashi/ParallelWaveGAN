@@ -124,9 +124,71 @@ Even on the CPU (Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz 16 threads), it can ge
 ```
 
 ## Results
-You can listen to the samples and download pretrained models at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).  
 
-The training is still on going. Please check the latest progress at https://github.com/kan-bayashi/ParallelWaveGAN/issues/1.
+Here the results are summarized in the table.  
+You can listen to the samples and download pretrained models from the link to our google drive.
+
+| Model link                                                                                                              | Lang  | Fs [Hz] | Mel range [Hz] | FFT / Shift / Win [pt] |
+| :------                                                                                                                 | :---: | :----:  | :--------:     | :---------------:      |
+| [train_nodev_ljspeech_parallel_wavegan.v1](https://drive.google.com/open?id=1wdHr1a51TLeo4iKrGErVKHVFyq6D17TU)          | EN    | 22.05k  | 80-7600        | 1024 / 256 / None      |
+| [train_nodev_ljspeech_parallel_wavegan.v1.no_limit](https://drive.google.com/open?id=1NoD3TCmKIDHHtf74YsScX8s59aZFOFJA) | EN    | 22.05k  | None           | 1024 / 256 / None      |
+| [train_nodev_jsut_parallel_wavegan.v1](https://drive.google.com/open?id=1UDRL0JAovZ8XZhoH0wi9jj_zeCKb-AIA)              | JP    | 24k     | 80-7600        | 2048 / 300 / 1200      |
+| [train_nodev_csmsc_parallel_wavegan.v1](https://drive.google.com/open?id=1C2nu9nOFdKcEd-D9xGquQ0bCia0B2v_4)             | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200      |
+| [train_nodev_arctic_slt_parallel_wavegan.v1](https://drive.google.com/open?id=1xG9CmSED2TzFdklD6fVxzf7kFV2kPQAJ)        | EN    | 16k     | 80-7600        | 1024 / 256 / None      |
+
+If you want to check more results, please access at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).
+
+If you want to know the latest progress, please check https://github.com/kan-bayashi/ParallelWaveGAN/issues/1.
+
+## How-to-use pretrained models
+
+Here the minimal code is shown to perform analysis-synthesis using the pretrained model.
+
+```bash
+# Please make sure you installed `parallel_wavegan`
+# If not, please install via pip
+$ pip install parallel_wavegan
+
+# Please download pretrained models and put them in `pretrain_model` directory
+$ ls pretrain_model
+  checkpoint-400000steps.pkl    config.yml    stats.h5
+
+# Please put an audio file in `sample` directory to perform analysis-synthesis
+$ ls sample/
+  sample.wav
+
+# Then perform feature extraction -> feature normalization -> sysnthesis
+$ parallel-wavegan-preprocess \
+	--rootdir sample \
+	--config pretrain_model/config.yml \
+	--dumpdir dump/sample/raw
+$ parallel-wavegan-normalize \
+	--config pretrain_model/config.yml \
+	--rootdir dump/sample/raw \
+	--dumpdir dump/sample/norm \
+	--stats pretrain_model/stats.h5
+$ parallel-wavegan-decode \
+	--checkpoint pretrain_model/checkpoint-400000steps.pkl \
+	--dumpdir dump/sample/norm \
+	--outdir sample
+100%|████████████████████████████████████████| 1/1 [00:00<00:00, 914.19it/s]
+[Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
+[Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    1.2s finished
+2019-11-13 13:44:29,574 (normalize:87) INFO: the number of files = 1.
+100%|████████████████████████████████████████| 1/1 [00:00<00:00, 513.13it/s]
+[Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
+[Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    0.6s finished
+2019-11-13 13:44:31,229 (decode:91) INFO: the number of features to be decoded = 1.
+2019-11-13 13:44:37,074 (decode:105) INFO: loaded model parameters from pretrain_model/checkpoint-400000steps.pkl.
+[decode]: 100%|███████████████████| 1/1 [00:00<00:00, 18.33it/s, RTF=0.0146]
+2019-11-13 13:44:37,132 (decode:129) INFO: finished generation of 1 utterances (RTF = 0.015).
+
+# you can find the generated speech in `sample` directory
+$ ls sample
+  sample.wav    sample_gen.wav
+```
+
+If you want to combine with E2E-TTS, i.e., Text2Mel models, please check [ESPnet-TTS](https://github.com/espnet/espnet#tts-demo).
 
 ## References
 
