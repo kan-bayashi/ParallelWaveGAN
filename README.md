@@ -1,6 +1,6 @@
 # Parallel WaveGAN implementation with Pytorch
 
-![](https://github.com/kan-bayashi/ParallelWaveGAN/workflows/CI/badge.svg) [![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/pypi/pyversions/parallel-wavegan) ![](https://img.shields.io/pypi/l/parallel-wavegan)
+![](https://github.com/kan-bayashi/ParallelWaveGAN/workflows/CI/badge.svg) [![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/pypi/pyversions/parallel-wavegan) ![](https://img.shields.io/pypi/l/parallel-wavegan) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
 This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480) implementation with Pytorch.
 
@@ -8,9 +8,13 @@ You can check our samples in [our demo HP](https://kan-bayashi.github.io/Paralle
 
 ![](https://user-images.githubusercontent.com/22779813/68081503-4b8fcf00-fe52-11e9-8791-e02851220355.png)
 
+> Source of the figure: https://arxiv.org/pdf/1910.11480.pdf
+
 The goal of this repository is to provide the real-time neural vocoder which is compatible with [ESPnet-TTS](https://github.com/espnet/espnet).  
 
-> Source of the figure: https://arxiv.org/pdf/1910.11480.pdf
+You can try the realtime end-to-end text-to-speech demonstraion in Google Colab!
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
 ## Requirements
 
@@ -165,22 +169,22 @@ $ parallel-wavegan-preprocess \
 	--config pretrain_model/config.yml \
 	--rootdir sample \
 	--dumpdir dump/sample/raw
+100%|████████████████████████████████████████| 1/1 [00:00<00:00, 914.19it/s]
+[Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
+[Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    1.2s finished
 $ parallel-wavegan-normalize \
 	--config pretrain_model/config.yml \
 	--rootdir dump/sample/raw \
 	--dumpdir dump/sample/norm \
 	--stats pretrain_model/stats.h5
-$ parallel-wavegan-decode \
-	--checkpoint pretrain_model/checkpoint-400000steps.pkl \
-	--dumpdir dump/sample/norm \
-	--outdir sample
-100%|████████████████████████████████████████| 1/1 [00:00<00:00, 914.19it/s]
-[Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
-[Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    1.2s finished
 2019-11-13 13:44:29,574 (normalize:87) INFO: the number of files = 1.
 100%|████████████████████████████████████████| 1/1 [00:00<00:00, 513.13it/s]
 [Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
 [Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    0.6s finished
+$ parallel-wavegan-decode \
+	--checkpoint pretrain_model/checkpoint-400000steps.pkl \
+	--dumpdir dump/sample/norm \
+	--outdir sample
 2019-11-13 13:44:31,229 (decode:91) INFO: the number of features to be decoded = 1.
 2019-11-13 13:44:37,074 (decode:105) INFO: loaded model parameters from pretrain_model/checkpoint-400000steps.pkl.
 [decode]: 100%|███████████████████| 1/1 [00:00<00:00, 18.33it/s, RTF=0.0146]
@@ -191,7 +195,9 @@ $ ls sample
   sample.wav    sample_gen.wav
 ```
 
-If you want to combine with E2E-TTS, i.e., Text2Mel models, please check [ESPnet / TTS demo](https://github.com/espnet/espnet#tts-demo).
+If you want to combine with TTS models, you can try the realtime demonstraion in Google Colab!
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
 ## References
 
