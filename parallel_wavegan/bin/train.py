@@ -26,6 +26,7 @@ from tqdm import tqdm
 import parallel_wavegan
 
 from parallel_wavegan.datasets import AudioMelDataset
+from parallel_wavegan.layers import mu_law_encode
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.models import ParallelWaveGANDiscriminator
 from parallel_wavegan.models import ParallelWaveGANGenerator
@@ -153,7 +154,7 @@ class Trainer(object):
         """Train model one step."""
         # parse batch
         batch = [b.to(self.device) for b in batch]
-        z, c, y, _ = batch
+        z, c, y = batch
 
         # calculate loss for generator
         y_ = self.model["generator"](z, c)
@@ -231,7 +232,7 @@ class Trainer(object):
         """Evaluate model one step."""
         # parse batch
         batch = [b.to(self.device) for b in batch]
-        z, c, y, _ = batch
+        z, c, y = batch
 
         # calculate generator loss
         y_ = self.model["generator"](z, c)
@@ -301,7 +302,7 @@ class Trainer(object):
         # generate
         with torch.no_grad():
             batch = [b.to(self.device) for b in batch]
-            z_batch, c_batch, y_batch, _ = batch
+            z_batch, c_batch, y_batch = batch
             y_batch_ = self.model["generator"](z_batch, c_batch)
 
         # check directory
@@ -372,7 +373,8 @@ class Collater(object):
     def __init__(self,
                  batch_max_steps=20480,
                  hop_size=256,
-                 aux_context_window=2
+                 aux_context_window=2,
+                 apply_mulaw=False,
                  ):
         """Initialize customized collater for PyTorch DataLoader.
 
@@ -380,6 +382,7 @@ class Collater(object):
             batch_max_steps (int): The maximum length of input signal in batch.
             hop_size (int): Hop size of auxiliary features.
             aux_context_window (int): Context window size for auxiliary feature conv.
+            apply_mulaw (bool): Whether to apply mulaw quantization for target speech.
 
         """
         if batch_max_steps % hop_size != 0:
@@ -389,6 +392,7 @@ class Collater(object):
         self.batch_max_frames = batch_max_steps // hop_size
         self.hop_size = hop_size
         self.aux_context_window = aux_context_window
+        self.apply_mulaw = apply_mulaw
 
     def __call__(self, batch):
         """Convert into batch tensors.
@@ -400,11 +404,10 @@ class Collater(object):
             Tensor: Gaussian noise batch (B, 1, T).
             Tensor: Auxiliary feature batch (B, C, T'), where T = (T' - 2 * aux_context_window) * hop_size
             Tensor: Target signal batch (B, 1, T).
-            LongTensor: Input length batch (B,)
 
         """
-        # Time resolution adjustment
-        new_batch = []
+        # Time resolution check
+        y_batch, c_batch = [], []
         for idx in range(len(batch)):
             x, c = batch[idx]
             self._assert_ready_for_upsampling(x, c, self.hop_size, 0)
@@ -413,44 +416,30 @@ class Collater(object):
                 interval_end = len(c) - self.batch_max_frames - self.aux_context_window
                 start_frame = np.random.randint(interval_start, interval_end)
                 start_step = start_frame * self.hop_size
-                x = x[start_step: start_step + self.batch_max_steps]
+                y = x[start_step: start_step + self.batch_max_steps]
                 c = c[start_frame - self.aux_context_window:
                       start_frame + self.aux_context_window + self.batch_max_frames]
-                self._assert_ready_for_upsampling(x, c, self.hop_size, self.aux_context_window)
+                self._assert_ready_for_upsampling(y, c, self.hop_size, self.aux_context_window)
             else:
                 logging.warn(f"removed short sample from batch (length={len(x)}).")
                 continue
-            new_batch.append((x, c))
-        batch = new_batch
+            y_batch += [y.astype(np.float32).reshape(-1, 1)]
+            c_batch += [c.astype(np.float32)]
 
-        # Make padded target signal batch
-        xlens = [len(b[0]) for b in batch]
-        max_olen = max(xlens)
-        y_batch = np.array([self._pad_2darray(b[0].reshape(-1, 1), max_olen) for b in batch], dtype=np.float32)
-        y_batch = torch.FloatTensor(y_batch).transpose(2, 1)
+        # Convert each batch to tensor, asuume that each item in batch has the same length
+        y_batch = torch.FloatTensor(np.array(y_batch)).transpose(2, 1)  # (B, 1, T)
+        if self.apply_mulaw:
+            y_batch = mu_law_encode(y_batch)  # default is 16 bit conversion
+        c_batch = torch.FloatTensor(np.array(c_batch)).transpose(2, 1)  # (B, C, T')
 
-        # Make padded conditional auxiliary feature batch
-        clens = [len(b[1]) for b in batch]
-        max_clen = max(clens)
-        c_batch = np.array([self._pad_2darray(b[1], max_clen) for b in batch], dtype=np.float32)
-        c_batch = torch.FloatTensor(c_batch).transpose(2, 1)
-
-        # Make input noise signal batch
+        # Make input noise signal batch tensor
         z_batch = torch.randn(y_batch.size())
 
-        # Make the list of the length of input signals
-        input_lengths = torch.LongTensor(xlens)
-
-        return z_batch, c_batch, y_batch, input_lengths
+        return z_batch, c_batch, y_batch
 
     @staticmethod
     def _assert_ready_for_upsampling(x, c, hop_size, context_window):
         assert len(x) == (len(c) - 2 * context_window) * hop_size
-
-    @staticmethod
-    def _pad_2darray(x, max_len, b_pad=0, constant_values=0):
-        return np.pad(x, [(b_pad, max_len - len(x) - b_pad), (0, 0)],
-                      mode="constant", constant_values=constant_values)
 
 
 def main():
@@ -563,6 +552,7 @@ def main():
         batch_max_steps=config["batch_max_steps"],
         hop_size=config["hop_size"],
         aux_context_window=config["generator_params"]["aux_context_window"],
+        apply_mulaw=config.get("apply_mulaw", False)  # keep compatibilty
     )
     train_sampler, dev_sampler = None, None
     if args.distributed:
