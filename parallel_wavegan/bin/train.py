@@ -432,7 +432,8 @@ class Collater(object):
 
         # Apply 16-bit mulaw conversion
         if self.apply_mulaw:
-            y_batch = mu_law_encode(y_batch)
+            with torch.no_grad():
+                y_batch = mu_law_encode(y_batch)
 
         # Make input noise signal batch tensor
         z_batch = torch.randn(y_batch.size())
