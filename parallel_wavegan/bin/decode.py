@@ -20,6 +20,7 @@ import yaml
 from tqdm import tqdm
 
 from parallel_wavegan.datasets import MelDataset
+from parallel_wavegan.layers import mu_law_decode
 from parallel_wavegan.models import ParallelWaveGANGenerator
 from parallel_wavegan.utils import read_hdf5
 
@@ -115,7 +116,9 @@ def main():
             c = np.pad(c, (pad_size, (0, 0)), "edge")
             c = torch.FloatTensor(c).unsqueeze(0).transpose(2, 1).to(device)
             start = time.time()
-            y = model(z, c).view(-1).cpu().numpy()
+            y = model(z, c).view(-1)
+            if config.get("apply_mulaw", False):
+                y = mu_law_decode(y)
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf
@@ -123,7 +126,7 @@ def main():
             # save as PCM 16 bit wav file
             utt_id = os.path.splitext(os.path.basename(feat_path))[0]
             sf.write(os.path.join(config["outdir"], f"{utt_id}_gen.wav"),
-                     y, config["sampling_rate"], "PCM_16")
+                     y.cpu().numpy(), config["sampling_rate"], "PCM_16")
 
     # report average RTF
     logging.info(f"finished generation of {idx} utterances (RTF = {total_rtf / idx:.03f}).")
