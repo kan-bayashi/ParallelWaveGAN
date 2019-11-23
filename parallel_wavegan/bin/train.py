@@ -539,7 +539,7 @@ def main():
             audio_load_fn=audio_load_fn,
             mel_load_fn=mel_load_fn,
             mel_length_threshold=mel_length_threshold,
-            allow_cache=config.get("allow_cache", False)),  # keep compatibilty
+            allow_cache=config.get("allow_cache", False)),  # keep compatibility
         "dev": AudioMelDataset(
             root_dir=args.dev_dumpdir,
             audio_query=audio_query,
@@ -547,7 +547,7 @@ def main():
             audio_load_fn=audio_load_fn,
             mel_load_fn=mel_load_fn,
             mel_length_threshold=mel_length_threshold,
-            allow_cache=config.get("allow_cache", False)),  # keep compatibilty
+            allow_cache=config.get("allow_cache", False)),  # keep compatibility
     }
 
     # get data loader
@@ -555,7 +555,7 @@ def main():
         batch_max_steps=config["batch_max_steps"],
         hop_size=config["hop_size"],
         aux_context_window=config["generator_params"]["aux_context_window"],
-        apply_mulaw=config.get("apply_mulaw", False)  # keep compatibilty
+        apply_mulaw=config.get("apply_mulaw", False)  # keep compatibility
     )
     train_sampler, dev_sampler = None, None
     if args.distributed:
