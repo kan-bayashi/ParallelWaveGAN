@@ -428,9 +428,11 @@ class Collater(object):
 
         # Convert each batch to tensor, asuume that each item in batch has the same length
         y_batch = torch.FloatTensor(np.array(y_batch)).transpose(2, 1)  # (B, 1, T)
-        if self.apply_mulaw:
-            y_batch = mu_law_encode(y_batch)  # default is 16 bit conversion
         c_batch = torch.FloatTensor(np.array(c_batch)).transpose(2, 1)  # (B, C, T')
+
+        # Apply 16-bit mulaw conversion
+        if self.apply_mulaw:
+            y_batch = mu_law_encode(y_batch)
 
         # Make input noise signal batch tensor
         z_batch = torch.randn(y_batch.size())
