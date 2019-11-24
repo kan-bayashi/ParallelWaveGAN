@@ -164,7 +164,7 @@ class Trainer(object):
         if self.steps > self.config["discriminator_train_start_steps"]:
             if self.config["apply_mulaw_for_discriminator"]:
                 y = mu_law_encode(y)
-                y_ = mu_law_encode(y)
+                y_ = mu_law_encode(y_)
             p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
             gen_loss += self.config["lambda_adv"] * adv_loss
