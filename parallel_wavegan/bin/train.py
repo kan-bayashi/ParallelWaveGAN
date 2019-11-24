@@ -162,6 +162,9 @@ class Trainer(object):
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
         gen_loss = sc_loss + mag_loss
         if self.steps > self.config["discriminator_train_start_steps"]:
+            if self.config["apply_mulaw_for_discriminator"]:
+                y = mu_law_encode(y)
+                y_ = mu_law_encode(y)
             p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
             gen_loss += self.config["lambda_adv"] * adv_loss
@@ -236,14 +239,17 @@ class Trainer(object):
 
         # calculate generator loss
         y_ = self.model["generator"](z, c)
-        p_ = self.model["discriminator"](y_)
-        y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
-        adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
+        y, y_ = y.squeeze(1), y_.squeeze(1)
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
+        if self.config["apply_mulaw_for_discriminator"]:
+            y = mu_law_encode(y)
+            y_ = mu_law_encode(y_)
+        p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
+        adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
         aux_loss = sc_loss + mag_loss
         gen_loss = aux_loss + self.config["lambda_adv"] * adv_loss
 
-        # train discriminator
+        # calculate discriminator loss
         p = self.model["discriminator"](y.unsqueeze(1)).squeeze(1)
         p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
         real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
