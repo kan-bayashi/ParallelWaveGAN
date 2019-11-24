@@ -433,7 +433,7 @@ class Collater(object):
         return z_batch, c_batch, y_batch
 
     @staticmethod
-    def _assert_ready_for_upsamping(x, c, hop_size, context_window):
+    def _assert_ready_for_upsampling(x, c, hop_size, context_window):
         """Assert the audio length and feature length are correctly adjusted for upsamping."""
         assert len(x) == (len(c) - 2 * context_window) * hop_size
 
