@@ -406,12 +406,13 @@ class Collater(object):
             Tensor: Target signal batch (B, 1, T).
 
         """
-        # Time resolution check
+        # time resolution check
         y_batch, c_batch = [], []
         for idx in range(len(batch)):
             x, c = batch[idx]
             self._assert_ready_for_upsampling(x, c, self.hop_size, 0)
             if len(c) - 2 * self.aux_context_window > self.batch_max_frames:
+                # randomly pickup with the batch_max_steps length of the part
                 interval_start = self.aux_context_window
                 interval_end = len(c) - self.batch_max_frames - self.aux_context_window
                 start_frame = np.random.randint(interval_start, interval_end)
@@ -426,22 +427,23 @@ class Collater(object):
             y_batch += [y.astype(np.float32).reshape(-1, 1)]
             c_batch += [c.astype(np.float32)]
 
-        # Convert each batch to tensor, asuume that each item in batch has the same length
+        # convert each batch to tensor, asuume that each item in batch has the same length
         y_batch = torch.FloatTensor(np.array(y_batch)).transpose(2, 1)  # (B, 1, T)
         c_batch = torch.FloatTensor(np.array(c_batch)).transpose(2, 1)  # (B, C, T')
 
-        # Apply 16-bit mulaw conversion
+        # apply 16-bit mulaw conversion
         if self.apply_mulaw:
             with torch.no_grad():
                 y_batch = mu_law_encode(y_batch)
 
-        # Make input noise signal batch tensor
+        # make input noise signal batch tensor
         z_batch = torch.randn(y_batch.size())
 
         return z_batch, c_batch, y_batch
 
     @staticmethod
     def _assert_ready_for_upsampling(x, c, hop_size, context_window):
+        """Assert the audio length and feature length are correctly adjusted for upsamping."""
         assert len(x) == (len(c) - 2 * context_window) * hop_size
 
 
