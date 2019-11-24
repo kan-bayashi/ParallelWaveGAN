@@ -424,8 +424,8 @@ class Collater(object):
             else:
                 logging.warn(f"removed short sample from batch (length={len(x)}).")
                 continue
-            y_batch += [y.astype(np.float32).reshape(-1, 1)]
-            c_batch += [c.astype(np.float32)]
+            y_batch += [y.astype(np.float32).reshape(-1, 1)]  # [(T, 1), (T, 1), ...]
+            c_batch += [c.astype(np.float32)]  # [(T' C), (T' C), ...]
 
         # convert each batch to tensor, asuume that each item in batch has the same length
         y_batch = torch.FloatTensor(np.array(y_batch)).transpose(2, 1)  # (B, 1, T)
@@ -437,7 +437,7 @@ class Collater(object):
                 y_batch = mu_law_encode(y_batch)
 
         # make input noise signal batch tensor
-        z_batch = torch.randn(y_batch.size())
+        z_batch = torch.randn(y_batch.size())  # (B, 1, T)
 
         return z_batch, c_batch, y_batch
 
