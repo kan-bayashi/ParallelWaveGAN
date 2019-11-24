@@ -156,7 +156,7 @@ class Trainer(object):
         batch = [b.to(self.device) for b in batch]
         z, c, y = batch
 
-        # calculate loss for generator
+        # calculate generator loss
         y_ = self.model["generator"](z, c)
         y, y_ = y.squeeze(1), y_.squeeze(1)
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
