@@ -380,7 +380,6 @@ class Collater(object):
                  batch_max_steps=20480,
                  hop_size=256,
                  aux_context_window=2,
-                 apply_mulaw=False,
                  ):
         """Initialize customized collater for PyTorch DataLoader.
 
@@ -388,7 +387,6 @@ class Collater(object):
             batch_max_steps (int): The maximum length of input signal in batch.
             hop_size (int): Hop size of auxiliary features.
             aux_context_window (int): Context window size for auxiliary feature conv.
-            apply_mulaw (bool): Whether to apply mulaw quantization for target speech.
 
         """
         if batch_max_steps % hop_size != 0:
@@ -398,7 +396,6 @@ class Collater(object):
         self.batch_max_frames = batch_max_steps // hop_size
         self.hop_size = hop_size
         self.aux_context_window = aux_context_window
-        self.apply_mulaw = apply_mulaw
 
     def __call__(self, batch):
         """Convert into batch tensors.
@@ -436,11 +433,6 @@ class Collater(object):
         # convert each batch to tensor, asuume that each item in batch has the same length
         y_batch = torch.FloatTensor(np.array(y_batch)).transpose(2, 1)  # (B, 1, T)
         c_batch = torch.FloatTensor(np.array(c_batch)).transpose(2, 1)  # (B, C, T')
-
-        # apply 16-bit mulaw conversion
-        if self.apply_mulaw:
-            with torch.no_grad():
-                y_batch = mu_law_encode(y_batch)
 
         # make input noise signal batch tensor
         z_batch = torch.randn(y_batch.size())  # (B, 1, T)
@@ -563,7 +555,6 @@ def main():
         batch_max_steps=config["batch_max_steps"],
         hop_size=config["hop_size"],
         aux_context_window=config["generator_params"]["aux_context_window"],
-        apply_mulaw=config.get("apply_mulaw", False)  # keep compatibility
     )
     train_sampler, dev_sampler = None, None
     if args.distributed:
