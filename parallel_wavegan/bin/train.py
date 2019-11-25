@@ -155,7 +155,7 @@ class Trainer(object):
         batch = [b.to(self.device) for b in batch]
         z, c, y = batch
 
-        # calculate loss for generator
+        # calculate generator loss
         y_ = self.model["generator"](z, c)
         y, y_ = y.squeeze(1), y_.squeeze(1)
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
@@ -242,7 +242,7 @@ class Trainer(object):
         aux_loss = sc_loss + mag_loss
         gen_loss = aux_loss + self.config["lambda_adv"] * adv_loss
 
-        # train discriminator
+        # calculate discriminator loss
         p = self.model["discriminator"](y.unsqueeze(1)).squeeze(1)
         p_ = self.model["discriminator"](y_.unsqueeze(1)).squeeze(1)
         real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
@@ -434,7 +434,7 @@ class Collater(object):
 
     @staticmethod
     def _assert_ready_for_upsampling(x, c, hop_size, context_window):
-        """Assert the audio length and feature length are correctly adjusted for upsamping."""
+        """Assert the audio and feature lengths are correctly adjusted for upsamping."""
         assert len(x) == (len(c) - 2 * context_window) * hop_size
 
 
