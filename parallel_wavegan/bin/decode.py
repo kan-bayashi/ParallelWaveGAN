@@ -117,6 +117,8 @@ def main():
             c = torch.FloatTensor(c).unsqueeze(0).transpose(2, 1).to(device)
             start = time.time()
             y = model(z, c).view(-1)
+            if config.get("apply_mulaw", False):
+                y = mu_law_decode(y)
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf
