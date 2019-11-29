@@ -130,7 +130,8 @@ fi
 
 if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
     echo "Stage 3: Network decoding"
-    [ -z "${checkpoint}" ] && checkpoint="$(find "${expdir}" -name "*.pkl" -print0 | xargs -0 ls -t | head -n 1)"
+    # shellcheck disable=SC2012
+    [ -z "${checkpoint}" ] && checkpoint="$(ls -dt "${expdir}"/*.pkl | head -1 || true)"
     outdir="${expdir}/wav/$(basename "${checkpoint}" .pkl)"
     pids=()
     for name in "${dev_set}" "${eval_set}"; do
