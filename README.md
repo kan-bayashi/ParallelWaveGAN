@@ -138,6 +138,7 @@ You can listen to the samples and download pretrained models from the link to ou
 | Model link                                                                                                              | Lang  | Fs [Hz] | Mel range [Hz] | FFT / Shift / Win [pt] |
 | :------                                                                                                                 | :---: | :----:  | :--------:     | :---------------:      |
 | [train_nodev_ljspeech_parallel_wavegan.v1](https://drive.google.com/open?id=1wdHr1a51TLeo4iKrGErVKHVFyq6D17TU)          | EN    | 22.05k  | 80-7600        | 1024 / 256 / None      |
+| [train_nodev_ljspeech_parallel_wavegan.v1.long](https://drive.google.com/open?id=1XRn3s_wzPF2fdfGshLwuvNHrbgD0hqVS)     | EN    | 22.05k  | 80-7600        | 1024 / 256 / None      |
 | [train_nodev_ljspeech_parallel_wavegan.v1.no_limit](https://drive.google.com/open?id=1NoD3TCmKIDHHtf74YsScX8s59aZFOFJA) | EN    | 22.05k  | None           | 1024 / 256 / None      |
 | [train_nodev_jsut_parallel_wavegan.v1](https://drive.google.com/open?id=1UDRL0JAovZ8XZhoH0wi9jj_zeCKb-AIA)              | JP    | 24k     | 80-7600        | 2048 / 300 / 1200      |
 | [train_nodev_csmsc_parallel_wavegan.v1](https://drive.google.com/open?id=1C2nu9nOFdKcEd-D9xGquQ0bCia0B2v_4)             | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200      |
