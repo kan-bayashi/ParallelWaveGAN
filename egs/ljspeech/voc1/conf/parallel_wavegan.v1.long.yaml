@@ -1,7 +1,8 @@
 # This is the hyperparameter configuration file for Parallel WaveGAN.
 # Please make sure this is adjusted for the LJSpeech dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
-# This configuration requires 12 GB GPU memory and takes ~3 days on TITAN V.
+# This configuration trains more steps up to 1000k compared to v1 config.
+# It requires 12 GB GPU memory and takes ~7 days on TITAN V.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -84,7 +85,6 @@ pin_memory: true           # Whether to pin memory in Pytorch DataLoader.
 num_workers: 2             # Number of workers in Pytorch DataLoader.
 remove_short_samples: true # Whether to remove samples the length of which are less than batch_max_steps.
 allow_cache: true          # Whether to allow cache in dataset. If true, it requires cpu memory.
-apply_mulaw: false         # Whether to apply mulaw quantization for target audio
 
 ###########################################################
 #             OPTIMIZER & SCHEDULER SETTING               #
