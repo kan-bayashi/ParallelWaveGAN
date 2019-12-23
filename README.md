@@ -135,14 +135,14 @@ Even on the CPU (Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz 16 threads), it can ge
 Here the results are summarized in the table.  
 You can listen to the samples and download pretrained models from the link to our google drive.
 
-| Model link                                                                                                              | Lang  | Fs [Hz] | Mel range [Hz] | FFT / Shift / Win [pt] |
-| :------                                                                                                                 | :---: | :----:  | :--------:     | :---------------:      |
-| [train_nodev_ljspeech_parallel_wavegan.v1](https://drive.google.com/open?id=1wdHr1a51TLeo4iKrGErVKHVFyq6D17TU)          | EN    | 22.05k  | 80-7600        | 1024 / 256 / None      |
-| [train_nodev_ljspeech_parallel_wavegan.v1.long](https://drive.google.com/open?id=1XRn3s_wzPF2fdfGshLwuvNHrbgD0hqVS)     | EN    | 22.05k  | 80-7600        | 1024 / 256 / None      |
-| [train_nodev_ljspeech_parallel_wavegan.v1.no_limit](https://drive.google.com/open?id=1NoD3TCmKIDHHtf74YsScX8s59aZFOFJA) | EN    | 22.05k  | None           | 1024 / 256 / None      |
-| [train_nodev_jsut_parallel_wavegan.v1](https://drive.google.com/open?id=1UDRL0JAovZ8XZhoH0wi9jj_zeCKb-AIA)              | JP    | 24k     | 80-7600        | 2048 / 300 / 1200      |
-| [train_nodev_csmsc_parallel_wavegan.v1](https://drive.google.com/open?id=1C2nu9nOFdKcEd-D9xGquQ0bCia0B2v_4)             | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200      |
-| [train_nodev_arctic_slt_parallel_wavegan.v1](https://drive.google.com/open?id=1xG9CmSED2TzFdklD6fVxzf7kFV2kPQAJ)        | EN    | 16k     | 80-7600        | 1024 / 256 / None      |
+| Model link                                                                                                  | Lang  | Fs [Hz] | Mel range [Hz] | FFT / Hop / Win [pt] | # iters |
+| :------                                                                                                     | :---: | :----:  | :--------:     | :---------------:    | :-----: |
+| [ljspeech_parallel_wavegan.v1](https://drive.google.com/open?id=1wdHr1a51TLeo4iKrGErVKHVFyq6D17TU)          | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 400k    |
+| [ljspeech_parallel_wavegan.v1.long](https://drive.google.com/open?id=1XRn3s_wzPF2fdfGshLwuvNHrbgD0hqVS)     | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 1000k   |
+| [ljspeech_parallel_wavegan.v1.no_limit](https://drive.google.com/open?id=1NoD3TCmKIDHHtf74YsScX8s59aZFOFJA) | EN    | 22.05k  | None           | 1024 / 256 / None    | 400k    |
+| [jsut_parallel_wavegan.v1](https://drive.google.com/open?id=1UDRL0JAovZ8XZhoH0wi9jj_zeCKb-AIA)              | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
+| [csmsc_parallel_wavegan.v1](https://drive.google.com/open?id=1C2nu9nOFdKcEd-D9xGquQ0bCia0B2v_4)             | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
+| [arctic_slt_parallel_wavegan.v1](https://drive.google.com/open?id=1xG9CmSED2TzFdklD6fVxzf7kFV2kPQAJ)        | EN    | 16k     | 80-7600        | 1024 / 256 / None    | 400k    |
 
 If you want to check more results, please access at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).
 
