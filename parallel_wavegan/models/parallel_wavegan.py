@@ -32,6 +32,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                  aux_context_window=2,
                  dropout=0.0,
                  use_weight_norm=True,
+                 use_causal_conv=False,
                  upsample_conditional_features=True,
                  upsample_net="ConvInUpsampleNetwork",
                  upsample_params={"upsample_scales": [4, 4, 4, 4]},
@@ -52,6 +53,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
             dropout (float): Dropout rate. 0.0 means no dropout applied.
             use_weight_norm (bool): Whether to use weight norm.
                 If set to true, it will be applied to all of the conv layers.
+            use_causal_conv (bool): Whether to use causal structure.
             upsample_conditional_features (bool): Whether to use upsampling network.
             upsample_net (str): Upsampling network architecture.
             upsample_params (dict): Upsampling network parameters.
@@ -77,6 +79,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
             upsample_params.update({
                 "aux_channels": aux_channels,
                 "aux_context_window": aux_context_window,
+                "use_causal_conv": use_causal_conv,
             })
             self.upsample_net = getattr(upsample, upsample_net)(**upsample_params)
         else:
@@ -95,7 +98,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                 dilation=dilation,
                 dropout=dropout,
                 bias=True,  # NOTE: magenda uses bias, but musyoku doesn't
-                causal=False,
+                use_causal_conv=use_causal_conv,
             )
             self.conv_layers += [conv]
 
