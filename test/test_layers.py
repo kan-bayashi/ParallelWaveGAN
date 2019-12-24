@@ -7,6 +7,7 @@
 import logging
 
 import numpy as np
+import pytest
 import torch
 
 from parallel_wavegan.layers import Conv1d
@@ -39,7 +40,13 @@ def test_conv_initialization():
     np.testing.assert_array_equal(conv2d.bias.data.numpy(),
                                   np.zeros_like(conv2d.bias.data.numpy()))
 
-def test_upsample():
+
+@pytest.mark.parametrize(
+    "use_causal_conv", [
+        (False),
+        (True),
+    ])
+def test_upsample(use_causal_conv):
     length = 10
     scales = [4, 4]
     x = torch.randn(1, 10, length)
@@ -50,6 +57,7 @@ def test_upsample():
     for aux_context_window in [0, 1, 2, 3]:
         conv_upsample = ConvInUpsampleNetwork(scales,
                                               aux_channels=x.size(1),
-                                              aux_context_window=aux_context_window)
+                                              aux_context_window=aux_context_window,
+                                              use_causal_conv=use_causal_conv)
         y = conv_upsample(x)
         assert (x.size(-1) - 2 * aux_context_window) * np.prod(scales) == y.size(-1)

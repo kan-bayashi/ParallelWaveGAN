@@ -34,6 +34,7 @@ def make_generator_args(**kwargs):
         aux_context_window=0,
         dropout=1 - 0.95,
         use_weight_norm=True,
+        use_causal_conv=False,
         upsample_conditional_features=True,
         upsample_net="ConvInUpsampleNetwork",
         upsample_params={"upsample_scales": [4, 4]},
@@ -80,9 +81,14 @@ def make_mutli_reso_stft_loss_args(**kwargs):
         ({"stacks": 1}, {}, {}),
         ({"use_weight_norm": False}, {"use_weight_norm": False}, {}),
         ({"aux_context_window": 2}, {}, {}),
+        ({"upsample_net": "UpsampleNetwork"}, {}, {}),
         ({"upsample_params": {"upsample_scales": [4], "freq_axis_kernel_size": 3}}, {}, {}),
         ({"upsample_conditional_features": False, "upsample_params": {"upsample_scales": [1]}}, {}, {}),
         ({}, {"nonlinear_activation": "ReLU", "nonlinear_activation_params": {}}, {}),
+        ({"use_causal_conv": True}, {}, {}),
+        ({"use_causal_conv": True, "aux_context_window": 1}, {}, {}),
+        ({"use_causal_conv": True, "aux_context_window": 2}, {}, {}),
+        ({"use_causal_conv": True, "aux_context_window": 3}, {}, {}),
     ])
 def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     # setup
