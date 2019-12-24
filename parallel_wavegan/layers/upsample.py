@@ -66,7 +66,8 @@ class UpsampleNetwork(torch.nn.Module):
                  upsample_activation="none",
                  upsample_activation_params={},
                  mode="nearest",
-                 freq_axis_kernel_size=1
+                 freq_axis_kernel_size=1,
+                 use_causal_conv=False,
                  ):
         """Initialize upsampling network module.
 
@@ -79,9 +80,10 @@ class UpsampleNetwork(torch.nn.Module):
 
         """
         super(UpsampleNetwork, self).__init__()
+        self.use_causal_conv = use_causal_conv
         self.up_layers = torch.nn.ModuleList()
         for scale in upsample_scales:
-            # interpolatino layer
+            # interpolation layer
             stretch = Stretch2d(scale, 1, mode)
             self.up_layers += [stretch]
 
@@ -89,7 +91,10 @@ class UpsampleNetwork(torch.nn.Module):
             assert (freq_axis_kernel_size - 1) % 2 == 0, "Not support even number freq axis kernel size."
             freq_axis_padding = (freq_axis_kernel_size - 1) // 2
             kernel_size = (freq_axis_kernel_size, scale * 2 + 1)
-            padding = (freq_axis_padding, scale)
+            if use_causal_conv:
+                padding = (freq_axis_padding, scale * 2)
+            else:
+                padding = (freq_axis_padding, scale)
             conv = Conv2d(1, 1, kernel_size=kernel_size, padding=padding, bias=False)
             self.up_layers += [conv]
 
@@ -110,7 +115,10 @@ class UpsampleNetwork(torch.nn.Module):
         """
         c = c.unsqueeze(1)  # (B, 1, C, T)
         for f in self.up_layers:
-            c = f(c)
+            if self.use_causal_conv and isinstance(f, Conv2d):
+                c = f(c)[..., :c.size(-1)]
+            else:
+                c = f(c)
         return c.squeeze(1)  # (B, C, T')
 
 
@@ -153,6 +161,7 @@ class ConvInUpsampleNetwork(torch.nn.Module):
             upsample_activation_params=upsample_activation_params,
             mode=mode,
             freq_axis_kernel_size=freq_axis_kernel_size,
+            use_causal_conv=use_causal_conv,
         )
 
     def forward(self, c):
