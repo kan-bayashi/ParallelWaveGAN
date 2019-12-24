@@ -141,8 +141,8 @@ class ConvInUpsampleNetwork(torch.nn.Module):
 
         """
         super(ConvInUpsampleNetwork, self).__init__()
-        self.use_causal_conv = aux_context_window
         self.aux_context_window = aux_context_window
+        self.use_causal_conv = use_causal_conv and aux_context_window > 0
         # To capture wide-context information in conditional features
         kernel_size = aux_context_window + 1 if use_causal_conv else 2 * aux_context_window + 1
         # NOTE(kan-bayashi): Here do not use padding because the input is already padded
@@ -170,5 +170,5 @@ class ConvInUpsampleNetwork(torch.nn.Module):
 
         """
         c_ = self.conv_in(c)
-        c = c_[:, :, c.size(-1)] if self.use_causal_conv else c_
+        c = c_[:, :, :-self.aux_context_window] if self.use_causal_conv else c_
         return self.upsample(c)
