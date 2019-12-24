@@ -86,6 +86,7 @@ def make_mutli_reso_stft_loss_args(**kwargs):
         ({"upsample_conditional_features": False, "upsample_params": {"upsample_scales": [1]}}, {}, {}),
         ({}, {"nonlinear_activation": "ReLU", "nonlinear_activation_params": {}}, {}),
         ({"use_causal_conv": True}, {}, {}),
+        ({"use_causal_conv": True, "upsample_net": "UpsampleNetwork"}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 1}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 2}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 3}, {}, {}),
@@ -131,11 +132,20 @@ def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     optimizer_d.step()
 
 
-def test_causal_parallel_wavegan():
+@pytest.mark.parametrize(
+    "upsample_net, aux_context_window", [
+        ("ConvInUpsampleNetwork", 0),
+        ("ConvInUpsampleNetwork", 1),
+        ("ConvInUpsampleNetwork", 2),
+        ("ConvInUpsampleNetwork", 3),
+        ("UpsampleNetwork", 0),
+    ])
+def test_causal_parallel_wavegan(upsample_net, aux_context_window):
     batch_size = 1
     batch_length = 4096
     args_g = make_generator_args(use_causal_conv=True,
-                                 aux_context_window=2,
+                                 upsample_net=upsample_net,
+                                 aux_context_window=aux_context_window,
                                  dropout=0.0)
     model_g = ParallelWaveGANGenerator(**args_g)
     z = torch.randn(batch_size, 1, batch_length)
