@@ -48,8 +48,8 @@ class ResidualBlock(torch.nn.Module):
                  dropout=0.0,
                  padding=None,
                  dilation=1,
-                 causal=False,
-                 bias=True
+                 bias=True,
+                 use_causal_conv=False
                  ):
         """Initialize ResidualBlock module.
 
@@ -62,20 +62,20 @@ class ResidualBlock(torch.nn.Module):
             padding (int): Padding for convolution layers. If None, proper padding is
                 computed depends on dilation and kernel_size.
             dilation (int): Dilation factor.
-            causal (bool): Whether to use causal or non-causal convolution.
             bias (bool): Whether to add bias parameter in convolution layers.
+            use_causal_conv (bool): Whether to use use_causal_conv or non-use_causal_conv convolution.
 
         """
         super(ResidualBlock, self).__init__()
         self.dropout = dropout
         if padding is None:
             # no future time stamps available
-            if causal:
+            if use_causal_conv:
                 padding = (kernel_size - 1) * dilation
             else:
                 assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
                 padding = (kernel_size - 1) // 2 * dilation
-        self.causal = causal
+        self.use_causal_conv = use_causal_conv
 
         # dilation conv
         self.conv = Conv1d(residual_channels, gate_channels, kernel_size,
@@ -108,8 +108,8 @@ class ResidualBlock(torch.nn.Module):
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.conv(x)
 
-        # remove future time steps if causal conv
-        x = x[:, :, :residual.size(-1)] if self.causal else x
+        # remove future time steps if use_causal_conv conv
+        x = x[:, :, :residual.size(-1)] if self.use_causal_conv else x
 
         # split into two part for gated activation
         splitdim = 1

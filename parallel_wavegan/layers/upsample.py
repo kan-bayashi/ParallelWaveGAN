@@ -66,7 +66,8 @@ class UpsampleNetwork(torch.nn.Module):
                  upsample_activation="none",
                  upsample_activation_params={},
                  mode="nearest",
-                 freq_axis_kernel_size=1
+                 freq_axis_kernel_size=1,
+                 use_causal_conv=False,
                  ):
         """Initialize upsampling network module.
 
@@ -79,9 +80,10 @@ class UpsampleNetwork(torch.nn.Module):
 
         """
         super(UpsampleNetwork, self).__init__()
+        self.use_causal_conv = use_causal_conv
         self.up_layers = torch.nn.ModuleList()
         for scale in upsample_scales:
-            # interpolatino layer
+            # interpolation layer
             stretch = Stretch2d(scale, 1, mode)
             self.up_layers += [stretch]
 
@@ -89,7 +91,10 @@ class UpsampleNetwork(torch.nn.Module):
             assert (freq_axis_kernel_size - 1) % 2 == 0, "Not support even number freq axis kernel size."
             freq_axis_padding = (freq_axis_kernel_size - 1) // 2
             kernel_size = (freq_axis_kernel_size, scale * 2 + 1)
-            padding = (freq_axis_padding, scale)
+            if use_causal_conv:
+                padding = (freq_axis_padding, scale * 2)
+            else:
+                padding = (freq_axis_padding, scale)
             conv = Conv2d(1, 1, kernel_size=kernel_size, padding=padding, bias=False)
             self.up_layers += [conv]
 
@@ -110,7 +115,10 @@ class UpsampleNetwork(torch.nn.Module):
         """
         c = c.unsqueeze(1)  # (B, 1, C, T)
         for f in self.up_layers:
-            c = f(c)
+            if self.use_causal_conv and isinstance(f, Conv2d):
+                c = f(c)[..., :c.size(-1)]
+            else:
+                c = f(c)
         return c.squeeze(1)  # (B, C, T')
 
 
@@ -124,7 +132,8 @@ class ConvInUpsampleNetwork(torch.nn.Module):
                  mode="nearest",
                  freq_axis_kernel_size=1,
                  aux_channels=80,
-                 aux_context_window=0
+                 aux_context_window=0,
+                 use_causal_conv=False
                  ):
         """Initialize convolution + upsampling network module.
 
@@ -136,11 +145,14 @@ class ConvInUpsampleNetwork(torch.nn.Module):
             freq_axis_kernel_size (int): Kernel size in the direction of frequency axis.
             aux_channels (int): Number of channels of pre-convolutional layer.
             aux_context_window (int): Context window size of the pre-convolutional layer.
+            use_causal_conv (bool): Whether to use causal structure.
 
         """
         super(ConvInUpsampleNetwork, self).__init__()
+        self.aux_context_window = aux_context_window
+        self.use_causal_conv = use_causal_conv and aux_context_window > 0
         # To capture wide-context information in conditional features
-        kernel_size = 2 * aux_context_window + 1
+        kernel_size = aux_context_window + 1 if use_causal_conv else 2 * aux_context_window + 1
         # NOTE(kan-bayashi): Here do not use padding because the input is already padded
         self.conv_in = Conv1d(aux_channels, aux_channels, kernel_size=kernel_size, bias=False)
         self.upsample = UpsampleNetwork(
@@ -149,6 +161,7 @@ class ConvInUpsampleNetwork(torch.nn.Module):
             upsample_activation_params=upsample_activation_params,
             mode=mode,
             freq_axis_kernel_size=freq_axis_kernel_size,
+            use_causal_conv=use_causal_conv,
         )
 
     def forward(self, c):
@@ -165,4 +178,6 @@ class ConvInUpsampleNetwork(torch.nn.Module):
             The length of inputs considers the context window size.
 
         """
-        return self.upsample(self.conv_in(c))
+        c_ = self.conv_in(c)
+        c = c_[:, :, :-self.aux_context_window] if self.use_causal_conv else c_
+        return self.upsample(c)

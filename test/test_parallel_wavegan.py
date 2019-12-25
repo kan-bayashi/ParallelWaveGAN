@@ -34,6 +34,7 @@ def make_generator_args(**kwargs):
         aux_context_window=0,
         dropout=1 - 0.95,
         use_weight_norm=True,
+        use_causal_conv=False,
         upsample_conditional_features=True,
         upsample_net="ConvInUpsampleNetwork",
         upsample_params={"upsample_scales": [4, 4]},
@@ -80,9 +81,15 @@ def make_mutli_reso_stft_loss_args(**kwargs):
         ({"stacks": 1}, {}, {}),
         ({"use_weight_norm": False}, {"use_weight_norm": False}, {}),
         ({"aux_context_window": 2}, {}, {}),
+        ({"upsample_net": "UpsampleNetwork"}, {}, {}),
         ({"upsample_params": {"upsample_scales": [4], "freq_axis_kernel_size": 3}}, {}, {}),
         ({"upsample_conditional_features": False, "upsample_params": {"upsample_scales": [1]}}, {}, {}),
         ({}, {"nonlinear_activation": "ReLU", "nonlinear_activation_params": {}}, {}),
+        ({"use_causal_conv": True}, {}, {}),
+        ({"use_causal_conv": True, "upsample_net": "UpsampleNetwork"}, {}, {}),
+        ({"use_causal_conv": True, "aux_context_window": 1}, {}, {}),
+        ({"use_causal_conv": True, "aux_context_window": 2}, {}, {}),
+        ({"use_causal_conv": True, "aux_context_window": 3}, {}, {}),
     ])
 def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     # setup
@@ -123,3 +130,53 @@ def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
+
+
+@pytest.mark.parametrize(
+    "upsample_net, aux_context_window", [
+        ("ConvInUpsampleNetwork", 0),
+        ("ConvInUpsampleNetwork", 1),
+        ("ConvInUpsampleNetwork", 2),
+        ("ConvInUpsampleNetwork", 3),
+        ("UpsampleNetwork", 0),
+    ])
+def test_causal_parallel_wavegan(upsample_net, aux_context_window):
+    batch_size = 1
+    batch_length = 4096
+    args_g = make_generator_args(use_causal_conv=True,
+                                 upsample_net=upsample_net,
+                                 aux_context_window=aux_context_window,
+                                 dropout=0.0)
+    model_g = ParallelWaveGANGenerator(**args_g)
+    z = torch.randn(batch_size, 1, batch_length)
+    c = torch.randn(batch_size, args_g["aux_channels"],
+                    batch_length // np.prod(args_g["upsample_params"]["upsample_scales"]))
+
+    z_ = z.clone()
+    c_ = c.clone()
+    z_[..., z.size(-1) // 2:] = torch.randn(z[..., z.size(-1) // 2:].shape)
+    c_[..., c.size(-1) // 2:] = torch.randn(c[..., c.size(-1) // 2:].shape)
+    c = torch.nn.ConstantPad1d(args_g["aux_context_window"], 0.0)(c)
+    c_ = torch.nn.ConstantPad1d(args_g["aux_context_window"], 0.0)(c_)
+    try:
+        # check not equal
+        np.testing.assert_array_equal(c.numpy(), c_.numpy())
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Must be different.")
+    try:
+        # check not equal
+        np.testing.assert_array_equal(z.numpy(), z_.numpy())
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Must be different.")
+
+    # check causality
+    y = model_g(z, c)
+    y_ = model_g(z_, c_)
+    np.testing.assert_array_equal(
+        y[..., :y.size(-1) // 2].detach().cpu().numpy(),
+        y_[..., :y_.size(-1) // 2].detach().cpu().numpy(),
+    )
