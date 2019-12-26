@@ -99,7 +99,7 @@ def main():
     else:
         logging.basicConfig(
             level=logging.WARN, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
-        logging.warning('skip DEBUG/INFO messages')
+        logging.warning('Skip DEBUG/INFO messages')
 
     # load config
     with open(args.config) as f:

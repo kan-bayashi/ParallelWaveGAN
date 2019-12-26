@@ -92,7 +92,7 @@ class Trainer(object):
                 break
 
         self.tqdm.close()
-        logging.info("finished training.")
+        logging.info("Finished training.")
 
     def save_checkpoint(self, checkpoint_path):
         """Save checkpoint.
@@ -224,7 +224,7 @@ class Trainer(object):
         # update
         self.epochs += 1
         self.train_steps_per_epoch = train_steps_per_epoch
-        logging.info(f"(steps: {self.steps}) finished {self.epochs} epoch training "
+        logging.info(f"(Steps: {self.steps}) Finished {self.epochs} epoch training "
                      f"({self.train_steps_per_epoch} steps per epoch).")
 
     def _eval_step(self, batch):
@@ -260,7 +260,7 @@ class Trainer(object):
 
     def _eval_epoch(self):
         """Evaluate model one epoch."""
-        logging.info(f"(step: {self.steps}) start evaluation.")
+        logging.info(f"(Steps: {self.steps}) Start evaluation.")
         # change mode
         for key in self.model.keys():
             self.model[key].eval()
@@ -275,13 +275,13 @@ class Trainer(object):
             if eval_steps_per_epoch == 1:
                 self._genearete_and_save_intermediate_result(batch)
 
-        logging.info(f"(step: {self.steps}) finished evaluation "
+        logging.info(f"(Steps: {self.steps}) Finished evaluation "
                      f"({eval_steps_per_epoch} steps per epoch).")
 
         # average loss
         for key in self.total_eval_loss.keys():
             self.total_eval_loss[key] /= eval_steps_per_epoch
-            logging.info(f"(steps: {self.steps}) {key} = {self.total_eval_loss[key]:.4f}.")
+            logging.info(f"(Steps: {self.steps}) {key} = {self.total_eval_loss[key]:.4f}.")
 
         # record
         self._write_to_tensorboard(self.total_eval_loss)
@@ -345,7 +345,7 @@ class Trainer(object):
         if self.steps % self.config["save_interval_steps"] == 0:
             self.save_checkpoint(
                 os.path.join(self.config["outdir"], f"checkpoint-{self.steps}steps.pkl"))
-            logging.info(f"successfully saved checkpoint @ {self.steps} steps.")
+            logging.info(f"Successfully saved checkpoint @ {self.steps} steps.")
 
     def _check_eval_interval(self):
         if self.steps % self.config["eval_interval_steps"] == 0:
@@ -355,7 +355,7 @@ class Trainer(object):
         if self.steps % self.config["log_interval_steps"] == 0:
             for key in self.total_train_loss.keys():
                 self.total_train_loss[key] /= self.config["log_interval_steps"]
-                logging.info(f"(steps: {self.steps}) {key} = {self.total_train_loss[key]:.4f}.")
+                logging.info(f"(Steps: {self.steps}) {key} = {self.total_train_loss[key]:.4f}.")
             self._write_to_tensorboard(self.total_train_loss)
 
             # reset
@@ -418,7 +418,7 @@ class Collater(object):
                       start_frame + self.aux_context_window + self.batch_max_frames]
                 self._assert_ready_for_upsampling(y, c, self.hop_size, self.aux_context_window)
             else:
-                logging.warn(f"removed short sample from batch (length={len(x)}).")
+                logging.warn(f"Removed short sample from batch (length={len(x)}).")
                 continue
             y_batch += [y.astype(np.float32).reshape(-1, 1)]  # [(T, 1), (T, 1), ...]
             c_batch += [c.astype(np.float32)]  # [(T' C), (T' C), ...]
@@ -492,7 +492,7 @@ def main():
         logging.basicConfig(
             level=logging.WARN, stream=sys.stdout,
             format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
-        logging.warning("skip DEBUG/INFO messages")
+        logging.warning("Skip DEBUG/INFO messages")
 
     # check directory existence
     if not os.path.exists(args.outdir):
@@ -637,7 +637,7 @@ def main():
     # resume from checkpoint
     if len(args.resume) != 0:
         trainer.load_checkpoint(args.resume)
-        logging.info(f"successfully resumed from {args.resume}.")
+        logging.info(f"Successfully resumed from {args.resume}.")
 
     # run training loop
     try:
@@ -645,7 +645,7 @@ def main():
     except KeyboardInterrupt:
         trainer.save_checkpoint(
             os.path.join(config["outdir"], f"checkpoint-{trainer.steps}steps.pkl"))
-        logging.info(f"successfully saved checkpoint @ {trainer.steps}steps.")
+        logging.info(f"Successfully saved checkpoint @ {trainer.steps}steps.")
 
 
 if __name__ == "__main__":
