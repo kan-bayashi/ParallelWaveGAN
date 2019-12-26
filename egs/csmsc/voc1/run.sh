@@ -57,6 +57,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
+        echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.log."
         ${train_cmd} --num-threads "${n_jobs}" "${dumpdir}/${name}/raw/preprocessing.log" \
             parallel-wavegan-preprocess \
                 --config "${conf}" \
@@ -65,28 +66,30 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
                 --dumpdir "${dumpdir}/${name}/raw" \
                 --n_jobs "${n_jobs}" \
                 --verbose "${verbose}"
-        echo "successfully finished feature extraction of ${name} set."
+        echo "Successfully finished feature extraction of ${name} set."
     ) &
     pids+=($!)
     done
     i=0; for pid in "${pids[@]}"; do wait "${pid}" || ((++i)); done
-    [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && false
-    echo "successfully finished feature extraction."
+    [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && exit 1;
+    echo "Successfully finished feature extraction."
 
     # calculate statistics for normalization
+    echo "Statistics computation start. See the progress via ${dumpdir}/${train_set}/compute_statistics.log."
     ${train_cmd} "${dumpdir}/${train_set}/compute_statistics.log" \
         parallel-wavegan-compute-statistics \
             --config "${conf}" \
             --rootdir "${dumpdir}/${train_set}/raw" \
             --dumpdir "${dumpdir}/${train_set}" \
             --verbose "${verbose}"
-    echo "successfully finished calculation of statistics."
+    echo "Successfully finished calculation of statistics."
 
     # normalize and dump them
     pids=()
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/norm" ] && mkdir -p "${dumpdir}/${name}/norm"
+        echo "Nomalization start. See the progress via ${dumpdir}/${name}/norm/normalize.log."
         ${train_cmd} --num-threads "${n_jobs}" "${dumpdir}/${name}/norm/normalize.log" \
             parallel-wavegan-normalize \
                 --config "${conf}" \
@@ -95,13 +98,13 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
                 --dumpdir "${dumpdir}/${name}/norm" \
                 --n_jobs "${n_jobs}" \
                 --verbose "${verbose}"
-        echo "successfully finished normalization of ${name} set."
+        echo "Successfully finished normalization of ${name} set."
     ) &
     pids+=($!)
     done
     i=0; for pid in "${pids[@]}"; do wait "${pid}" || ((++i)); done
-    [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && false
-    echo "successfully finished normalization."
+    [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && exit 1;
+    echo "Successfully finished normalization."
 fi
 
 if [ -z "${tag}" ]; then
@@ -118,6 +121,7 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     else
         train="parallel-wavegan-train"
     fi
+    echo "Training start. See the progress via ${expdir}/train.log."
     ${cuda_cmd} --gpu "${n_gpus}" "${expdir}/train.log" \
         ${train} \
             --config "${conf}" \
@@ -126,7 +130,7 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
             --outdir "${expdir}" \
             --resume "${resume}" \
             --verbose "${verbose}"
-    echo "successfully finished training."
+    echo "Successfully finished training."
 fi
 
 if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
@@ -139,18 +143,19 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
     (
         [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
         [ "${n_gpus}" -gt 1 ] && n_gpus=1
+        echo "Decoding start. See the progress via ${outdir}/${name}/decode.log."
         ${cuda_cmd} --gpu "${n_gpus}" "${outdir}/${name}/decode.log" \
             parallel-wavegan-decode \
                 --dumpdir "${dumpdir}/${name}/norm" \
                 --checkpoint "${checkpoint}" \
                 --outdir "${outdir}/${name}" \
                 --verbose "${verbose}"
-        echo "successfully finished decoding of ${name} set."
+        echo "Successfully finished decoding of ${name} set."
     ) &
     pids+=($!)
     done
     i=0; for pid in "${pids[@]}"; do wait "${pid}" || ((++i)); done
-    [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && false
-    echo "successfully finished decoding."
+    [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && exit 1;
+    echo "Successfully finished decoding."
 fi
-echo "finished."
+echo "Finished."
