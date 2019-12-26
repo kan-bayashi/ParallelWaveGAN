@@ -54,7 +54,7 @@ def main():
     else:
         logging.basicConfig(
             level=logging.WARN, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
-        logging.warning('skip DEBUG/INFO messages')
+        logging.warning('Skip DEBUG/INFO messages')
 
     # load config
     with open(args.config) as f:
@@ -84,7 +84,7 @@ def main():
         mel_load_fn=mel_load_fn,
         return_filename=True,
     )
-    logging.info(f"the number of files = {len(dataset)}.")
+    logging.info(f"The number of files = {len(dataset)}.")
 
     # restore scaler
     scaler = StandardScaler()

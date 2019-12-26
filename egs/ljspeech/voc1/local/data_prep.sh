@@ -62,4 +62,4 @@ tail -n "${num_deveval}" "${scp}" | tail -n "${num_eval}" > "${data_dir}/${eval_
 # remove all
 rm -rf "${data_dir}/all"
 
-echo "successfully prepared data."
+echo "Successfully prepared data."

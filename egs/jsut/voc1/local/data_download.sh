@@ -19,9 +19,9 @@ if [ ! -e "${download_dir}/jsut_ver1.1" ]; then
     unzip -o ./*.zip
     rm ./*.zip
     cd "${cwd}" || exit 1;
-    echo "successfully downloaded data."
+    echo "Successfully downloaded data."
 else
-    echo "already exists. skipped."
+    echo "Already exists. Skipped."
 fi
 
 if [ ! -e "${download_dir}/jsut_lab" ]; then
@@ -31,7 +31,7 @@ if [ ! -e "${download_dir}/jsut_lab" ]; then
         cp -vr "jsut-lab/${name}" jsut_ver1.1/
     done
     cd - || exit 1;
-    echo "successfully downloaded context label."
+    echo "Successfully downloaded context label."
 else
-    echo "already exists. skipped."
+    echo "Already exists. Skipped."
 fi

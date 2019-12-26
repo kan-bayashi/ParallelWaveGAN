@@ -17,7 +17,7 @@ export MPL_BACKEND=Agg
 
 # check installation
 if ! command -v parallel-wavegan-train > /dev/null; then
-    echo "Error: it seems setup is not finished." >&2
-    echo "Error: please setup your environment by following README.md" >&2
+    echo "Error: It seems setup is not finished." >&2
+    echo "Error: Please setup your environment by following README.md" >&2
     return 1
 fi

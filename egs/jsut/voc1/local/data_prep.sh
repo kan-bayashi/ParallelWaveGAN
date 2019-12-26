@@ -75,4 +75,4 @@ head -n "${num_deveval}" "${segments}" | head -n "${num_eval}" > "${data_dir}/${
 # remove all
 rm -rf "${data_dir}/all"
 
-echo "successfully prepared data."
+echo "Successfully prepared data."

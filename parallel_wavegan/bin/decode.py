@@ -54,7 +54,7 @@ def main():
     else:
         logging.basicConfig(
             level=logging.WARN, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
-        logging.warning("skip DEBUG/INFO messages")
+        logging.warning("Skip DEBUG/INFO messages")
 
     # check directory existence
     if not os.path.exists(args.outdir):
@@ -88,10 +88,10 @@ def main():
             mel_query=mel_query,
             mel_load_fn=mel_load_fn,
             return_filename=True)
-        logging.info(f"the number of features to be decoded = {len(dataset)}.")
+        logging.info(f"The number of features to be decoded = {len(dataset)}.")
     else:
         dataset = kaldiio.ReadHelper(f"scp:{args.scp}")
-        logging.info(f"the feature loaded from {args.scp}.")
+        logging.info(f"The feature loaded from {args.scp}.")
 
     # setup
     if torch.cuda.is_available():
@@ -102,7 +102,7 @@ def main():
     model.load_state_dict(torch.load(args.checkpoint, map_location="cpu")["model"]["generator"])
     model.remove_weight_norm()
     model = model.eval().to(device)
-    logging.info(f"loaded model parameters from {args.checkpoint}.")
+    logging.info(f"Loaded model parameters from {args.checkpoint}.")
 
     # start generation
     pad_size = (config["generator_params"]["aux_context_window"],
@@ -126,7 +126,7 @@ def main():
                      y, config["sampling_rate"], "PCM_16")
 
     # report average RTF
-    logging.info(f"finished generation of {idx} utterances (RTF = {total_rtf / idx:.03f}).")
+    logging.info(f"Finished generation of {idx} utterances (RTF = {total_rtf / idx:.03f}).")
 
 
 if __name__ == "__main__":
