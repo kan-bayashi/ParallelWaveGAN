@@ -27,7 +27,7 @@ import parallel_wavegan
 
 from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
-from parallel_wavegan.models import ParallelWaveGANDiscriminator
+from parallel_wavegan.models import ParallelWaveGANDiscriminator, ResidualParallelWaveGANDiscriminator
 from parallel_wavegan.models import ParallelWaveGANGenerator
 from parallel_wavegan.optimizers import RAdam
 from parallel_wavegan.utils import read_hdf5
@@ -582,12 +582,21 @@ def main():
             pin_memory=config["pin_memory"]),
     }
 
+    # Pick the discriminator to use
+    if config['discriminator_type'] == 'residual':
+        discriminator = ResidualParallelWaveGANDiscriminator(**config['residual_discriminator_params']).to(device)
+        
+    elif config['discriminator_type'] == 'normal':
+        discriminator = ParallelWaveGANDiscriminator(**config["discriminator_params"]).to(device)
+        
+    else:
+        raise NotImplementedError(f'discriminator type {config["discriminator_type"]} not implemented!')
+
     # define models and optimizers
     model = {
         "generator": ParallelWaveGANGenerator(
             **config["generator_params"]).to(device),
-        "discriminator": ParallelWaveGANDiscriminator(
-            **config["discriminator_params"]).to(device),
+        "discriminator": discriminator,
     }
     criterion = {
         "stft": MultiResolutionSTFTLoss(
