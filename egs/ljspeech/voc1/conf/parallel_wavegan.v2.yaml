@@ -1,8 +1,9 @@
 # This is the hyperparameter configuration file for Parallel WaveGAN.
 # Please make sure this is adjusted for the LJSpeech dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
-# This configuration requires 12 GB GPU memory and takes ~3 days on TITAN V.
-# Compared to v1, this configuration starts to train discriminator from first step.
+# This configuration requires 12 GB GPU memory and takes ~5 days on TITAN V.
+# Compared to v1, this configuration utilizes residual architecture Discriminator.
+# Since the discriminator is bigger than v1, batch size is reduced 6 -> 5.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -26,6 +27,7 @@ format: "hdf5"           # Feature file format. "npy" or "hdf5" is supported.
 ###########################################################
 #         GENERATOR NETWORK ARCHITECTURE SETTING          #
 ###########################################################
+generator_type: "ParallelWaveGANGenerator" # Generator type.
 generator_params:
     in_channels: 1        # Number of input channels.
     out_channels: 1       # Number of output channels.
@@ -49,16 +51,18 @@ generator_params:
 ###########################################################
 #       DISCRIMINATOR NETWORK ARCHITECTURE SETTING        #
 ###########################################################
+discriminator_type: "ResidualParallelWaveGANDiscriminator" # Discriminator type.
 discriminator_params:
     in_channels: 1        # Number of input channels.
     out_channels: 1       # Number of output channels.
-    kernel_size: 3        # Number of output channels.
-    layers: 10            # Number of conv layers.
-    conv_channels: 64     # Number of chnn layers.
-    bias: true            # Whether to use bias parameter in conv.
+    kernel_size: 3        # Kernel size of dilated convolution.
+    layers: 30            # Number of residual block layers.
+    stacks: 3             # Number of stacks i.e., dilation cycles.
+    residual_channels: 32 # Number of channels in residual conv.
+    gate_channels: 64     # Number of channels in gated conv.
+    skip_channels: 32     # Number of channels in skip conv.
+    dropout: 0.0          # Dropout rate. 0.0 means no dropout applied.
     use_weight_norm: true # Whether to use weight norm.
-                          # If set to true, it will be applied to all of the conv layers.
-    nonlinear_activation: "LeakyReLU" # Nonlinear function after each conv.
     nonlinear_activation_params:      # Nonlinear function parameters
         negative_slope: 0.2           # Alpha in LeakyReLU.
 
@@ -79,7 +83,7 @@ lambda_adv: 4.0  # Loss balancing coefficient.
 ###########################################################
 #                  DATA LOADER SETTING                    #
 ###########################################################
-batch_size: 6              # Batch size.
+batch_size: 5              # Batch size.
 batch_max_steps: 25600     # Length of each audio in batch. Make sure dividable by hop_size.
 pin_memory: true           # Whether to pin memory in Pytorch DataLoader.
 num_workers: 2             # Number of workers in Pytorch DataLoader.
@@ -111,11 +115,11 @@ discriminator_grad_norm: 1 # Discriminator's gradient norm.
 ###########################################################
 #                    INTERVAL SETTING                     #
 ###########################################################
-discriminator_train_start_steps: 1 # Number of steps to start to train discriminator.
-train_max_steps: 400000            # Number of training steps.
-save_interval_steps: 5000          # Interval steps to save checkpoint.
-eval_interval_steps: 1000          # Interval steps to evaluate the network.
-log_interval_steps: 100            # Interval steps to record the training log.
+discriminator_train_start_steps: 100000 # Number of steps to start to train discriminator.
+train_max_steps: 400000                 # Number of training steps.
+save_interval_steps: 5000               # Interval steps to save checkpoint.
+eval_interval_steps: 1000               # Interval steps to evaluate the network.
+log_interval_steps: 100                 # Interval steps to record the training log.
 
 ###########################################################
 #                     OTHER SETTING                       #
