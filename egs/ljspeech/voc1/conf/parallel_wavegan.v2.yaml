@@ -2,7 +2,7 @@
 # Please make sure this is adjusted for the LJSpeech dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
 # This configuration requires 12 GB GPU memory and takes ~3 days on TITAN V.
-# Compared to v1, this configuration starts to train discriminator from first step.
+# Compared to v1, this configuration utilizes residual architecture Discriminator.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -26,6 +26,7 @@ format: "hdf5"           # Feature file format. "npy" or "hdf5" is supported.
 ###########################################################
 #         GENERATOR NETWORK ARCHITECTURE SETTING          #
 ###########################################################
+generator_type: "ParallelWaveGANGenerator" # Generator type.
 generator_params:
     in_channels: 1        # Number of input channels.
     out_channels: 1       # Number of output channels.
@@ -49,16 +50,18 @@ generator_params:
 ###########################################################
 #       DISCRIMINATOR NETWORK ARCHITECTURE SETTING        #
 ###########################################################
+discriminator_type: "ResidualParallelWaveGANDiscriminator" # Discriminator type.
 discriminator_params:
     in_channels: 1        # Number of input channels.
     out_channels: 1       # Number of output channels.
-    kernel_size: 3        # Number of output channels.
-    layers: 10            # Number of conv layers.
-    conv_channels: 64     # Number of chnn layers.
-    bias: true            # Whether to use bias parameter in conv.
+    kernel_size: 3        # Kernel size of dilated convolution.
+    layers: 30            # Number of residual block layers.
+    stacks: 3             # Number of stacks i.e., dilation cycles.
+    residual_channels: 32 # Number of channels in residual conv.
+    gate_channels: 64     # Number of channels in gated conv.
+    skip_channels: 32     # Number of channels in skip conv.
+    dropout: 0.0          # Dropout rate. 0.0 means no dropout applied.
     use_weight_norm: true # Whether to use weight norm.
-                          # If set to true, it will be applied to all of the conv layers.
-    nonlinear_activation: "LeakyReLU" # Nonlinear function after each conv.
     nonlinear_activation_params:      # Nonlinear function parameters
         negative_slope: 0.2           # Alpha in LeakyReLU.
 
