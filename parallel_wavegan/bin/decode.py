@@ -19,8 +19,9 @@ import yaml
 
 from tqdm import tqdm
 
+import parallel_wavegan.models
+
 from parallel_wavegan.datasets import MelDataset
-from parallel_wavegan.models import ParallelWaveGANGenerator
 from parallel_wavegan.utils import read_hdf5
 
 
@@ -98,8 +99,12 @@ def main():
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    model = ParallelWaveGANGenerator(**config["generator_params"])
-    model.load_state_dict(torch.load(args.checkpoint, map_location="cpu")["model"]["generator"])
+    model_class = getattr(
+        parallel_wavegan.models,
+        config.get("generator_type", "ParallelWaveGANGenerator"))
+    model = model_class(**config["generator_params"])
+    model.load_state_dict(
+        torch.load(args.checkpoint, map_location="cpu")["model"]["generator"])
     model.remove_weight_norm()
     model = model.eval().to(device)
     logging.info(f"Loaded model parameters from {args.checkpoint}.")
