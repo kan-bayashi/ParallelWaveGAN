@@ -62,23 +62,6 @@ discriminator_params:
         negative_slope: 0.2           # Alpha in LeakyReLU.
 
 ###########################################################
-#   RESIDUAL DISCRIMINATOR NETWORK ARCHITECTURE SETTING   #
-###########################################################
-residual_discriminator_params:
-    in_channels: 1        # Number of input channels.
-    out_channels: 1       # Number of output channels.
-    kernel_size: 3        # Kernel size of dilated convolution.
-    layers: 30            # Number of residual block layers.
-    stacks: 3             # Number of stacks i.e., dilation cycles.
-    residual_channels: 32 # Number of channels in residual conv.
-    gate_channels: 64     # Number of channels in gated conv.
-    skip_channels: 32     # Number of channels in skip conv.
-    dropout: 0.0          # Dropout rate. 0.0 means no dropout applied.
-    use_weight_norm: true # Whether to use weight norm.
-    nonlinear_activation_params:      # Nonlinear function parameters
-        negative_slope: 0.2           # Alpha in LeakyReLU.
-
-###########################################################
 #                   STFT LOSS SETTING                     #
 ###########################################################
 stft_loss_params:
@@ -91,7 +74,6 @@ stft_loss_params:
 #               ADVERSARIAL LOSS SETTING                  #
 ###########################################################
 lambda_adv: 4.0  # Loss balancing coefficient.
-discriminator_type: "residual"
 
 ###########################################################
 #                  DATA LOADER SETTING                    #
