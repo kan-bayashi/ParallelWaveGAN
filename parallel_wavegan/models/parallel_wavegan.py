@@ -289,6 +289,7 @@ class ResidualParallelWaveGANDiscriminator(torch.nn.Module):
                  dropout=0.0,
                  use_weight_norm=True,
                  use_causal_conv=False,
+                 nonlinear_activation="LeakyReLU",
                  nonlinear_activation_params={"negative_slope": 0.2},
                  ):
         """Initialize Parallel WaveGAN Discriminator module.
@@ -323,10 +324,11 @@ class ResidualParallelWaveGANDiscriminator(torch.nn.Module):
         layers_per_stack = layers // stacks
 
         # define first convolution
-        self.first_conv = Conv1d1x1(in_channels, residual_channels, bias=True)
-        self.first_conv_activation = torch.nn.LeakyReLU(
-            negative_slope=nonlinear_activation_params['negative_slope'],
-            inplace=True)
+        self.first_conv = torch.nn.Sequential(
+            Conv1d1x1(in_channels, residual_channels, bias=True),
+            getattr(torch.nn, nonlinear_activation)(
+                inplace=True, **nonlinear_activation_params),
+        )
 
         # define residual blocks
         self.conv_layers = torch.nn.ModuleList()
@@ -347,9 +349,11 @@ class ResidualParallelWaveGANDiscriminator(torch.nn.Module):
 
         # define output layers
         self.last_conv_layers = torch.nn.ModuleList([
-            torch.nn.LeakyReLU(negative_slope=nonlinear_activation_params['negative_slope'], inplace=True),
+            getattr(torch.nn, nonlinear_activation)(
+                inplace=True, **nonlinear_activation_params),
             Conv1d1x1(skip_channels, skip_channels, bias=True),
-            torch.nn.LeakyReLU(negative_slope=nonlinear_activation_params['negative_slope'], inplace=True),
+            getattr(torch.nn, nonlinear_activation)(
+                inplace=True, **nonlinear_activation_params),
             Conv1d1x1(skip_channels, out_channels, bias=True),
         ])
 
@@ -368,7 +372,6 @@ class ResidualParallelWaveGANDiscriminator(torch.nn.Module):
 
         """
         x = self.first_conv(x)
-        x = self.first_conv_activation(x)
 
         skips = 0
         for f in self.conv_layers:
