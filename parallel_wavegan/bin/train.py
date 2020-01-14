@@ -24,6 +24,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import parallel_wavegan
+import parallel_wavegan.models
 
 from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
