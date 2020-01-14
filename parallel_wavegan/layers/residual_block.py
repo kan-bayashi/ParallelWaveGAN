@@ -124,10 +124,10 @@ class ResidualBlock(torch.nn.Module):
 
         x = torch.tanh(xa) * torch.sigmoid(xb)
 
-        # For skip connection
+        # for skip connection
         s = self.conv1x1_skip(x)
 
-        # For residual connection
+        # for residual connection
         x = (self.conv1x1_out(x) + residual) * math.sqrt(0.5)
 
         return x, s
