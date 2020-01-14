@@ -397,7 +397,7 @@ class Collater(object):
 
         Returns:
             Tensor: Gaussian noise batch (B, 1, T).
-            Tensor: Auxiliary feature batch (B, C, T"), where T = (T" - 2 * aux_context_window) * hop_size
+            Tensor: Auxiliary feature batch (B, C, T'), where T = (T' - 2 * aux_context_window) * hop_size
             Tensor: Target signal batch (B, 1, T).
 
         """
@@ -420,11 +420,11 @@ class Collater(object):
                 logging.warn(f"Removed short sample from batch (length={len(x)}).")
                 continue
             y_batch += [y.astype(np.float32).reshape(-1, 1)]  # [(T, 1), (T, 1), ...]
-            c_batch += [c.astype(np.float32)]  # [(T" C), (T" C), ...]
+            c_batch += [c.astype(np.float32)]  # [(T' C), (T' C), ...]
 
         # convert each batch to tensor, asuume that each item in batch has the same length
         y_batch = torch.FloatTensor(np.array(y_batch)).transpose(2, 1)  # (B, 1, T)
-        c_batch = torch.FloatTensor(np.array(c_batch)).transpose(2, 1)  # (B, C, T")
+        c_batch = torch.FloatTensor(np.array(c_batch)).transpose(2, 1)  # (B, C, T')
 
         # make input noise signal batch tensor
         z_batch = torch.randn(y_batch.size())  # (B, 1, T)
