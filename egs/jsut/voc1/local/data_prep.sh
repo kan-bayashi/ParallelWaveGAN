@@ -19,6 +19,7 @@ eval_set="eval"
 db_root=$1
 data_dir=$2
 
+# check arguments
 if [ $# != 2 ]; then
     echo "Usage: $0 [Options] <db_root> <data_dir>"
     echo "e.g.: $0 downloads/jsut_ver1.1 data"
@@ -31,6 +32,8 @@ if [ $# != 2 ]; then
     echo "    --eval_set: name of eval set (default=eval)."
     exit 1
 fi
+
+set -euo pipefail
 
 # make dirs
 for name in all "${train_set}" "${dev_set}" "${eval_set}"; do

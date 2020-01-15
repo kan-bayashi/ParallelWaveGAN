@@ -33,6 +33,8 @@ if [ $# != 3 ]; then
     exit 1
 fi
 
+set -euo pipefail
+
 # check speaker
 available_spks=(
     "slt" "clb" "bdl" "rms" "jmk" "awb" "ksp"

@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 # Copyright 2019 Tomoki Hayashi
 #  MIT License (https://opensource.org/licenses/MIT)
@@ -32,6 +32,8 @@ if [ $# != 2 ]; then
     echo "    --eval_set: name of eval set (default=eval)."
     exit 1
 fi
+
+set -euo pipefail
 
 # make dirs
 for name in all "${train_set}" "${dev_set}" "${eval_set}"; do
