@@ -11,6 +11,8 @@ if [ $# != 1 ]; then
     exit 1
 fi
 
+set -euo pipefail
+
 cwd=$(pwd)
 if [ ! -e "${download_dir}/jsut_ver1.1" ]; then
     mkdir -p "${download_dir}"

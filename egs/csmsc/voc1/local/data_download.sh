@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 # Copyright 2019 Tomoki Hayashi
 #  MIT License (https://opensource.org/licenses/MIT)
@@ -10,6 +10,8 @@ if [ $# != 1 ]; then
     echo "Usage: $0 <download_dir>"
     exit 1
 fi
+
+set -euo pipefail
 
 # download dataset
 cwd=$(pwd)

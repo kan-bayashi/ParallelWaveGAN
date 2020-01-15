@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 # Copyright 2019 Tomoki Hayashi
 #  MIT License (https://opensource.org/licenses/MIT)
@@ -16,6 +16,8 @@ if [ $# != 2 ]; then
     echo "Available speakers: ${available_spks[*]}"
     exit 1
 fi
+
+set -euo pipefail
 
 # check speakers
 if ! echo "${available_spks[*]}" | grep -q "${spk}"; then
