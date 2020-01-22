@@ -26,12 +26,12 @@ spk=slt # you can select from slt, clb, bdl, rms, awb, jmk, ksp
 # training related setting
 tag=""     # tag for directory to save model
 resume=""  # checkpoint path to resume training
-           # (e.g. /path/to/checkpoint-10000steps.pkl)
+           # (e.g. <path>/<to>/checkpoint-10000steps.pkl)
 
 # decoding related setting
 checkpoint="" # checkpoint path to be used for decoding
               # if not provided, the latest one will be used
-              # (e.g. /path/to/checkpoint-400000steps.pkl)
+              # (e.g. <path>/<to>/checkpoint-400000steps.pkl)
 
 # shellcheck disable=SC1091
 . parse_options.sh || exit 1;

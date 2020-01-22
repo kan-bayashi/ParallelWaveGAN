@@ -88,7 +88,7 @@ $ ./run.sh --stage 2 --stop_stage 2
 $ CUDA_VISIBLE_DEVICES=1 ./run.sh --stage 2
 
 # If you want to resume training from 10000 steps checkpoint
-$ ./run.sh --stage 2 --resume exp/path/to/checkpoint-10000steps.pkl
+$ ./run.sh --stage 2 --resume <path>/<to>/checkpoint-10000steps.pkl
 ```
 
 The integration with job schedulers such as [slurm](https://slurm.schedmd.com/documentation.html) can be done via `cmd.sh` and  `conf/slurm.conf`.  
