@@ -548,6 +548,7 @@ def main():
         hop_size=config["hop_size"],
         aux_context_window=config["generator_params"]["aux_context_window"],
     )
+    batch_size = config["batch_size"]
     train_sampler, dev_sampler = None, None
     if args.distributed:
         # setup sampler for distributed training
@@ -562,12 +563,16 @@ def main():
             num_replicas=args.world_size,
             rank=args.rank,
             shuffle=False)
+        # prevent to multiply batchsize by #gpus in distributed training
+        assert batch_size >= args.world_size, "Batch size is smaller than world size."
+        batch_size = batch_size // args.world_size
+        logging.info(f"Batch size per process = {batch_size}")
     data_loader = {
         "train": DataLoader(
             dataset=dataset["train"],
             shuffle=False if args.distributed else True,
             collate_fn=collater,
-            batch_size=config["batch_size"],
+            batch_size=batch_size,
             num_workers=config["num_workers"],
             sampler=train_sampler,
             pin_memory=config["pin_memory"]),
@@ -575,7 +580,7 @@ def main():
             dataset=dataset["dev"],
             shuffle=False if args.distributed else True,
             collate_fn=collater,
-            batch_size=config["batch_size"],
+            batch_size=batch_size,
             num_workers=config["num_workers"],
             sampler=dev_sampler,
             pin_memory=config["pin_memory"]),
