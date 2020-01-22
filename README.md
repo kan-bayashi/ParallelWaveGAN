@@ -113,8 +113,10 @@ Then you can run distributed multi-gpu training via following command:
 $ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" ./run.sh --stage 2 --n_gpus 8
 ```
 
-In the case of distributed training, batch size will be automatically multiplied by the number of gpus.  
-Please be careful.
+In distributed training, batch size will be changed as follows. Please be careful.
+
+- `~v.0.2.7`: Batch size of each gpu is the original batch size. Actual batch size will be batch size * the number of gpus.
+- `v.0.2.8~`: Batch size of each gpu is batch size // the number of gpus. Actual batch size is the same as the original batch size.
 
 The decoding speed is RTF = 0.016 with TITAN V, much faster than the real-time.
 
