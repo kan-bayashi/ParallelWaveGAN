@@ -1,9 +1,8 @@
 # This is the hyperparameter configuration file for Parallel WaveGAN.
 # Please make sure this is adjusted for the LJSpeech dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
-# This configuration requires 2 GPUs with 12 GB memory and takes ~5 days on TITAN V.
+# This configuration requires 2 GPUs with 24 GB memory and takes ~5 days on TITAN RTX.
 # Compared to v1, this configuration utilizes residual architecture Discriminator.
-# Since the discriminator is bigger than v1, batch size is reduced 6 -> 5.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -83,7 +82,7 @@ lambda_adv: 4.0  # Loss balancing coefficient.
 ###########################################################
 #                  DATA LOADER SETTING                    #
 ###########################################################
-batch_size: 10             # Batch size.
+batch_size: 20             # Batch size.
 batch_max_steps: 25600     # Length of each audio in batch. Make sure dividable by hop_size.
 pin_memory: true           # Whether to pin memory in Pytorch DataLoader.
 num_workers: 2             # Number of workers in Pytorch DataLoader.
