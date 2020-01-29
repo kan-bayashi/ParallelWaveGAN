@@ -45,10 +45,7 @@ if ! echo "${available_spks[*]}" | grep -q "${spk}"; then
     exit 1
 fi
 
-# make dirs
-for name in all "${train_set}" "${dev_set}" "${eval_set}"; do
-    [ ! -e "${data_dir}/${name}" ] && mkdir -p "${data_dir}/${name}"
-done
+[ ! -e "${data_dir}/all" ] && mkdir -p "${data_dir}/all"
 
 # set filenames
 scp="${data_dir}/all/wav.scp"
@@ -59,7 +56,7 @@ segments="${data_dir}/all/segments"
 [ -e "${segments}" ] && rm "${segments}"
 
 # make scp
-find "${db_root}" -name "*.wav" -follow | sort | while read -r filename;do
+find "${db_root}" -name "*.wav" -follow | sort | while read -r filename; do
     id="${spk}_$(basename "${filename}" | sed -e "s/\.[^\.]*$//g")"
     echo "${id} ${filename}" >> "${scp}"
 done
@@ -85,18 +82,28 @@ find "${db_root}/lab" -name "*.lab" -follow | sort | while read -r filename; do
     echo "${spk}_$(basename "${filename}" .lab) ${spk}_$(basename "${filename}" .lab) ${start} ${end}" >> "${segments}"
 done
 
+# check
+diff -q <(awk '{print $1}' "${scp}") <(awk '{print $1}' "${segments}") > /dev/null
+
 # split
 num_all=$(wc -l < "${scp}")
 num_deveval=$((num_dev + num_eval))
 num_train=$((num_all - num_deveval))
-head -n "${num_train}" "${scp}" > "${data_dir}/${train_set}/wav.scp"
-tail -n "${num_deveval}" "${scp}" | head -n "${num_dev}" > "${data_dir}/${dev_set}/wav.scp"
-tail -n "${num_deveval}" "${scp}" | tail -n "${num_eval}" > "${data_dir}/${eval_set}/wav.scp"
-head -n "${num_train}" "${segments}" > "${data_dir}/${train_set}/segments"
-tail -n "${num_deveval}" "${segments}" | head -n "${num_dev}" > "${data_dir}/${dev_set}/segments"
-tail -n "${num_deveval}" "${segments}" | tail -n "${num_eval}" > "${data_dir}/${eval_set}/segments"
+split_data.sh \
+    --num_first "${num_train}" \
+    --num_second "${num_deveval}" \
+    "${data_dir}/all" \
+    "${data_dir}/${train_set}" \
+    "${data_dir}/deveval"
+split_data.sh \
+    --num_first "${num_dev}" \
+    --num_second "${num_eval}" \
+    "${data_dir}/deveval" \
+    "${data_dir}/${dev_set}" \
+    "${data_dir}/${eval_set}"
 
-# remove all
+# remove tmp directories
 rm -rf "${data_dir}/all"
+rm -rf "${data_dir}/deveval"
 
 echo "Successfully prepared data."

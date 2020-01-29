@@ -37,7 +37,7 @@ eval_db_root=${db_root}/DOCS/Test_set
 wav_type=HS  # DT or HS
 
 # make directories
-for name in train "${train_set}" "${dev_set}" "${eval_set}"; do
+for name in train "${eval_set}"; do
     [ ! -e "${data_dir}/${name}" ] && mkdir -p "${data_dir}/${name}"
 done
 
@@ -63,10 +63,10 @@ sort -R "${scp}.tmp" > "${scp}"
 rm -r "${scp}.tmp"
 
 # split
-num_all=$(wc -l < "${scp}")
-num_train=$(( num_all - num_dev ))
-head -n ${num_train} "${scp}" | sort > "${data_dir}/${train_set}/wav.scp"
-tail -n ${num_dev} "${scp}" | sort > "${data_dir}/${dev_set}/wav.scp"
+split_data.sh --num_second ${num_dev} \
+    "${data_dir}/train" \
+    "${data_dir}/${train_set}" \
+    "${data_dir}/${dev_set}"
 
 # make evaluation data
 scp="${data_dir}/${eval_set}/wav.scp"
