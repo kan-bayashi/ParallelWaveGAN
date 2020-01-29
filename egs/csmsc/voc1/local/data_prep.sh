@@ -33,7 +33,7 @@ if [ $# != 2 ]; then
     exit 1
 fi
 
-set -eu
+set -euo pipefail
 
 [ ! -e "${data_dir}/all" ] && mkdir -p "${data_dir}/all"
 
