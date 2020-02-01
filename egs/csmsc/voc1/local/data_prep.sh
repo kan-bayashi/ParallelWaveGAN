@@ -35,10 +35,7 @@ fi
 
 set -euo pipefail
 
-# make dirs
-for name in all "${train_set}" "${dev_set}" "${eval_set}"; do
-    [ ! -e "${data_dir}/${name}" ] && mkdir -p "${data_dir}/${name}"
-done
+[ ! -e "${data_dir}/all" ] && mkdir -p "${data_dir}/all"
 
 # set filenames
 scp="${data_dir}/all/wav.scp"
@@ -49,31 +46,41 @@ segments="${data_dir}/all/segments"
 [ -e "${segments}" ] && rm "${segments}"
 
 # make wav.scp
-find "${db_root}/Wave" -name "*.wav" -follow | sort | while read -r filename;do
+find "${db_root}/Wave" -name "*.wav" -follow | sort | while read -r filename; do
     id="$(basename "${filename}" .wav)"
-    echo "${id} cat ${filename} | sox -t wav - -c 1 -b 16 -t wav - rate ${fs} |" >> "${scp}"
+    echo "csmsc_${id} cat ${filename} | sox -t wav - -c 1 -b 16 -t wav - rate ${fs} |" >> "${scp}"
 done
 
 # make segments
-find "${db_root}/PhoneLabeling" -name "*.interval" -follow | sort | while read -r filename;do
+find "${db_root}/PhoneLabeling" -name "*.interval" -follow | sort | while read -r filename; do
     id="$(basename "${filename}" .interval)"
     start_sec=$(tail -n +14 "${filename}" | head -n 1)
     end_sec=$(head -n -2 "${filename}" | tail -n 1)
-    echo "${id} ${id} ${start_sec} ${end_sec}" >> "${segments}"
+    echo "csmsc_${id} csmsc_${id} ${start_sec} ${end_sec}" >> "${segments}"
 done
+
+# check
+diff -q <(awk '{print $1}' "${scp}") <(awk '{print $1}' "${segments}") > /dev/null
 
 # split
 num_all=$(wc -l < "${scp}")
 num_deveval=$((num_dev + num_eval))
 num_train=$((num_all - num_deveval))
-head -n "${num_train}" "${scp}" > "${data_dir}/${train_set}/wav.scp"
-tail -n "${num_deveval}" "${scp}" | head -n "${num_dev}" > "${data_dir}/${dev_set}/wav.scp"
-tail -n "${num_deveval}" "${scp}" | tail -n "${num_eval}" > "${data_dir}/${eval_set}/wav.scp"
-head -n "${num_train}" "${segments}" > "${data_dir}/${train_set}/segments"
-tail -n "${num_deveval}" "${segments}" | head -n "${num_dev}" > "${data_dir}/${dev_set}/segments"
-tail -n "${num_deveval}" "${segments}" | tail -n "${num_eval}" > "${data_dir}/${eval_set}/segments"
+split_data.sh \
+    --num_first "${num_train}" \
+    --num_second "${num_deveval}" \
+    "${data_dir}/all" \
+    "${data_dir}/${train_set}" \
+    "${data_dir}/deveval"
+split_data.sh \
+    --num_first "${num_dev}" \
+    --num_second "${num_eval}" \
+    "${data_dir}/deveval" \
+    "${data_dir}/${dev_set}" \
+    "${data_dir}/${eval_set}"
 
-# remove all
+# remove tmp directories
 rm -rf "${data_dir}/all"
+rm -rf "${data_dir}/deveval"
 
 echo "Successfully prepared data."
