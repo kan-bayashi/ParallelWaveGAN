@@ -14,6 +14,7 @@ from parallel_wavegan.layers import Conv1d
 from parallel_wavegan.layers import Conv1d1x1
 from parallel_wavegan.layers import ResidualBlock
 from parallel_wavegan.layers import upsample
+from parallel_wavegan import models
 
 
 class ParallelWaveGANGenerator(torch.nn.Module):
@@ -79,12 +80,21 @@ class ParallelWaveGANGenerator(torch.nn.Module):
             upsample_params.update({
                 "use_causal_conv": use_causal_conv,
             })
-            if upsample_net == "ConvInUpsampleNetwork":
+            if upsample_net == "MelGANGenerator":
                 upsample_params.update({
-                    "aux_channels": aux_channels,
-                    "aux_context_window": aux_context_window,
+                    "in_channels": aux_channels,
+                    "out_channels": aux_channels,
+                    "use_weight_norm": False,  # not to apply twice
+                    "use_final_nolinear_activation": False,
                 })
-            self.upsample_net = getattr(upsample, upsample_net)(**upsample_params)
+                self.upsample_net = getattr(models, upsample_net)(**upsample_params)
+            else:
+                if upsample_net == "ConvInUpsampleNetwork":
+                    upsample_params.update({
+                        "aux_channels": aux_channels,
+                        "aux_context_window": aux_context_window,
+                    })
+                self.upsample_net = getattr(upsample, upsample_net)(**upsample_params)
         else:
             self.upsample_net = None
 
