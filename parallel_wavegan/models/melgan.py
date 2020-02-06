@@ -25,10 +25,11 @@ class MelGANGenerator(torch.nn.Module):
                  upsample_scales=[8, 8, 2, 2],
                  stack_kernel_size=3,
                  stacks=3,
-                 padding_fn=torch.nn.ReflectionPad1d,
                  activation_fn=torch.nn.LeakyReLU,
                  activation_params={"negative_slope": 0.2},
-                 final_activation_fn=torch.nn.Tanh,
+                 padding_fn=torch.nn.ReflectionPad1d,
+                 padding_params={},
+                 use_final_activation_fn=True,
                  use_weight_norm=True,
                  ):
         """Initialize MelGANGenerator module.
@@ -53,13 +54,13 @@ class MelGANGenerator(torch.nn.Module):
         super(MelGANGenerator, self).__init__()
 
         # check hyper parameters is valid
-        assert channels > np.prod(upsample_scales)
+        assert channels >= np.prod(upsample_scales)
         assert channels % (2 ** len(upsample_scales)) == 0
 
         # add initial layer
         layers = []
         layers += [
-            padding_fn((kernel_size - 1) // 2),
+            padding_fn((kernel_size - 1) // 2, **padding_params),
             torch.nn.Conv1d(in_channels, channels, kernel_size, bias=bias),
         ]
 
@@ -85,20 +86,21 @@ class MelGANGenerator(torch.nn.Module):
                         channels=channels // (2 ** (i + 1)),
                         dilation=stack_kernel_size ** j,
                         bias=bias,
-                        padding_fn=padding_fn,
                         activation_fn=activation_fn,
                         activation_params=activation_params,
+                        padding_fn=padding_fn,
+                        padding_params=padding_params,
                     )
                 ]
 
         # add final layer
         layers += [
             activation_fn(**activation_params),
-            padding_fn((kernel_size - 1) // 2),
+            padding_fn((kernel_size - 1) // 2, **padding_params),
             torch.nn.Conv1d(channels // (2 ** (i + 1)), 1, kernel_size, bias=bias),
         ]
-        if final_activation_fn is not None:
-            layers += [final_activation_fn()]
+        if use_final_activation_fn is not None:
+            layers += [torch.nn.Tanh()]
 
         self.melgan = torch.nn.Sequential(*layers)
 

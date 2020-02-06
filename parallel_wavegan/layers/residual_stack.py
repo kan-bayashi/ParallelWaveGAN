@@ -16,9 +16,10 @@ class ResidualStack(torch.nn.Module):
                  channels=32,
                  dilation=1,
                  bias=True,
-                 padding_fn=torch.nn.ReflectionPad1d,
                  activation_fn=torch.nn.LeakyReLU,
                  activation_params={"negative_slope": 0.2},
+                 padding_fn=torch.nn.ReflectionPad1d,
+                 padding_params={},
                  ):
         """Initialize ResidualStack module.
 
@@ -34,9 +35,12 @@ class ResidualStack(torch.nn.Module):
         """
         super(ResidualStack, self).__init__()
 
+        assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
+        padding = (kernel_size - 1) // 2 * dilation
+
         self.stack = torch.nn.Sequential(
             activation_fn(**activation_params),
-            padding_fn(dilation),
+            padding_fn(padding, **padding_params),
             torch.nn.Conv1d(channels, channels, kernel_size, dilation=dilation, bias=bias),
             activation_fn(**activation_params),
             torch.nn.Conv1d(channels, channels, 1, bias=bias),
