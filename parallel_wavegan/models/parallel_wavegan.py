@@ -83,6 +83,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                 "use_causal_conv": use_causal_conv,
             })
             if upsample_net == "MelGANGenerator":
+                assert aux_context_window == 0
                 upsample_params.update({
                     "in_channels": aux_channels,
                     "out_channels": aux_channels,
