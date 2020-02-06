@@ -110,6 +110,9 @@ def make_mutli_reso_stft_loss_args(**kwargs):
         ({"use_causal_conv": True, "aux_context_window": 1}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 2}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 3}, {}, {}),
+        ({"upsample_net": "MelGANGenerator", "upsample_params": {
+            "upsample_scales": [4, 4],
+        }}, {}, {}),
     ])
 def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     # setup
@@ -165,6 +168,7 @@ def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
         ({"aux_context_window": 2}, {}, {}),
         ({"upsample_net": "UpsampleNetwork"}, {}, {}),
         ({"upsample_params": {"upsample_scales": [4], "freq_axis_kernel_size": 3}}, {}, {}),
+        ({"upsample_params": {"nonlinear_activation": "ReLU"}}, {}, {}),
         ({"upsample_conditional_features": False, "upsample_params": {"upsample_scales": [1]}}, {}, {}),
         ({}, {"nonlinear_activation": "ReLU", "nonlinear_activation_params": {}}, {}),
         ({"use_causal_conv": True}, {}, {}),
