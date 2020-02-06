@@ -88,7 +88,8 @@ def main():
             args.dumpdir,
             mel_query=mel_query,
             mel_load_fn=mel_load_fn,
-            return_filename=True)
+            return_filename=True,
+        )
         logging.info(f"The number of features to be decoded = {len(dataset)}.")
     else:
         dataset = kaldiio.ReadHelper(f"scp:{args.scp}")
@@ -105,22 +106,28 @@ def main():
     model = model_class(**config["generator_params"])
     model.load_state_dict(
         torch.load(args.checkpoint, map_location="cpu")["model"]["generator"])
+    logging.info(f"Loaded model parameters from {args.checkpoint}.")
     model.remove_weight_norm()
     model = model.eval().to(device)
-    logging.info(f"Loaded model parameters from {args.checkpoint}.")
+    use_noise_input = not isinstance(
+        model, parallel_wavegan.models.MelGANGenerator)
+    pad_fn = torch.nn.ReplicationPad1d(
+        config["generator_params"].get("aux_context_window", 0))
 
     # start generation
-    pad_size = (config["generator_params"]["aux_context_window"],
-                config["generator_params"]["aux_context_window"])
     total_rtf = 0.0
     with torch.no_grad(), tqdm(dataset, desc="[decode]") as pbar:
         for idx, (feat_path, c) in enumerate(pbar, 1):
-            # generate each utterance
-            z = torch.randn(1, 1, c.shape[0] * config["hop_size"]).to(device)
-            c = np.pad(c, (pad_size, (0, 0)), "edge")
-            c = torch.FloatTensor(c).unsqueeze(0).transpose(2, 1).to(device)
+            # setup input
+            c = pad_fn(torch.from_numpy(c).unsqueeze(0).transpose(2, 1)).to(device)
+            x = (c,)
+            if use_noise_input:
+                z = torch.randn(1, 1, c.shape[0] * config["hop_size"]).to(device)
+                x = (z,) + x
+
+            # generate
             start = time.time()
-            y = model(z, c).view(-1).cpu().numpy()
+            y = model(*x).view(-1).cpu().numpy()
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf
