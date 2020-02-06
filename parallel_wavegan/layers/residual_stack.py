@@ -20,7 +20,7 @@ class ResidualStack(torch.nn.Module):
                  nonlinear_activation_params={"negative_slope": 0.2},
                  pad="ReflectionPad1d",
                  pad_params={},
-                 use_causal_conv=False
+                 use_causal_conv=False,
                  ):
         """Initialize ResidualStack module.
 
