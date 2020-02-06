@@ -25,12 +25,13 @@ class MelGANGenerator(torch.nn.Module):
                  upsample_scales=[8, 8, 2, 2],
                  stack_kernel_size=3,
                  stacks=3,
-                 activation_fn=torch.nn.LeakyReLU,
+                 activation_fn="LeakyReLU",
                  activation_params={"negative_slope": 0.2},
-                 padding_fn=torch.nn.ReflectionPad1d,
+                 padding_fn="ReflectionPad1d",
                  padding_params={},
                  use_final_activation_fn=True,
                  use_weight_norm=True,
+                 use_causal_conv=False,
                  ):
         """Initialize MelGANGenerator module.
 
@@ -43,31 +44,34 @@ class MelGANGenerator(torch.nn.Module):
             upsample_scales (list): List of upsampling scales.
             stack_kernel_size (int): Kernel size of dilated conv layers in residual stack.
             stacks (int): Number of stacks in a single residual stack.
-            padding_fn (torch.nn.Module): Padding function before dilated convolution layer.
-            activation_fn (torch.nn.Module): Activation function.
+            activation_fn (torch.nn.Module): Activation function module name.
             activation_params (dict): Hyperparameters for activation function.
-            final_activation_fn (torch.nn.Module): Activation function for the final layer.
+            padding_fn (torch.nn.Module): Padding function module name before dilated convolution layer.
+            padding_params (dict): Hyperparameters for padding function.
+            use_final_activation_fn (torch.nn.Module): Activation function for the final layer.
             use_weight_norm (bool): Whether to use weight norm.
                 If set to true, it will be applied to all of the conv layers.
+            use_causal_conv (bool): Whether to use causal convolution.
 
         """
         super(MelGANGenerator, self).__init__()
 
         # check hyper parameters is valid
+        assert not use_causal_conv, "Not supported yet."
         assert channels >= np.prod(upsample_scales)
         assert channels % (2 ** len(upsample_scales)) == 0
 
         # add initial layer
         layers = []
         layers += [
-            padding_fn((kernel_size - 1) // 2, **padding_params),
+            getattr(torch.nn, padding_fn)((kernel_size - 1) // 2, **padding_params),
             torch.nn.Conv1d(in_channels, channels, kernel_size, bias=bias),
         ]
 
         for i, upsample_scale in enumerate(upsample_scales):
             # add upsampling layer
             layers += [
-                activation_fn(**activation_params),
+                getattr(torch.nn, activation_fn)(**activation_params),
                 torch.nn.ConvTranspose1d(
                     channels // (2 ** i),
                     channels // (2 ** (i + 1)),
@@ -90,16 +94,17 @@ class MelGANGenerator(torch.nn.Module):
                         activation_params=activation_params,
                         padding_fn=padding_fn,
                         padding_params=padding_params,
+                        use_causal_conv=use_causal_conv,
                     )
                 ]
 
         # add final layer
         layers += [
-            activation_fn(**activation_params),
-            padding_fn((kernel_size - 1) // 2, **padding_params),
-            torch.nn.Conv1d(channels // (2 ** (i + 1)), 1, kernel_size, bias=bias),
+            getattr(torch.nn, activation_fn)(**activation_params),
+            getattr(torch.nn, padding_fn)((kernel_size - 1) // 2, **padding_params),
+            torch.nn.Conv1d(channels // (2 ** (i + 1)), out_channels, kernel_size, bias=bias),
         ]
-        if use_final_activation_fn is not None:
+        if use_final_activation_fn:
             layers += [torch.nn.Tanh()]
 
         self.melgan = torch.nn.Sequential(*layers)
