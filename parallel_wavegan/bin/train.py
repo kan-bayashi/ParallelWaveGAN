@@ -76,6 +76,8 @@ class Trainer(object):
         self.finish_train = False
         self.total_train_loss = defaultdict(float)
         self.total_eval_loss = defaultdict(float)
+        self.use_noise_input = not isinstance(
+            model["generator"], parallel_wavegan.models.MelGANGenerator)
 
     def run(self):
         """Run training."""
@@ -155,7 +157,10 @@ class Trainer(object):
         z, c, y = batch
 
         # calculate generator loss
-        y_ = self.model["generator"](z, c)
+        if self.use_noise_input:
+            y_ = self.model["generator"](z, c)
+        else:
+            y_ = self.model["generator"](c)
         y, y_ = y.squeeze(1), y_.squeeze(1)
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
         gen_loss = sc_loss + mag_loss
@@ -226,6 +231,7 @@ class Trainer(object):
         logging.info(f"(Steps: {self.steps}) Finished {self.epochs} epoch training "
                      f"({self.train_steps_per_epoch} steps per epoch).")
 
+    @torch.no_grad()
     def _eval_step(self, batch):
         """Evaluate model one step."""
         # parse batch
@@ -233,7 +239,10 @@ class Trainer(object):
         z, c, y = batch
 
         # calculate generator loss
-        y_ = self.model["generator"](z, c)
+        if self.use_noise_input:
+            y_ = self.model["generator"](z, c)
+        else:
+            y_ = self.model["generator"](c)
         p_ = self.model["discriminator"](y_)
         y, y_, p_ = y.squeeze(1), y_.squeeze(1), p_.squeeze(1)
         adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
@@ -267,8 +276,7 @@ class Trainer(object):
         # calculate loss for each batch
         for eval_steps_per_epoch, batch in enumerate(tqdm(self.data_loader["dev"], desc="[eval]"), 1):
             # eval one step
-            with torch.no_grad():
-                self._eval_step(batch)
+            self._eval_step(batch)
 
             # save intermediate result
             if eval_steps_per_epoch == 1:
@@ -292,16 +300,19 @@ class Trainer(object):
         for key in self.model.keys():
             self.model[key].train()
 
+    @torch.no_grad()
     def _genearete_and_save_intermediate_result(self, batch):
         """Generate and save intermediate result."""
         # delayed import to avoid error related backend error
         import matplotlib.pyplot as plt
 
         # generate
-        with torch.no_grad():
-            batch = [b.to(self.device) for b in batch]
-            z_batch, c_batch, y_batch = batch
+        batch = [b.to(self.device) for b in batch]
+        z_batch, c_batch, y_batch = batch
+        if self.use_noise_input:
             y_batch_ = self.model["generator"](z_batch, c_batch)
+        else:
+            y_batch_ = self.model["generator"](c_batch)
 
         # check directory
         dirname = os.path.join(self.config["outdir"], f"predictions/{self.steps}steps")
@@ -510,7 +521,7 @@ def main():
     # get dataset
     if config["remove_short_samples"]:
         mel_length_threshold = config["batch_max_steps"] // config["hop_size"] + \
-            2 * config["generator_params"]["aux_context_window"]
+            2 * config["generator_params"].get("aux_context_window", 0)
     else:
         mel_length_threshold = None
     if config["format"] == "hdf5":
@@ -546,7 +557,7 @@ def main():
     collater = Collater(
         batch_max_steps=config["batch_max_steps"],
         hop_size=config["hop_size"],
-        aux_context_window=config["generator_params"]["aux_context_window"],
+        aux_context_window=config["generator_params"].get("aux_context_window", 0),
     )
     train_sampler, dev_sampler = None, None
     if args.distributed:
