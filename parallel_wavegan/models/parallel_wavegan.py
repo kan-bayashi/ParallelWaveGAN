@@ -32,6 +32,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                  aux_channels=80,
                  aux_context_window=2,
                  dropout=0.0,
+                 bias=True,
                  use_weight_norm=True,
                  use_causal_conv=False,
                  upsample_conditional_features=True,
@@ -52,6 +53,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
             aux_channels (int): Number of channels for auxiliary feature conv.
             aux_context_window (int): Context window size for auxiliary feature.
             dropout (float): Dropout rate. 0.0 means no dropout applied.
+            bias (bool): Whether to use bias parameter in conv layer.
             use_weight_norm (bool): Whether to use weight norm.
                 If set to true, it will be applied to all of the conv layers.
             use_causal_conv (bool): Whether to use causal structure.
@@ -110,7 +112,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                 aux_channels=aux_channels,
                 dilation=dilation,
                 dropout=dropout,
-                bias=True,  # NOTE: magenda uses bias, but musyoku doesn't
+                bias=bias,
                 use_causal_conv=use_causal_conv,
             )
             self.conv_layers += [conv]

@@ -35,11 +35,11 @@ def make_generator_args(**kwargs):
         upsample_scales=[8, 8, 2, 2],
         stack_kernel_size=3,
         stacks=3,
-        activation_fn="LeakyReLU",
-        activation_params={"negative_slope": 0.2},
+        nolinear_activation="LeakyReLU",
+        nolinear_activation_params={"negative_slope": 0.2},
         padding_fn="ReflectionPad1d",
         padding_params={},
-        use_final_activation_fn=True,
+        use_final_nolinear_activation=True,
         use_weight_norm=True,
     )
     defaults.update(kwargs)
@@ -57,9 +57,9 @@ def make_generator_args(**kwargs):
         ({"upsample_scales": [8, 8, 2, 2, 2]}, {}, {}),
         ({"channels": 1024, "upsample_scales": [8, 8, 2, 2, 2, 2]}, {}, {}),
         ({"padding_fn": "ConstantPad1d", "padding_params": {"value": 0.0}}, {}, {}),
-        ({"activation_fn": "ReLU", "activation_params": {}}, {}, {}),
+        ({"nolinear_activation": "ReLU", "nolinear_activation_params": {}}, {}, {}),
         ({"bias": False}, {}, {}),
-        ({"use_final_activation_fn": False}, {}, {}),
+        ({"use_final_nolinear_activation": False}, {}, {}),
         ({"use_weight_norm": False}, {}, {}),
     ])
 def test_melgan_trainable(dict_g, dict_d, dict_loss):
@@ -113,9 +113,9 @@ def test_melgan_trainable(dict_g, dict_d, dict_loss):
         ({"upsample_scales": [8, 8, 2, 2, 2]}, {}, {}),
         ({"channels": 1024, "upsample_scales": [8, 8, 2, 2, 2, 2]}, {}, {}),
         ({"padding_fn": "ConstantPad1d", "padding_params": {"value": 0.0}}, {}, {}),
-        ({"activation_fn": "ReLU", "activation_params": {}}, {}, {}),
+        ({"nolinear_activation": "ReLU", "nolinear_activation_params": {}}, {}, {}),
         ({"bias": False}, {}, {}),
-        ({"use_final_activation_fn": False}, {}, {}),
+        ({"use_final_nolinear_activation": False}, {}, {}),
         ({"use_weight_norm": False}, {}, {}),
     ])
 def test_melgan_trainable_with_residual_discriminator(dict_g, dict_d, dict_loss):
