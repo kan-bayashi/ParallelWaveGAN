@@ -63,9 +63,9 @@ class UpsampleNetwork(torch.nn.Module):
 
     def __init__(self,
                  upsample_scales,
-                 upsample_activation="none",
-                 upsample_activation_params={},
-                 mode="nearest",
+                 nonlinear_activation=None,
+                 nonlinear_activation_params={},
+                 interpolate_mode="nearest",
                  freq_axis_kernel_size=1,
                  use_causal_conv=False,
                  ):
@@ -73,9 +73,9 @@ class UpsampleNetwork(torch.nn.Module):
 
         Args:
             upsample_scales (list): List of upsampling scales.
-            upsample_activation (str): Activation function name.
-            upsample_activation_params (dict): Arguments for specified activation function.
-            mode (str): Interpolation mode.
+            nonlinear_activation (str): Activation function name.
+            nonlinear_activation_params (dict): Arguments for specified activation function.
+            interpolate_mode (str): Interpolation mode.
             freq_axis_kernel_size (int): Kernel size in the direction of frequency axis.
 
         """
@@ -84,7 +84,7 @@ class UpsampleNetwork(torch.nn.Module):
         self.up_layers = torch.nn.ModuleList()
         for scale in upsample_scales:
             # interpolation layer
-            stretch = Stretch2d(scale, 1, mode)
+            stretch = Stretch2d(scale, 1, interpolate_mode)
             self.up_layers += [stretch]
 
             # conv layer
@@ -99,8 +99,8 @@ class UpsampleNetwork(torch.nn.Module):
             self.up_layers += [conv]
 
             # nonlinear
-            if upsample_activation != "none":
-                nonlinear = getattr(torch.nn, upsample_activation)(**upsample_activation_params)
+            if nonlinear_activation is not None:
+                nonlinear = getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params)
                 self.up_layers += [nonlinear]
 
     def forward(self, c):
@@ -127,9 +127,9 @@ class ConvInUpsampleNetwork(torch.nn.Module):
 
     def __init__(self,
                  upsample_scales,
-                 upsample_activation="none",
-                 upsample_activation_params={},
-                 mode="nearest",
+                 nonlinear_activation=None,
+                 nonlinear_activation_params={},
+                 interpolate_mode="nearest",
                  freq_axis_kernel_size=1,
                  aux_channels=80,
                  aux_context_window=0,
@@ -139,8 +139,8 @@ class ConvInUpsampleNetwork(torch.nn.Module):
 
         Args:
             upsample_scales (list): List of upsampling scales.
-            upsample_activation (str): Activation function name.
-            upsample_activation_params (dict): Arguments for specified activation function.
+            nonlinear_activation (str): Activation function name.
+            nonlinear_activation_params (dict): Arguments for specified activation function.
             mode (str): Interpolation mode.
             freq_axis_kernel_size (int): Kernel size in the direction of frequency axis.
             aux_channels (int): Number of channels of pre-convolutional layer.
@@ -157,9 +157,9 @@ class ConvInUpsampleNetwork(torch.nn.Module):
         self.conv_in = Conv1d(aux_channels, aux_channels, kernel_size=kernel_size, bias=False)
         self.upsample = UpsampleNetwork(
             upsample_scales=upsample_scales,
-            upsample_activation=upsample_activation,
-            upsample_activation_params=upsample_activation_params,
-            mode=mode,
+            nonlinear_activation=nonlinear_activation,
+            nonlinear_activation_params=nonlinear_activation_params,
+            interpolate_mode=interpolate_mode,
             freq_axis_kernel_size=freq_axis_kernel_size,
             use_causal_conv=use_causal_conv,
         )

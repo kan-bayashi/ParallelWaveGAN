@@ -26,7 +26,7 @@ This repository is tested on Ubuntu 16.04 with a GPU Titan V.
 - NCCL 2+ (for distributed multi-gpu training)
 
 Different cuda version should be working but not explicitly tested.  
-All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3 and 1.3.1.
+All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3.1 and 1.4.
 
 ## Setup
 
@@ -209,6 +209,7 @@ If you want to combine with TTS models, you can try the realtime demonstraion in
 - [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
 - [r9y9/wavenet_vocoder](https://github.com/r9y9/wavenet_vocoder)
 - [LiyuanLucasLiu/RAdam](https://github.com/LiyuanLucasLiu/RAdam)
+- [descriptinc/melgan-neurips](https://github.com/descriptinc/melgan-neurips)
 
 ## Acknowledgement
 

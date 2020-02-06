@@ -14,6 +14,7 @@ from parallel_wavegan.layers import Conv1d
 from parallel_wavegan.layers import Conv1d1x1
 from parallel_wavegan.layers import ResidualBlock
 from parallel_wavegan.layers import upsample
+from parallel_wavegan import models
 
 
 class ParallelWaveGANGenerator(torch.nn.Module):
@@ -31,6 +32,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                  aux_channels=80,
                  aux_context_window=2,
                  dropout=0.0,
+                 bias=True,
                  use_weight_norm=True,
                  use_causal_conv=False,
                  upsample_conditional_features=True,
@@ -51,6 +53,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
             aux_channels (int): Number of channels for auxiliary feature conv.
             aux_context_window (int): Context window size for auxiliary feature.
             dropout (float): Dropout rate. 0.0 means no dropout applied.
+            bias (bool): Whether to use bias parameter in conv layer.
             use_weight_norm (bool): Whether to use weight norm.
                 If set to true, it will be applied to all of the conv layers.
             use_causal_conv (bool): Whether to use causal structure.
@@ -79,12 +82,20 @@ class ParallelWaveGANGenerator(torch.nn.Module):
             upsample_params.update({
                 "use_causal_conv": use_causal_conv,
             })
-            if upsample_net == "ConvInUpsampleNetwork":
+            if upsample_net == "MelGANGenerator":
+                assert aux_context_window == 0
                 upsample_params.update({
-                    "aux_channels": aux_channels,
-                    "aux_context_window": aux_context_window,
+                    "use_weight_norm": False,  # not to apply twice
+                    "use_final_nolinear_activation": False,
                 })
-            self.upsample_net = getattr(upsample, upsample_net)(**upsample_params)
+                self.upsample_net = getattr(models, upsample_net)(**upsample_params)
+            else:
+                if upsample_net == "ConvInUpsampleNetwork":
+                    upsample_params.update({
+                        "aux_channels": aux_channels,
+                        "aux_context_window": aux_context_window,
+                    })
+                self.upsample_net = getattr(upsample, upsample_net)(**upsample_params)
         else:
             self.upsample_net = None
 
@@ -100,7 +111,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                 aux_channels=aux_channels,
                 dilation=dilation,
                 dropout=dropout,
-                bias=True,  # NOTE: magenda uses bias, but musyoku doesn't
+                bias=bias,
                 use_causal_conv=use_causal_conv,
             )
             self.conv_layers += [conv]
