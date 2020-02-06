@@ -50,15 +50,17 @@ class MelGANGenerator(torch.nn.Module):
                 If set to true, it will be applied to all of the conv layers.
 
         """
+        super(MelGANGenerator, self).__init__()
+
         # check hyper parameters is valid
         assert channels > np.prod(upsample_scales)
-        assert channels % (2 ** len(upsample_scales))
+        assert channels % (2 ** len(upsample_scales)) == 0
 
         # add initial layer
         layers = []
         layers += [
-            padding_fn((kernel_size - 1 // 2)),
-            torch.nn.Conv1d(in_channels, channels, bias=bias),
+            padding_fn((kernel_size - 1) // 2),
+            torch.nn.Conv1d(in_channels, channels, kernel_size, bias=bias),
         ]
 
         for i, upsample_scale in enumerate(upsample_scales):
@@ -66,10 +68,10 @@ class MelGANGenerator(torch.nn.Module):
             layers += [
                 activation_fn(**activation_params),
                 torch.nn.ConvTranspose1d(
+                    channels // (2 ** i),
                     channels // (2 ** (i + 1)),
-                    channels // (2 ** (i + 2)),
                     upsample_scale * 2,
-                    stried=upsample_scale,
+                    stride=upsample_scale,
                     padding=upsample_scale // 2 + upsample_scale % 2,
                     output_padding=upsample_scale % 2,
                 )
@@ -80,7 +82,7 @@ class MelGANGenerator(torch.nn.Module):
                 layers += [
                     ResidualStack(
                         kernel_size=stack_kernel_size,
-                        channels=channels // (2 ** (i + 2)),
+                        channels=channels // (2 ** (i + 1)),
                         dilation=stack_kernel_size ** j,
                         bias=bias,
                         padding_fn=padding_fn,
@@ -92,8 +94,8 @@ class MelGANGenerator(torch.nn.Module):
         # add final layer
         layers += [
             activation_fn(**activation_params),
-            padding_fn((kernel_size - 1 // 2)),
-            torch.nn.Conv1d(channels // (2 ** (i + 2)), 1, kernel_size, bias=bias),
+            padding_fn((kernel_size - 1) // 2),
+            torch.nn.Conv1d(channels // (2 ** (i + 1)), 1, kernel_size, bias=bias),
         ]
         if final_activation_fn is not None:
             layers += [final_activation_fn()]
@@ -117,7 +119,7 @@ class MelGANGenerator(torch.nn.Module):
             Tensor: Output tensor (B, 1, T ** prod(upsample_scales)).
 
         """
-        self.melgan(c)
+        return self.melgan(c)
 
     def remove_weight_norm(self):
         """Remove weight normalization module from all of the layers."""
