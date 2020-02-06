@@ -16,8 +16,8 @@ class ResidualStack(torch.nn.Module):
                  channels=32,
                  dilation=1,
                  bias=True,
-                 activation_fn="LeakyReLU",
-                 activation_params={"negative_slope": 0.2},
+                 nolinear_activation="LeakyReLU",
+                 nolinear_activation_params={"negative_slope": 0.2},
                  padding_fn="ReflectionPad1d",
                  padding_params={},
                  use_causal_conv=False
@@ -29,9 +29,9 @@ class ResidualStack(torch.nn.Module):
             channels (int): Number of channels of convolution layers.
             dilation (int): Dilation factor.
             bias (bool): Whether to add bias parameter in convolution layers.
-            activation_fn (torch.nn.Module): Activation function module name.
-            activation_params (dict): Hyperparameters for activation function.
-            padding_fn (torch.nn.Module): Padding function module name before dilated convolution layer.
+            nolinear_activation (str): Activation function module name.
+            nolinear_activation_params (dict): Hyperparameters for activation function.
+            padding_fn (str): Padding function module name before dilated convolution layer.
             padding_params (dict): Hyperparameters for padding function.
             use_causal_conv (bool): Whether to use causal convolution.
 
@@ -43,10 +43,10 @@ class ResidualStack(torch.nn.Module):
         padding = (kernel_size - 1) // 2 * dilation
 
         self.stack = torch.nn.Sequential(
-            getattr(torch.nn, activation_fn)(**activation_params),
+            getattr(torch.nn, nolinear_activation)(**nolinear_activation_params),
             getattr(torch.nn, padding_fn)(padding, **padding_params),
             torch.nn.Conv1d(channels, channels, kernel_size, dilation=dilation, bias=bias),
-            getattr(torch.nn, activation_fn)(**activation_params),
+            getattr(torch.nn, nolinear_activation)(**nolinear_activation_params),
             torch.nn.Conv1d(channels, channels, 1, bias=bias),
         )
 
