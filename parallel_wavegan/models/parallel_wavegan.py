@@ -85,8 +85,6 @@ class ParallelWaveGANGenerator(torch.nn.Module):
             if upsample_net == "MelGANGenerator":
                 assert aux_context_window == 0
                 upsample_params.update({
-                    "in_channels": aux_channels,
-                    "out_channels": aux_channels,
                     "use_weight_norm": False,  # not to apply twice
                     "use_final_nolinear_activation": False,
                 })
