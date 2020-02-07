@@ -122,7 +122,7 @@ def main():
             c = pad_fn(torch.from_numpy(c).unsqueeze(0).transpose(2, 1)).to(device)
             x = (c,)
             if use_noise_input:
-                z = torch.randn(1, 1, c.shape[0] * config["hop_size"]).to(device)
+                z = torch.randn(1, 1, c.size(0) * config["hop_size"] - sum(pad_fn.padding)).to(device)
                 x = (z,) + x
 
             # generate
