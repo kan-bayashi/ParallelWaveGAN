@@ -2,6 +2,8 @@
 
 ![](https://github.com/kan-bayashi/ParallelWaveGAN/workflows/CI/badge.svg) [![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/pypi/pyversions/parallel-wavegan) ![](https://img.shields.io/pypi/l/parallel-wavegan) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
+> **2020/02/08 (New!)** We also support [MelGAN](https://arxiv.org/abs/1910.06711)'s generator!
+
 This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480) implementation with Pytorch.
 
 You can check our samples in [our demo HP](https://kan-bayashi.github.io/ParallelWaveGAN)!
@@ -62,12 +64,13 @@ If you want to use different cuda version, please check `tools/Makefile` to chan
 ## Run
 
 This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).  
-Currently, four recipes are supported.
+Currently, five recipes are supported.
 
 - [CMU Arctic](http://www.festvox.org/cmu_arctic/): English speakers
 - [LJSpeech](https://keithito.com/LJ-Speech-Dataset/): English female speaker
 - [JSUT](https://sites.google.com/site/shinnosuketakamichi/publication/jsut): Japanese female speaker
 - [CSMSC](https://www.data-baker.com/open_source.html): Mandarin female speaker
+- [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi speaker
 
 To run the recipe, please follow the below instruction.
 
@@ -133,6 +136,18 @@ Even on the CPU (Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz 16 threads), it can ge
 2019-11-06 09:04:56,697 (decode:129) INFO: finished generation of 250 utterances (RTF = 0.734).
 ```
 
+If you use MelGAN's generator, the decoding speed will be further faster.
+
+```bash
+# On CPU (Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz 16 threads)
+[decode]: 100%|██████████| 250/250 [04:00<00:00,  1.04it/s, RTF=0.0882]
+2020-02-08 10:45:14,111 (decode:142) INFO: Finished generation of 250 utterances (RTF = 0.137).
+
+# On GPU (TITAN V)
+[decode]: 100%|██████████| 250/250 [00:06<00:00, 36.38it/s, RTF=0.00189]
+2020-02-08 05:44:42,231 (decode:142) INFO: Finished generation of 250 utterances (RTF = 0.002).
+```
+
 ## Results
 
 Here the results are summarized in the table.  
@@ -147,6 +162,7 @@ You can listen to the samples and download pretrained models from the link to ou
 | [csmsc_parallel_wavegan.v1](https://drive.google.com/open?id=1C2nu9nOFdKcEd-D9xGquQ0bCia0B2v_4)             | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csmsc/voc1/conf/parallel_wavegan.v1.yaml)             | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
 | [arctic_slt_parallel_wavegan.v1](https://drive.google.com/open?id=1xG9CmSED2TzFdklD6fVxzf7kFV2kPQAJ)        | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/arctic/voc1/conf/parallel_wavegan.v1.yaml)            | EN    | 16k     | 80-7600        | 1024 / 256 / None    | 400k    |
 | [jnas_parallel_wavegan.v1](https://drive.google.com/open?id=1n_hkxPxryVXbp6oHM1NFm08q0TcoDXz1)              | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jnas/voc1/conf/parallel_wavegan.v1.yaml)              | JP    | 16k     | 80-7600        | 1024 / 256 / None    | 400k    |
+| [ljspeech_melgan.v1](https://drive.google.com/open?id=1z0vO1UMFHyeCdCLAmd7Moewi4QgCb07S)                    | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/melgan.v1.yaml)                    | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 400k    |
 
 If you want to check more results, please access at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).
 
@@ -209,6 +225,7 @@ If you want to combine with TTS models, you can try the realtime demonstraion in
 - [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
 - [r9y9/wavenet_vocoder](https://github.com/r9y9/wavenet_vocoder)
 - [LiyuanLucasLiu/RAdam](https://github.com/LiyuanLucasLiu/RAdam)
+- [MelGAN](https://arxiv.org/abs/1910.06711)
 - [descriptinc/melgan-neurips](https://github.com/descriptinc/melgan-neurips)
 
 ## Acknowledgement
