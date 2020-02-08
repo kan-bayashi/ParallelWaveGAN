@@ -166,8 +166,6 @@ You can listen to the samples and download pretrained models from the link to ou
 
 If you want to check more results, please access at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).
 
-If you want to know the latest progress, please check https://github.com/kan-bayashi/ParallelWaveGAN/issues/1.
-
 ## How-to-use pretrained models
 
 Here the minimal code is shown to perform analysis-synthesis using the pretrained model.
