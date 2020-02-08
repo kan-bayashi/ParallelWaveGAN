@@ -217,7 +217,7 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
             conv_channels (int): Number of chnn layers.
             nonlinear_activation (str): Nonlinear function after each conv.
             nonlinear_activation_params (dict): Nonlinear function parameters
-            bias (int): Whether to use bias parameter in conv.
+            bias (bool): Whether to use bias parameter in conv.
             use_weight_norm (bool) Whether to use weight norm.
                 If set to true, it will be applied to all of the conv layers.
 
@@ -298,6 +298,7 @@ class ResidualParallelWaveGANDiscriminator(torch.nn.Module):
                  gate_channels=128,
                  skip_channels=64,
                  dropout=0.0,
+                 bias=True,
                  use_weight_norm=True,
                  use_causal_conv=False,
                  nonlinear_activation="LeakyReLU",
@@ -315,6 +316,7 @@ class ResidualParallelWaveGANDiscriminator(torch.nn.Module):
             gate_channels (int):  Number of channels in gated conv.
             skip_channels (int): Number of channels in skip conv.
             dropout (float): Dropout rate. 0.0 means no dropout applied.
+            bias (bool): Whether to use bias parameter in conv.
             use_weight_norm (bool): Whether to use weight norm.
                 If set to true, it will be applied to all of the conv layers.
             use_causal_conv (bool): Whether to use causal structure.
@@ -353,7 +355,7 @@ class ResidualParallelWaveGANDiscriminator(torch.nn.Module):
                 aux_channels=-1,
                 dilation=dilation,
                 dropout=dropout,
-                bias=True,  # NOTE: magenda uses bias, but musyoku doesn't
+                bias=bias,
                 use_causal_conv=use_causal_conv,
             )
             self.conv_layers += [conv]
