@@ -16,7 +16,10 @@ You can try the realtime end-to-end text-to-speech demonstraion in Google Colab!
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
-> **2020/02/08 (New!)** We also support [MelGAN](https://arxiv.org/abs/1910.06711)'s generator!
+## What's new
+
+- 2020/02/12 **(New!)** Support [MelGAN](https://arxiv.org/abs/1910.06711)'s discriminator!
+- 2020/02/08 Support [MelGAN](https://arxiv.org/abs/1910.06711)'s generator!
 
 ## Requirements
 
