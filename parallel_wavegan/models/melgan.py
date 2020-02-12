@@ -356,7 +356,7 @@ class MelGANMultiScaleDiscriminator(torch.nn.Module):
 
         """
         outs = []
-        for f in self.layers:
+        for f in self.discriminators:
             outs += [f(x)]
             x = self.pooling(x)
 
