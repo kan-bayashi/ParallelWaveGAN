@@ -145,7 +145,10 @@ class Trainer(object):
             self.model["discriminator"].load_state_dict(state_dict["model"]["discriminator"])
         self.optimizer["generator"].load_state_dict(state_dict["optimizer"]["generator"])
         self.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
-        self.scheduler["generator"].load_state_dict(state_dict["scheduler"]["generator"])
+        # overwrite schedular argument parameters
+        state_dict["scheduler"]["generator"].update(**self.config["generator_scheduler_params"])
+        state_dict["scheduler"]["discriminator"].update(**self.config["discriminator_scheduler_params"])
+        self.scheduler["generator"].load_state_dict(state_dict["scheduler"]["discriminator"])
         self.scheduler["discriminator"].load_state_dict(state_dict["scheduler"]["discriminator"])
 
     def _train_step(self, batch):
