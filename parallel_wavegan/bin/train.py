@@ -187,7 +187,7 @@ class Trainer(object):
                     for i in range(len(p_)):
                         for j in range(len(p_[i]) - 1):
                             fm_loss += self.criterion["l1"](p_[i][j], p[i][j].detach())
-                    fm_loss /= (i + 1) * j  # do not include the last outputs
+                    fm_loss /= (i + 1) * (j + 1)
                     self.total_train_loss["train/feature_matching_loss"] += fm_loss.item()
                     adv_loss += self.config["lambda_feat_match"] * fm_loss
 
@@ -311,7 +311,7 @@ class Trainer(object):
                 for i in range(len(p_)):
                     for j in range(len(p_[i]) - 1):
                         fm_loss += self.criterion["l1"](p_[i][j], p[i][j])
-                fm_loss /= (i + 1) * j  # do not include the last outputs
+                fm_loss /= (i + 1) * (j + 1)
                 self.total_eval_loss["eval/feature_matching_loss"] += fm_loss.item()
                 gen_loss += self.config["lambda_adv"] * self.config["lambda_feat_match"] * fm_loss
 
