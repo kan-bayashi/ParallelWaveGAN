@@ -81,4 +81,4 @@ jobs:
           pip install -q -e .
       - name: Integration
         run: |
-          cd egs/yesno/voc1 && ./run.sh --conf conf/${{ matirx.config }}
+          cd egs/yesno/voc1 && ./run.sh --conf conf/${{ matrix.config }}
