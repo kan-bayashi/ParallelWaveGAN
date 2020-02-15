@@ -202,6 +202,7 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
                  kernel_size=3,
                  layers=10,
                  conv_channels=64,
+                 dilation_factor=1,
                  nonlinear_activation="LeakyReLU",
                  nonlinear_activation_params={"negative_slope": 0.2},
                  bias=True,
@@ -215,6 +216,8 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
             kernel_size (int): Number of output channels.
             layers (int): Number of conv layers.
             conv_channels (int): Number of chnn layers.
+            dilation_factor (int): Dilation factor. For example, if dilation_factor = 2,
+                the dilation will be 2, 4, 8, ..., and so on.
             nonlinear_activation (str): Nonlinear function after each conv.
             nonlinear_activation_params (dict): Nonlinear function parameters
             bias (bool): Whether to use bias parameter in conv.
@@ -224,13 +227,14 @@ class ParallelWaveGANDiscriminator(torch.nn.Module):
         """
         super(ParallelWaveGANDiscriminator, self).__init__()
         assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
+        assert dilation_factor > 0, "Dilation factor must be > 0."
         self.conv_layers = torch.nn.ModuleList()
         conv_in_channels = in_channels
         for i in range(layers - 1):
             if i == 0:
                 dilation = 1
             else:
-                dilation = i
+                dilation = i if dilation_factor == 1 else dilation_factor ** i
                 conv_in_channels = conv_channels
             padding = (kernel_size - 1) // 2 * dilation
             conv_layer = [
