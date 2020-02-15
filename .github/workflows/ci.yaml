@@ -84,6 +84,7 @@ jobs:
         run: |
           cd egs/yesno/voc1 && ./run.sh --conf conf/${{ matrix.config }}
       - uses: actions/upload-artifact@v1
+        if: failure()
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.config }}
           path: egs/yesno/voc1
