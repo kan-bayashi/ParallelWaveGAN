@@ -51,3 +51,33 @@ jobs:
       - name: Pytest
         run: |
           pytest test
+
+  integration:
+    runs-on: ubuntu-16.04
+    strategy:
+      max-parallel: 10
+      matrix:
+        python-version: [3.7]
+        pytorch-version: [1.4]
+        config: ["parallel_wavegan.v1.debug.yaml", "melgan.v1.debug.yaml" , "melgan.v2.debug.yaml"]
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: 'x64'
+      - uses: actions/cache@v1
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-${{ hashFiles('**/setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-
+      - name: Install dependencies
+        run: |
+          # install python modules
+          python -m pip install --upgrade pip
+          pip install -q -U numpy
+          pip install -q torch==${{ matrix.pytorch-version }} -f https://download.pytorch.org/whl/cpu/stable.html
+          pip install -q -e .
+      - name: Integration
+          cd egs/yesno/voc1 && ./run.sh --conf conf/${{ matirx.config }}
