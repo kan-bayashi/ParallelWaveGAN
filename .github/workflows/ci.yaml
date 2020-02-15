@@ -80,4 +80,5 @@ jobs:
           pip install -q torch==${{ matrix.pytorch-version }} -f https://download.pytorch.org/whl/cpu/stable.html
           pip install -q -e .
       - name: Integration
+        run: |
           cd egs/yesno/voc1 && ./run.sh --conf conf/${{ matirx.config }}
