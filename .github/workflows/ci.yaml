@@ -83,9 +83,7 @@ jobs:
       - name: Integration
         run: |
           cd egs/yesno/voc1 && ./run.sh --conf conf/${{ matrix.config }}
-          exit 1
      - uses: actions/upload-artifact@v1
-       if: failure()
        with:
          name: artifacts
          path: egs/yesnot/voc1
