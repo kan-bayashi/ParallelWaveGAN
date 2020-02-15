@@ -145,7 +145,10 @@ class Trainer(object):
             self.model["discriminator"].load_state_dict(state_dict["model"]["discriminator"])
         self.optimizer["generator"].load_state_dict(state_dict["optimizer"]["generator"])
         self.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
-        self.scheduler["generator"].load_state_dict(state_dict["scheduler"]["generator"])
+        # overwrite schedular argument parameters
+        state_dict["scheduler"]["generator"].update(**self.config["generator_scheduler_params"])
+        state_dict["scheduler"]["discriminator"].update(**self.config["discriminator_scheduler_params"])
+        self.scheduler["generator"].load_state_dict(state_dict["scheduler"]["discriminator"])
         self.scheduler["discriminator"].load_state_dict(state_dict["scheduler"]["discriminator"])
 
     def _train_step(self, batch):
@@ -187,7 +190,7 @@ class Trainer(object):
                     for i in range(len(p_)):
                         for j in range(len(p_[i]) - 1):
                             fm_loss += self.criterion["l1"](p_[i][j], p[i][j].detach())
-                    fm_loss /= (i + 1) * j  # do not include the last outputs
+                    fm_loss /= (i + 1) * (j + 1)
                     self.total_train_loss["train/feature_matching_loss"] += fm_loss.item()
                     adv_loss += self.config["lambda_feat_match"] * fm_loss
 
@@ -311,7 +314,7 @@ class Trainer(object):
                 for i in range(len(p_)):
                     for j in range(len(p_[i]) - 1):
                         fm_loss += self.criterion["l1"](p_[i][j], p[i][j])
-                fm_loss /= (i + 1) * j  # do not include the last outputs
+                fm_loss /= (i + 1) * (j + 1)
                 self.total_eval_loss["eval/feature_matching_loss"] += fm_loss.item()
                 gen_loss += self.config["lambda_adv"] * self.config["lambda_feat_match"] * fm_loss
 

@@ -184,8 +184,10 @@ class MelGANDiscriminator(torch.nn.Module):
         Args:
             in_channels (int): Number of input channels.
             out_channels (int): Number of output channels.
-            kernel_sizes (list): List of two kernel sizes. The sum will be used for the first conv layer,
+            kernel_sizes (list): List of two kernel sizes. The prod will be used for the first conv layer,
                 and the first and the second kernel sizes will be used for the last two layers.
+                For example if kernel_sizes = [5, 3], the first layer kernel size will be 5 * 3 = 15,
+                the last two layers' kernel size will be 5 and 3, respectively.
             channels (int): Initial number of channels for conv layer.
             max_downsample_channels (int): Maximum number of channels for downsampling layers.
             bias (bool): Whether to add bias parameter in convolution layers.
@@ -207,8 +209,8 @@ class MelGANDiscriminator(torch.nn.Module):
         # add first layer
         self.layers += [
             torch.nn.Sequential(
-                getattr(torch.nn, pad)((sum(kernel_sizes) - 1) // 2, **pad_params),
-                torch.nn.Conv1d(in_channels, channels, sum(kernel_sizes), bias=bias),
+                getattr(torch.nn, pad)((np.prod(kernel_sizes) - 1) // 2, **pad_params),
+                torch.nn.Conv1d(in_channels, channels, np.prod(kernel_sizes), bias=bias),
                 getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
             )
         ]
