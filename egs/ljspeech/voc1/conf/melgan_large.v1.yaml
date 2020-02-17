@@ -1,8 +1,8 @@
 # This is the hyperparameter configuration file for MelGAN.
 # Please make sure this is adjusted for the LJSpeech dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
-# This configuration use larger generator and performs 1000k iters.
-# It requires ~5 GB GPU memory and takes ~1 days on TITAN V.
+# This configuration use larger generator. It requires ~5 GB GPU memory and
+# takes ~1 days on TITAN V.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
