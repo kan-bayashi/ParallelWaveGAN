@@ -5,7 +5,7 @@
 # STFT-based auxiliary loss. This configuration requires ~4 GB GPU memory
 # and takes ~4 days on TITAN V. The discriminator loss is not stable as v1,
 # gradually decreasing both real and fake losses. But in terms of naturalness,
-# this model is better than v1.
+# this model is better than melgan.v1.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
