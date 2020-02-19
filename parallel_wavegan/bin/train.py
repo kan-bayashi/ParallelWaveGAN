@@ -167,6 +167,8 @@ class Trainer(object):
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
         gen_loss = sc_loss + mag_loss
         if self.steps > self.config["discriminator_train_start_steps"]:
+            # keep compatibility
+            gen_loss *= self.config.get("lambda_aux_after_introduce_adv_loss", 1.0)
             p_ = self.model["discriminator"](y_.unsqueeze(1))
             if not isinstance(p_, list):
                 # for standard discriminator
@@ -294,6 +296,9 @@ class Trainer(object):
         y, y_ = y.squeeze(1), y_.squeeze(1)
         sc_loss, mag_loss = self.criterion["stft"](y_, y)
         aux_loss = sc_loss + mag_loss
+        if self.steps > self.config["discriminator_train_start_steps"]:
+            # keep compatibility
+            aux_loss *= self.config.get("lambda_aux_after_introduce_adv_loss", 1.0)
         if not isinstance(p_, list):
             # for standard discriminator
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
