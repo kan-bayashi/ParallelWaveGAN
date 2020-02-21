@@ -16,7 +16,7 @@ Github: https://github.com/kan-bayashi/ParallelWaveGAN
 Here is the comparison in the analysis-synthesis condition using [LJSpeech dataset](https://keithito.com/LJ-Speech-Dataset/).  
 Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.
 
-- **Groundtruth**: Target speech
+- **Groundtruth**: Target speech.
 - **Parallel WaveGAN (official)**: Official samples provided in [the official demo HP](https://r9y9.github.io/demos/projects/icassp2020).
 - **Parallel WaveGAN (ours)**: Our samples based [this config](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml).
 - **MelGAN + STFT-loss (ours)**: Our samples based [this config](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/melgan.v3.long.yaml).
@@ -53,7 +53,7 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 Audio sampels trained on [JSUT dataset](https://sites.google.com/site/shinnosuketakamichi/publication/jsut).  
 Note that groundtruth samples are 48 kHz and we downsampled to 24 kHz and we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.
 
-- **Groundtruth**: Target speech
+- **Groundtruth**: Target speech.
 - **Parallel WaveGAN (ours)**: Our samples based [this config](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jsut/voc1/conf/parallel_wavegan.v1.yaml).
 
 |     |     |
@@ -71,7 +71,7 @@ Note that groundtruth samples are 48 kHz and we downsampled to 24 kHz and we lim
 Audio sampels trained on [CSMSC dataset](https://www.data-baker.com/open_source.html).  
 Note that groundtruth samples are 48 kHz and we downsampled to 24 kHz and we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.
 
-- **Groundtruth**: Target speech
+- **Groundtruth**: Target speech.
 - **Parallel WaveGAN (ours)**: Our samples based [this config](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csmsc/voc1/conf/parallel_wavegan.v1.yaml).
 
 |     |     |
@@ -87,6 +87,7 @@ Note that groundtruth samples are 48 kHz and we downsampled to 24 kHz and we lim
 ## References
 
 - [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
+- [MelGAN](https://arxiv.org/abs/1910.06711)
 - [Official Parallel WaveGAN demo](https://r9y9.github.io/demos/projects/icassp2020)
 
 
