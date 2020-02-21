@@ -3,11 +3,11 @@
 # apply to the other dataset, you might need to carefully change some parameters.
 # Both generator and discriminator are based on MelGAN but we also use
 # STFT-based auxiliary loss with fixed lr. This configuration requires ~4 GB
-# GPU memory and takes ~4 days on TITAN V.
+# GPU memory and takes ~7 days on TITAN V.
 # The discriminator loss is not stable as v1, i.e., gradually decreasing both
 # real and fake losses (Also, feature matching loss keeps increasing). But in
-# terms of naturalness, this model is better than v1.
-# If you get unstable results, please increase train_max_steps or use v3.long.
+# terms of naturalness, this model is better than v1. To get the stable results,
+# this model basically requires ~3M iters.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -80,7 +80,7 @@ stft_loss_params:
 ###########################################################
 use_feat_match_loss: true # Whether to use feature matching loss.
 lambda_feat_match: 25.0   # Loss balancing coefficient for feature matching loss.
-lambda_adv: 4.0           # Loss balancing coefficient for adversarial loss.
+lambda_adv: 4.0          # Loss balancing coefficient for adversarial loss.
 
 ###########################################################
 #                  DATA LOADER SETTING                    #
@@ -100,7 +100,7 @@ generator_optimizer_params:
     eps: 1.0e-6            # Generator's epsilon.
     weight_decay: 0.0      # Generator's weight decay coefficient.
 generator_scheduler_params:
-    step_size: 2000000     # Generator's scheduler step size.
+    step_size: 4000000     # Generator's scheduler step size.
     gamma: 0.5             # Generator's scheduler gamma.
                            # At each step size, lr will be multiplied by this parameter.
 generator_grad_norm: 10    # Generator's gradient norm.
@@ -109,7 +109,7 @@ discriminator_optimizer_params:
     eps: 1.0e-6            # Discriminator's epsilon.
     weight_decay: 0.0      # Discriminator's weight decay coefficient.
 discriminator_scheduler_params:
-    step_size: 2000000     # Discriminator's scheduler step size.
+    step_size: 4000000     # Discriminator's scheduler step size.
     gamma: 0.5             # Discriminator's scheduler gamma.
                            # At each step size, lr will be multiplied by this parameter.
 discriminator_grad_norm: 1 # Discriminator's gradient norm.
@@ -118,7 +118,7 @@ discriminator_grad_norm: 1 # Discriminator's gradient norm.
 #                    INTERVAL SETTING                     #
 ###########################################################
 discriminator_train_start_steps: 100000 # Number of steps to start to train discriminator.
-train_max_steps: 2000000                # Number of training steps.
+train_max_steps: 4000000                # Number of training steps.
 save_interval_steps: 5000               # Interval steps to save checkpoint.
 eval_interval_steps: 1000               # Interval steps to evaluate the network.
 log_interval_steps: 100                 # Interval steps to record the training log.
