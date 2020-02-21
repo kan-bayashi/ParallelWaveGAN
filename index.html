@@ -7,11 +7,11 @@
     
     <title> - Unofficial Parallel WaveGAN Implementation Demo</title>
     
-    <meta name="description" content="Unofficial Parallel WaveGAN implementation demo This is the demonstration page of UNOFFICIAL Parallel WaveGAN implementation.
+    <meta name="description" content="Unofficial Parallel WaveGAN implementation demo This is the demonstration page of UNOFFICIAL Parallel WaveGAN and MelGAN implementations.
 Github: https://github.com/kan-bayashi/ParallelWaveGAN
 Audio samples (English) Here is the comparison in the analysis-synthesis condition using LJSpeech dataset.
 Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.
- Groundtruth: Target speech Parallel WaveGAN (official): Official samples provided in the official demo HP. Parallel WaveGAN (ours): Our samples based this config.">
+ Groundtruth: Target speech. Parallel WaveGAN (official): Official samples provided in the official demo HP. Parallel WaveGAN (ours): Our samples based this config.">
     <meta name="author" content="">
     
     <link href="https://kan-bayashi.github.io/ParallelWaveGAN/an-old-hope.min.css" rel="stylesheet">
@@ -93,7 +93,7 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 
 <h1 id="unofficial-parallel-wavegan-implementation-demo">Unofficial Parallel WaveGAN implementation demo</h1>
 
-<p>This is the demonstration page of <strong>UNOFFICIAL</strong> Parallel WaveGAN implementation.</p>
+<p>This is the demonstration page of <strong>UNOFFICIAL</strong> Parallel WaveGAN and MelGAN implementations.</p>
 
 <p>Github: <a href="https://github.com/kan-bayashi/ParallelWaveGAN">https://github.com/kan-bayashi/ParallelWaveGAN</a></p>
 
@@ -103,97 +103,139 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.</p>
 
 <ul>
-<li>Groundtruth: Target speech</li>
-<li>Parallel WaveGAN (official): Official samples provided in <a href="https://r9y9.github.io/demos/projects/icassp2020">the official demo HP</a>.</li>
-<li>Parallel WaveGAN (ours): Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml">this config</a>.</li>
+<li><strong>Groundtruth</strong>: Target speech.</li>
+<li><strong>Parallel WaveGAN (official)</strong>: Official samples provided in <a href="https://r9y9.github.io/demos/projects/icassp2020">the official demo HP</a>.</li>
+<li><strong>Parallel WaveGAN (ours)</strong>: Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml">this config</a>.</li>
+<li><strong>MelGAN + STFT-loss (ours)</strong>: Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/melgan.v3.long.yaml">this config</a>.</li>
 </ul>
 
 <table>
 <thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (official)</th>
-<th>ParallelWaveGAN (ours)</th>
+<th></th>
+<th></th>
 </tr>
 </thead>
 
 <tbody>
 <tr>
-<td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0029.wav"/></audio></td>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (official)</strong></td>
+</tr>
+
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0033.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0029.wav"/></audio></td>
-<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0029.wav"/></audio></td>
 </tr>
-</tbody>
-</table>
 
-<table>
-<thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (official)</th>
-<th>ParallelWaveGAN (ours)</th>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
+<td><strong>MelGAN + STFT-loss (ours)</strong></td>
 </tr>
-</thead>
 
-<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0029.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0029.wav"/></audio></td>
+</tr>
+
+<tr>
+<td></td>
+<td></td>
+</tr>
+
+<tr>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (official)</strong></td>
+</tr>
+
 <tr>
 <td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0030.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0030.wav"/></audio></td>
-<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0030.wav"/></audio></td>
 </tr>
-</tbody>
-</table>
 
-<table>
-<thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (official)</th>
-<th>ParallelWaveGAN (ours)</th>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
+<td><strong>MelGAN + STFT-loss (ours)</strong></td>
 </tr>
-</thead>
 
-<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0030.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0030.wav"/></audio></td>
+</tr>
+
+<tr>
+<td></td>
+<td></td>
+</tr>
+
+<tr>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (official)</strong></td>
+</tr>
+
 <tr>
 <td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0031.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0031.wav"/></audio></td>
-<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0031.wav"/></audio></td>
 </tr>
-</tbody>
-</table>
 
-<table>
-<thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (official)</th>
-<th>ParallelWaveGAN (ours)</th>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
+<td><strong>MelGAN + STFT-loss (ours)</strong></td>
 </tr>
-</thead>
 
-<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0031.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0031.wav"/></audio></td>
+</tr>
+
+<tr>
+<td></td>
+<td></td>
+</tr>
+
+<tr>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (official)</strong></td>
+</tr>
+
 <tr>
 <td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0032.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0032.wav"/></audio></td>
-<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0032.wav"/></audio></td>
 </tr>
-</tbody>
-</table>
 
-<table>
-<thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (official)</th>
-<th>ParallelWaveGAN (ours)</th>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
+<td><strong>MelGAN + STFT-loss (ours)</strong></td>
 </tr>
-</thead>
 
-<tbody>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0032.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0032.wav"/></audio></td>
+</tr>
+
+<tr>
+<td></td>
+<td></td>
+</tr>
+
+<tr>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (official)</strong></td>
+</tr>
+
 <tr>
 <td><audio controls="" ><source src="wav/ljspeech/raw/LJ050-0033.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0033.wav"/></audio></td>
+</tr>
+
+<tr>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
+<td><strong>MelGAN + STFT-loss (ours)</strong></td>
+</tr>
+
+<tr>
 <td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0033.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0033.wav"/></audio></td>
 </tr>
 </tbody>
 </table>
@@ -204,51 +246,44 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 Note that groundtruth samples are 48 kHz and we downsampled to 24 kHz and we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.</p>
 
 <ul>
-<li>Groundtruth: Target speech</li>
-<li>Parallel WaveGAN (ours): Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jsut/voc1/conf/parallel_wavegan.v1.yaml">this config</a>.</li>
+<li><strong>Groundtruth</strong>: Target speech.</li>
+<li><strong>Parallel WaveGAN (ours)</strong>: Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jsut/voc1/conf/parallel_wavegan.v1.yaml">this config</a>.</li>
 </ul>
 
 <table>
 <thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (ours)</th>
+<th></th>
+<th></th>
 </tr>
 </thead>
 
 <tbody>
+<tr>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
+</tr>
+
 <tr>
 <td><audio controls="" ><source src="wav/jsut/raw/BASIC5000_0001.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/jsut/kan-bayashi_wavegan.v1/BASIC5000_0001.wav"/></audio></td>
 </tr>
-</tbody>
-</table>
 
-<table>
-<thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (ours)</th>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
 </tr>
-</thead>
 
-<tbody>
 <tr>
 <td><audio controls="" ><source src="wav/jsut/raw/BASIC5000_0002.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/jsut/kan-bayashi_wavegan.v1/BASIC5000_0002.wav"/></audio></td>
 </tr>
-</tbody>
-</table>
 
-<table>
-<thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (ours)</th>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
 </tr>
-</thead>
 
-<tbody>
 <tr>
 <td><audio controls="" ><source src="wav/jsut/raw/BASIC5000_0003.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/jsut/kan-bayashi_wavegan.v1/BASIC5000_0003.wav"/></audio></td>
@@ -262,51 +297,44 @@ Note that groundtruth samples are 48 kHz and we downsampled to 24 kHz and we lim
 Note that groundtruth samples are 48 kHz and we downsampled to 24 kHz and we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.</p>
 
 <ul>
-<li>Groundtruth: Target speech</li>
-<li>Parallel WaveGAN (ours): Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csmsc/voc1/conf/parallel_wavegan.v1.yaml">this config</a>.</li>
+<li><strong>Groundtruth</strong>: Target speech.</li>
+<li><strong>Parallel WaveGAN (ours)</strong>: Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csmsc/voc1/conf/parallel_wavegan.v1.yaml">this config</a>.</li>
 </ul>
 
 <table>
 <thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (ours)</th>
+<th></th>
+<th></th>
 </tr>
 </thead>
 
 <tbody>
+<tr>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
+</tr>
+
 <tr>
 <td><audio controls="" ><source src="wav/csmsc/raw/009901.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/csmsc/kan-bayashi_wavegan.v1/009901.wav"/></audio></td>
 </tr>
-</tbody>
-</table>
 
-<table>
-<thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (ours)</th>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
 </tr>
-</thead>
 
-<tbody>
 <tr>
 <td><audio controls="" ><source src="wav/csmsc/raw/009902.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/csmsc/kan-bayashi_wavegan.v1/009902.wav"/></audio></td>
 </tr>
-</tbody>
-</table>
 
-<table>
-<thead>
 <tr>
-<th>Groundtruth</th>
-<th>ParallelWaveGAN (ours)</th>
+<td><strong>Groundtruth</strong></td>
+<td><strong>ParallelWaveGAN (ours)</strong></td>
 </tr>
-</thead>
 
-<tbody>
 <tr>
 <td><audio controls="" ><source src="wav/csmsc/raw/009903.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/csmsc/kan-bayashi_wavegan.v1/009903.wav"/></audio></td>
@@ -318,6 +346,7 @@ Note that groundtruth samples are 48 kHz and we downsampled to 24 kHz and we lim
 
 <ul>
 <li><a href="https://arxiv.org/abs/1910.11480">Parallel WaveGAN</a></li>
+<li><a href="https://arxiv.org/abs/1910.06711">MelGAN</a></li>
 <li><a href="https://r9y9.github.io/demos/projects/icassp2020">Official Parallel WaveGAN demo</a></li>
 </ul>
 
@@ -335,7 +364,7 @@ e-mail: hayashi.tomoki@g.sp.m.is.nagoya-u.ac.jp</p>
 
 </main>
 <footer class="footer">
-  <span>&copy; 2019 <a href="https://kan-bayashi.github.io/ParallelWaveGAN/">Unofficial Parallel WaveGAN Implementation Demo</a></span>
+  <span>&copy; 2020 <a href="https://kan-bayashi.github.io/ParallelWaveGAN/">Unofficial Parallel WaveGAN Implementation Demo</a></span>
   <span>&middot;</span>
   <span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️</span>
   <span>&middot;</span>
