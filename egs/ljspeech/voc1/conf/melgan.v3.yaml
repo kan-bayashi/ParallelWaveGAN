@@ -1,11 +1,13 @@
 # This is the hyperparameter configuration file for MelGAN.
 # Please make sure this is adjusted for the LJSpeech dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
-# Both generator and discriminator are based on MelGAn but we also use
-# STFT-based auxiliary loss. This configuration requires ~4 GB GPU memory
-# and takes ~4 days on TITAN V. The discriminator loss is not stable as v1,
-# gradually decreasing both real and fake losses. But in terms of naturalness,
-# this model is better than melgan.v1.
+# Both generator and discriminator are based on MelGAN but we also use
+# STFT-based auxiliary loss with fixed lr. This configuration requires ~4 GB
+# GPU memory and takes ~4 days on TITAN V.
+# The discriminator loss is not stable as v1, i.e., gradually decreasing both
+# real and fake losses (Also, feature matching loss keeps increasing). But in
+# terms of naturalness, this model is better than v1.
+# If you get unstable results, please increase train_max_steps or use v3.long.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
