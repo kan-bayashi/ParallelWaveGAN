@@ -2,10 +2,10 @@
 
 ![](https://github.com/kan-bayashi/ParallelWaveGAN/workflows/CI/badge.svg) [![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/pypi/pyversions/parallel-wavegan) ![](https://img.shields.io/pypi/l/parallel-wavegan) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
-This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480) and [MelGAN](https://arxiv.org/abs/1910.06711) implementations with Pytorch.
-You can combine these state-of-the-art non-autoregressive models to build your own vocoder.
+This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480) and [MelGAN](https://arxiv.org/abs/1910.06711) implementations with Pytorch.  
+You can combine these state-of-the-art non-autoregressive models to build your own great vocoder!
 
-Please check our samples in [our demo HP](https://kan-bayashi.github.io/ParallelWaveGAN)!
+Please check our samples in [our demo HP](https://kan-bayashi.github.io/ParallelWaveGAN).
 
 ![](https://user-images.githubusercontent.com/22779813/68081503-4b8fcf00-fe52-11e9-8791-e02851220355.png)
 
