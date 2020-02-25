@@ -3,7 +3,7 @@ date: 2019-11-05T00:00:00+09:00
 type: "index"
 ---
 
-# Unofficial Parallel WaveGAN implementation demo
+# Unofficial Parallel WaveGAN (+ MelGAN) implementation demo
 
 This is the demonstration page of **UNOFFICIAL** Parallel WaveGAN and MelGAN implementations.
 
