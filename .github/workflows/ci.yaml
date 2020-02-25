@@ -59,7 +59,7 @@ jobs:
       matrix:
         python-version: [3.7]
         pytorch-version: [1.4.0]
-        config: ["parallel_wavegan.v1.debug.yaml", "melgan.v1.debug.yaml" , "melgan.v2.debug.yaml"]
+        config: ["parallel_wavegan.v1.debug.yaml", "melgan.v1.debug.yaml" , "melgan.v3.debug.yaml"]
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v1
