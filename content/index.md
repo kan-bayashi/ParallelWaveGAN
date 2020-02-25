@@ -24,7 +24,7 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 |     |     |
 | --- | --- |
 | **Groundtruth** | **ParallelWaveGAN (official)** |
-|<audio controls="" ><source src="wav/ljspeech/raw/LJ050-0033.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0029.wav"/></audio>|
+|<audio controls="" ><source src="wav/ljspeech/raw/LJ050-0029.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0029.wav"/></audio>|
 | **ParallelWaveGAN (ours)** | **MelGAN + STFT-loss (ours)** |
 |<audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0029.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0029.wav"/></audio>|
 |     |     |
