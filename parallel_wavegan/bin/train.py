@@ -127,29 +127,31 @@ class Trainer(object):
             os.makedirs(os.path.dirname(checkpoint_path))
         torch.save(state_dict, checkpoint_path)
 
-    def load_checkpoint(self, checkpoint_path):
+    def load_checkpoint(self, checkpoint_path, load_only_params=False):
         """Load checkpoint.
 
         Args:
             checkpoint_path (str): Checkpoint path to be loaded.
+            load_only_params (bool): Whether to load only model parameters.
 
         """
         state_dict = torch.load(checkpoint_path, map_location="cpu")
-        self.steps = state_dict["steps"]
-        self.epochs = state_dict["epochs"]
         if self.config["distributed"]:
             self.model["generator"].module.load_state_dict(state_dict["model"]["generator"])
             self.model["discriminator"].module.load_state_dict(state_dict["model"]["discriminator"])
         else:
             self.model["generator"].load_state_dict(state_dict["model"]["generator"])
             self.model["discriminator"].load_state_dict(state_dict["model"]["discriminator"])
-        self.optimizer["generator"].load_state_dict(state_dict["optimizer"]["generator"])
-        self.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
-        # overwrite schedular argument parameters
-        state_dict["scheduler"]["generator"].update(**self.config["generator_scheduler_params"])
-        state_dict["scheduler"]["discriminator"].update(**self.config["discriminator_scheduler_params"])
-        self.scheduler["generator"].load_state_dict(state_dict["scheduler"]["discriminator"])
-        self.scheduler["discriminator"].load_state_dict(state_dict["scheduler"]["discriminator"])
+        if not load_only_params:
+            self.steps = state_dict["steps"]
+            self.epochs = state_dict["epochs"]
+            self.optimizer["generator"].load_state_dict(state_dict["optimizer"]["generator"])
+            self.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
+            # overwrite schedular argument parameters
+            state_dict["scheduler"]["generator"].update(**self.config["generator_scheduler_params"])
+            state_dict["scheduler"]["discriminator"].update(**self.config["discriminator_scheduler_params"])
+            self.scheduler["generator"].load_state_dict(state_dict["scheduler"]["generator"])
+            self.scheduler["discriminator"].load_state_dict(state_dict["scheduler"]["discriminator"])
 
     def _train_step(self, batch):
         """Train model one step."""
@@ -552,6 +554,8 @@ def main():
                         help="directory to save checkpoints.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
+    parser.add_argument("--pretrain", default="", type=str, nargs="?",
+                        help="checkpoint file path to load pretrained params. (default=\"\")")
     parser.add_argument("--resume", default="", type=str, nargs="?",
                         help="checkpoint file path to resume training. (default=\"\")")
     parser.add_argument("--verbose", type=int, default=1,
@@ -757,6 +761,11 @@ def main():
         config=config,
         device=device,
     )
+
+    # load pretrained parameters from checkpoint
+    if len(args.pretrain) != 0:
+        trainer.load_checkpoint(args.pretrain, load_only_params=True)
+        logging.info(f"Successfully load parameters from {args.pretrain}.")
 
     # resume from checkpoint
     if len(args.resume) != 0:
