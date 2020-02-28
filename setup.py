@@ -32,16 +32,17 @@ requirements = {
         "tqdm>=4.26.1",
         "kaldiio>=2.14.1",
         "h5py>=2.10.0",
+        "yq>=2.10.0",
     ],
     "setup": [
         "numpy",
-        "pytest-runner"
+        "pytest-runner",
     ],
     "test": [
         "pytest>=3.3.0",
         "hacking>=1.1.0",
         "flake8>=3.7.8",
-        "flake8-docstrings>=1.3.1"
+        "flake8-docstrings>=1.3.1",
     ]
 }
 entry_points = {
@@ -62,7 +63,7 @@ extras_require = {k: v for k, v in requirements.items()
 
 dirname = os.path.dirname(__file__)
 setup(name="parallel_wavegan",
-      version="0.3.1",
+      version="0.3.1.post1",
       url="http://github.com/kan-bayashi/ParallelWaveGAN",
       author="Tomoki Hayashi",
       author_email="hayashi.tomoki@g.sp.m.is.nagoya-u.ac.jp",
