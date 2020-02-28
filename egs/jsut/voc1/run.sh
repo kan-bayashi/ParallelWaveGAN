@@ -53,6 +53,7 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
         "${download_dir}/jsut_ver1.1" data
 fi
 
+stats=$(grep -q "hdf5" <(yq ".format" "${conf}") && echo "stats.h5" || echo "stats.npy")
 if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     echo "Stage 1: Feature extraction"
     # extract raw features
@@ -96,7 +97,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
         ${train_cmd} --num-threads "${n_jobs}" "${dumpdir}/${name}/norm/normalize.log" \
             parallel-wavegan-normalize \
                 --config "${conf}" \
-                --stats "${dumpdir}/${train_set}/stats.h5" \
+                --stats "${dumpdir}/${train_set}/${stats}" \
                 --rootdir "${dumpdir}/${name}/raw" \
                 --dumpdir "${dumpdir}/${name}/norm" \
                 --n_jobs "${n_jobs}" \
@@ -118,7 +119,7 @@ fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
     [ ! -e "${expdir}" ] && mkdir -p "${expdir}"
-    cp "${dumpdir}/${train_set}/stats.h5" "${expdir}"
+    cp "${dumpdir}/${train_set}/${stats}" "${expdir}"
     if [ "${n_gpus}" -gt 1 ]; then
         train="python -m parallel_wavegan.distributed.launch --nproc_per_node ${n_gpus} -c parallel-wavegan-train"
     else
