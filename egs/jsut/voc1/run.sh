@@ -53,7 +53,7 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
         "${download_dir}/jsut_ver1.1" data
 fi
 
-stats=$(grep -q "hdf5" <(yq ".format" "${conf}") && echo "stats.h5" || echo "stats.npy")
+stats=stats.$(sed -e "s/#.*//g" "${conf}" | grep format | grep -q hdf5 && echo h5 || echo npy)
 if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     echo "Stage 1: Feature extraction"
     # extract raw features
