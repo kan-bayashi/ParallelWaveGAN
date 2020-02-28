@@ -32,6 +32,7 @@ This repository is tested on Ubuntu 16.04 with a GPU Titan V.
 - CuDNN 7+
 - NCCL 2+ (for distributed multi-gpu training)
 - libsndfile (you can install via `sudo apt install libsndfile-dev` in ubuntu)
+- jq (you can install via `sudo apt install jq` in ubuntu)
 
 Different cuda version should be working but not explicitly tested.  
 All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3.1 and 1.4.
