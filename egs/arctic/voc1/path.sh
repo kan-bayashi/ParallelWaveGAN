@@ -28,7 +28,7 @@ if ! command -v jq > /dev/null; then
     return 1
 fi
 if ! command -v yq > /dev/null; then
-    echo "Error: It seems jq is not installed." >&2
+    echo "Error: It seems yq is not installed." >&2
     echo "Error: Please install via \`pip install yq\`." >&2
     return 1
 fi
