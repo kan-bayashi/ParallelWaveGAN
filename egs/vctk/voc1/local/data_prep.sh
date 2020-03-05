@@ -6,7 +6,7 @@
 # shellcheck disable=SC1091
 . ./path.sh || exit 1;
 
-fs=22050
+fs=24000
 num_dev=10
 num_eval=10
 train_set="train_nodev"
