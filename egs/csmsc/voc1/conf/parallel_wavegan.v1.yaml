@@ -1,7 +1,7 @@
 # This is the hyperparameter configuration file for Parallel WaveGAN.
 # Please make sure this is adjusted for the CSMSC dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
-# This configuration requires 16 GB GPU memory and takes ~3 days on RTX TITAN.
+# This configuration requires 12 GB GPU memory and takes ~3 days on RTX TITAN.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
