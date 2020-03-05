@@ -37,8 +37,8 @@ checkpoint="" # checkpoint path to be used for decoding
 . parse_options.sh || exit 1;
 
 train_set="train_nodev_$(echo "${spks}" | tr " " "_")" # name of training data directory
-dev_set="dev_$(echo "${spks}" | tr " " "_")"           # name of training data directory
-eval_set="eval_$(echo "${spks}" | tr " " "_")"         # name of training data directory
+dev_set="dev_$(echo "${spks}" | tr " " "_")"           # name of development data directory
+eval_set="eval_$(echo "${spks}" | tr " " "_")"         # name of evaluation data directory
 
 set -euo pipefail
 
