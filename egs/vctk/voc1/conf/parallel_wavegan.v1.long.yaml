@@ -1,7 +1,7 @@
 # This is the hyperparameter configuration file for Parallel WaveGAN.
-# Please make sure this is adjusted for the CSMSC dataset. If you want to
+# Please make sure this is adjusted for the VCTK corpus. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
-# This configuration requires 12 GB GPU memory and takes ~3 days on RTX TITAN.
+# This configuration requires 12 GB GPU memory and takes ~7 days on RTX TITAN.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -16,10 +16,10 @@ num_mels: 80             # Number of mel basis.
 fmin: 80                 # Minimum freq in mel basis calculation.
 fmax: 7600               # Maximum frequency in mel basis calculation.
 global_gain_scale: 1.0   # Will be multiplied to all of waveform.
-trim_silence: false      # Whether to trim the start and end of silence.
-trim_threshold_in_db: 60 # Need to tune carefully if the recording is not good.
-trim_frame_size: 2048    # Frame size in trimming.
-trim_hop_size: 512       # Hop size in trimming.
+trim_silence: true       # Whether to trim the start and end of silence.
+trim_threshold_in_db: 20 # Need to tune carefully if the recording is not good.
+trim_frame_size: 1024    # Frame size in trimming.
+trim_hop_size: 256       # Hop size in trimming.
 format: "hdf5"           # Feature file format. "npy" or "hdf5" is supported.
 
 ###########################################################
@@ -79,7 +79,7 @@ lambda_adv: 4.0  # Loss balancing coefficient.
 #                  DATA LOADER SETTING                    #
 ###########################################################
 batch_size: 6              # Batch size.
-batch_max_steps: 25500     # Length of each audio in batch. Make sure dividable by hop_size.
+batch_max_steps: 24000     # Length of each audio in batch. Make sure dividable by hop_size.
 pin_memory: true           # Whether to pin memory in Pytorch DataLoader.
 num_workers: 2             # Number of workers in Pytorch DataLoader.
 remove_short_samples: true # Whether to remove samples the length of which are less than batch_max_steps.
@@ -111,7 +111,7 @@ discriminator_grad_norm: 1 # Discriminator's gradient norm.
 #                    INTERVAL SETTING                     #
 ###########################################################
 discriminator_train_start_steps: 100000 # Number of steps to start to train discriminator.
-train_max_steps: 400000                 # Number of training steps.
+train_max_steps: 1000000                # Number of training steps.
 save_interval_steps: 5000               # Interval steps to save checkpoint.
 eval_interval_steps: 1000               # Interval steps to evaluate the network.
 log_interval_steps: 100                 # Interval steps to record the training log.
