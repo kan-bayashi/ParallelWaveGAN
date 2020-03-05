@@ -27,13 +27,13 @@ if [ $# != 3 ]; then
     echo "e.g.: $0 downloads/VCTK-Corpus p225 data"
     echo ""
     echo "Options:"
-    echo "    --fs: sampling frequency (default=${fs})."
-    echo "    --num_dev: number of development uttreances (default=${num_dev})."
-    echo "    --num_eval: number of evaluation uttreances (default=${num_eval})."
-    echo "    --train_set: name of train set (default=${train_set})."
-    echo "    --dev_set: name of dev set (default=${dev_set})."
-    echo "    --eval_set: name of eval set (default=${eval_set})."
-    echo "    --shuffle: whether to perform shuffle in making dev / eval set (default=${shuffle})."
+    echo "    --fs: sampling frequency (default=24000)."
+    echo "    --num_dev: number of development uttreances (default=10)."
+    echo "    --num_eval: number of evaluation uttreances (default=10)."
+    echo "    --train_set: name of train set (default=train_nodev)."
+    echo "    --dev_set: name of dev set (default=dev)."
+    echo "    --eval_set: name of eval set (default=eval)."
+    echo "    --shuffle: whether to perform shuffle in making dev / eval set (default=false)."
     exit 1
 fi
 
