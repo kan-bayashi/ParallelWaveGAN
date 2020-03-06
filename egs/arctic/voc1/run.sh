@@ -64,14 +64,14 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
-        echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.log."
-        ${train_cmd} --num-threads "${n_jobs}" "${dumpdir}/${name}/raw/preprocessing.log" \
+        echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.*.log."
+        make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
+        ${train_cmd} JOB=1:${n_jobs} "${dumpdir}/${name}/raw/preprocessing.JOB.log" \
             parallel-wavegan-preprocess \
                 --config "${conf}" \
-                --scp "data/${name}/wav.scp" \
-                --segments "data/${name}/segments" \
-                --dumpdir "${dumpdir}/${name}/raw" \
-                --n_jobs "${n_jobs}" \
+                --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
+                --segments "${dumpdir}/${name}/raw/segments.JOB" \
+                --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
                 --verbose "${verbose}"
         echo "Successfully finished feature extraction of ${name} set."
     ) &
@@ -96,14 +96,13 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/norm" ] && mkdir -p "${dumpdir}/${name}/norm"
-        echo "Nomalization start. See the progress via ${dumpdir}/${name}/norm/normalize.log."
-        ${train_cmd} --num-threads "${n_jobs}" "${dumpdir}/${name}/norm/normalize.log" \
+        echo "Nomalization start. See the progress via ${dumpdir}/${name}/norm/normalize.*.log."
+        ${train_cmd} JOB=1:${n_jobs} "${dumpdir}/${name}/norm/normalize.JOB.log" \
             parallel-wavegan-normalize \
                 --config "${conf}" \
                 --stats "${dumpdir}/${train_set}/stats.${stats_ext}" \
-                --rootdir "${dumpdir}/${name}/raw" \
-                --dumpdir "${dumpdir}/${name}/norm" \
-                --n_jobs "${n_jobs}" \
+                --rootdir "${dumpdir}/${name}/raw/dump.JOB" \
+                --dumpdir "${dumpdir}/${name}/norm/dump.JOB" \
                 --verbose "${verbose}"
         echo "Successfully finished normalization of ${name} set."
     ) &
