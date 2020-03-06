@@ -16,8 +16,6 @@ import numpy as np
 import soundfile as sf
 import yaml
 
-from joblib import delayed
-from joblib import Parallel
 from tqdm import tqdm
 
 from parallel_wavegan.datasets import AudioDataset
@@ -83,8 +81,6 @@ def main():
                         help="directory to dump feature files.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
-    parser.add_argument("--n_jobs", type=int, default=16,
-                        help="number of parallel jobs. (default=16)")
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level. higher is more logging. (default=1)")
     args = parser.parse_args()
@@ -124,8 +120,8 @@ def main():
     if not os.path.exists(args.dumpdir):
         os.makedirs(args.dumpdir, exist_ok=True)
 
-    # define function for parallel processing
-    def _process_single_file(data):
+    # process each data
+    for data in tqdm(dataset):
         # parse inputs
         if args.scp is not None:
             utt_id, (fs, audio) = data
@@ -168,10 +164,10 @@ def main():
         # apply global gain
         if config["global_gain_scale"] > 0.0:
             audio *= config["global_gain_scale"]
-            if np.abs(audio).max() > 1.0:
-                logging.warn(f"{utt_id} causes clipping. "
-                             f"it is better to re-consider global gain scale.")
-                return
+        if np.abs(audio).max() >= 1.0:
+            logging.warn(f"{utt_id} causes clipping. "
+                         f"it is better to re-consider global gain scale.")
+            continue
 
         # save
         if config["format"] == "hdf5":
@@ -184,10 +180,6 @@ def main():
                     mel.astype(np.float32), allow_pickle=False)
         else:
             raise ValueError("support only hdf5 or npy format.")
-
-    # process in parallel
-    Parallel(n_jobs=args.n_jobs, verbose=args.verbose)(
-        [delayed(_process_single_file)(data) for data in tqdm(dataset)])
 
 
 if __name__ == "__main__":
