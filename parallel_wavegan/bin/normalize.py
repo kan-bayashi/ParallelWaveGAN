@@ -13,8 +13,6 @@ import os
 import numpy as np
 import yaml
 
-from joblib import delayed
-from joblib import Parallel
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
@@ -38,8 +36,6 @@ def main():
                         help="statistics file.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
-    parser.add_argument("--n_jobs", type=int, default=16,
-                        help="number of parallel jobs. (default=16)")
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level. higher is more logging. (default=1)")
     args = parser.parse_args()
@@ -97,7 +93,8 @@ def main():
     else:
         raise ValueError("support only hdf5 or npy format.")
 
-    def _process_single_file(data):
+    # process each file
+    for data in tqdm(dataset):
         # parse inputs
         audio_name, mel_name, audio, mel = data
 
@@ -117,10 +114,6 @@ def main():
                     mel.astype(np.float32), allow_pickle=False)
         else:
             raise ValueError("support only hdf5 or npy format.")
-
-    # process in parallel
-    Parallel(n_jobs=args.n_jobs, verbose=args.verbose)(
-        [delayed(_process_single_file)(data) for data in tqdm(dataset)])
 
 
 if __name__ == "__main__":
