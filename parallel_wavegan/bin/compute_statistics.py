@@ -28,9 +28,11 @@ def main():
         description="Compute mean and variance of dumped raw features "
                     "(See detail in parallel_wavegan/bin/compute_statistics.py).")
     parser.add_argument("--feats-scp", default=None, type=str,
-                        help="kaldi-style feats.scp file. you need to specify either feats-scp or rootdir.")
+                        help="kaldi-style feats.scp file. "
+                             "you need to specify either feats-scp or rootdir.")
     parser.add_argument("--rootdir", type=str, required=True,
-                        help="directory including feature files. you need to specify either feats-scp or rootdir.")
+                        help="directory including feature files. "
+                             "you need to specify either feats-scp or rootdir.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
     parser.add_argument("--dumpdir", default=None, type=str,
