@@ -78,7 +78,7 @@ def main():
         mel_query=mel_query,
         audio_load_fn=audio_load_fn,
         mel_load_fn=mel_load_fn,
-        return_filename=True,
+        return_utt_id=True,
     )
     logging.info(f"The number of files = {len(dataset)}.")
 
@@ -94,23 +94,20 @@ def main():
         raise ValueError("support only hdf5 or npy format.")
 
     # process each file
-    for data in tqdm(dataset):
-        # parse inputs
-        audio_name, mel_name, audio, mel = data
-
+    for utt_id, audio, mel in tqdm(dataset):
         # normalize
         mel = scaler.transform(mel)
 
         # save
         if config["format"] == "hdf5":
-            write_hdf5(os.path.join(args.dumpdir, f"{os.path.basename(audio_name)}"),
+            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"),
                        "wave", audio.astype(np.float32))
-            write_hdf5(os.path.join(args.dumpdir, f"{os.path.basename(mel_name)}"),
+            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"),
                        "feats", mel.astype(np.float32))
         elif config["format"] == "npy":
-            np.save(os.path.join(args.dumpdir, f"{os.path.basename(audio_name)}"),
+            np.save(os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
                     audio.astype(np.float32), allow_pickle=False)
-            np.save(os.path.join(args.dumpdir, f"{os.path.basename(mel_name)}"),
+            np.save(os.path.join(args.dumpdir, f"{utt_id}-feats.npy"),
                     mel.astype(np.float32), allow_pickle=False)
         else:
             raise ValueError("support only hdf5 or npy format.")
