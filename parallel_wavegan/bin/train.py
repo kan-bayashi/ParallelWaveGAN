@@ -555,7 +555,7 @@ def main():
                              "you need to specify either train-*-scp or train-dumpdir.")
     parser.add_argument("--train-segments", default=None, type=str,
                         help="kaldi-style segments file for training.")
-    parser.add_argument("--train-dumpdir", type=str, required=True,
+    parser.add_argument("--train-dumpdir", default=None, type=str,
                         help="directory including training data. "
                              "you need to specify either train-*-scp or train-dumpdir.")
     parser.add_argument("--dev-wav-scp", default=None, type=str,
@@ -566,7 +566,7 @@ def main():
                              "you need to specify either dev-*-scp or dev-dumpdir.")
     parser.add_argument("--dev-segments", default=None, type=str,
                         help="kaldi-style segments file for validation.")
-    parser.add_argument("--dev-dumpdir", type=str, required=True,
+    parser.add_argument("--dev-dumpdir", default=None, type=str,
                         help="directory including development data. "
                              "you need to specify either dev-*-scp or dev-dumpdir.")
     parser.add_argument("--outdir", type=str, required=True,
