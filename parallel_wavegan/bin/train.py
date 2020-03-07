@@ -509,7 +509,8 @@ class Collater(object):
         y_batch, c_batch = [], []
         for idx in range(len(batch)):
             x, c = batch[idx]
-            self._assert_ready_for_upsampling(x, c, self.hop_size, 0)
+            x, c = self._adjust_length(x, c)
+            self._assert_length(x, c, self.hop_size, 0)
             if len(c) - 2 * self.aux_context_window > self.batch_max_frames:
                 # randomly pickup with the batch_max_steps length of the part
                 interval_start = self.aux_context_window
@@ -519,7 +520,7 @@ class Collater(object):
                 y = x[start_step: start_step + self.batch_max_steps]
                 c = c[start_frame - self.aux_context_window:
                       start_frame + self.aux_context_window + self.batch_max_frames]
-                self._assert_ready_for_upsampling(y, c, self.hop_size, self.aux_context_window)
+                self._assert_length(y, c, self.hop_size, self.aux_context_window)
             else:
                 logging.warn(f"Removed short sample from batch (length={len(x)}).")
                 continue
@@ -537,8 +538,20 @@ class Collater(object):
         else:
             return (c_batch,), y_batch
 
+    def _adjust_length(self, x, c):
+        """Adjust the audio and feature lengths.
+
+        NOTE that basically we assume that the length of x and c are adjusted
+        in preprocessing stage, but if we use ESPnet processed features, this process
+        will be needed because the length of x is not adjusted.
+
+        """
+        if len(x) < len(c) * self.hop_size:
+            x = np.pad(x, (0, len(c) * self.hop_size - len(x)), mode="edge")
+        return x, c
+
     @staticmethod
-    def _assert_ready_for_upsampling(x, c, hop_size, context_window):
+    def _assert_legnth(x, c, hop_size, context_window):
         """Assert the audio and feature lengths are correctly adjusted for upsamping."""
         assert len(x) == (len(c) - 2 * context_window) * hop_size
 
