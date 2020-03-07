@@ -25,6 +25,7 @@ class AudioMelSCPDataset(Dataset):
                  audio_length_threshold=None,
                  mel_length_threshold=None,
                  return_utt_id=False,
+                 return_sampling_rate=False,
                  allow_cache=False,
                  ):
         """Initialize dataset.
@@ -36,6 +37,7 @@ class AudioMelSCPDataset(Dataset):
             audio_length_threshold (int): Threshold to remove short audio files.
             mel_length_threshold (int): Threshold to remove short feature files.
             return_utt_id (bool): Whether to return utterance id.
+            return_sampling_rate (bool): Wheter to return sampling rate.
             allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
@@ -71,6 +73,7 @@ class AudioMelSCPDataset(Dataset):
         self.mel_loader = mel_loader
         self.utt_ids = audio_keys
         self.return_utt_id = return_utt_id
+        self.return_sampling_rate = return_sampling_rate
         self.allow_cache = allow_cache
 
         if allow_cache:
@@ -87,7 +90,7 @@ class AudioMelSCPDataset(Dataset):
 
         Returns:
             str: Utterance id (only in return_utt_id = True).
-            ndarray: Audio signal (T,).
+            ndarray or tuple: Audio signal (T,) or (w/ sampling rate if return_sampling_rate = True).
             ndarray: Feature (T', C).
 
         """
@@ -95,12 +98,15 @@ class AudioMelSCPDataset(Dataset):
             return self.caches[idx]
 
         utt_id = self.utt_ids[idx]
-        audio = self.audio_loader[utt_id]
+        fs, audio = self.audio_loader[utt_id]
         mel = self.mel_loader[utt_id]
 
         # normalize audio signal to be [-1, 1]
         audio = audio.astype(np.float32)
         audio /= (1 << (16 - 1))  # assume that wav is PCM 16 bit
+
+        if self.return_sampling_rate:
+            audio = (audio, fs)
 
         if self.return_utt_id:
             items = utt_id, audio, mel
@@ -130,6 +136,7 @@ class AudioSCPDataset(Dataset):
                  segments=None,
                  audio_length_threshold=None,
                  return_utt_id=False,
+                 return_sampling_rate=False,
                  allow_cache=False,
                  ):
         """Initialize dataset.
@@ -140,6 +147,7 @@ class AudioSCPDataset(Dataset):
             segments (str): Kaldi-style segments file.
             audio_length_threshold (int): Threshold to remove short audio files.
             return_utt_id (bool): Whether to return utterance id.
+            return_sampling_rate (bool): Wheter to return sampling rate.
             allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
@@ -175,18 +183,21 @@ class AudioSCPDataset(Dataset):
 
         Returns:
             str: Utterance id (only in return_utt_id = True).
-            ndarray: Audio signal (T,).
+            ndarray or tuple: Audio signal (T,) or (w/ sampling rate if return_sampling_rate = True).
 
         """
         if self.allow_cache and len(self.caches[idx]) != 0:
             return self.caches[idx]
 
         utt_id = self.utt_ids[idx]
-        audio = self.audio_loader[utt_id]
+        fs, audio = self.audio_loader[utt_id]
 
         # normalize audio signal to be [-1, 1]
         audio = audio.astype(np.float32)
         audio /= (1 << (16 - 1))  # assume that wav is PCM 16 bit
+
+        if self.return_sampling_rate:
+            audio = (audio, fs)
 
         if self.return_utt_id:
             items = utt_id, audio
