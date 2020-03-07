@@ -21,9 +21,6 @@ from parallel_wavegan.datasets import AudioMelSCPDataset
 from parallel_wavegan.utils import read_hdf5
 from parallel_wavegan.utils import write_hdf5
 
-# make sure each process use single thread
-os.environ["OMP_NUM_THREADS"] = "1"
-
 
 def main():
     """Run preprocessing process."""
