@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
 from parallel_wavegan.datasets import AudioMelDataset
+from parallel_wavegan.datasets import AudioMelSCPDataset
 from parallel_wavegan.utils import read_hdf5
 from parallel_wavegan.utils import write_hdf5
 
@@ -29,7 +30,16 @@ def main():
     parser = argparse.ArgumentParser(
         description="Normalize dumped raw features (See detail in parallel_wavegan/bin/normalize.py).")
     parser.add_argument("--rootdir", type=str, required=True,
-                        help="directory including feature files to be normalized.")
+                        help="directory including feature files to be normalized. "
+                             "you need to specify either *-scp or rootdir.")
+    parser.add_argument("--wav-scp", default=None, type=str,
+                        help="kaldi-style wav.scp file. "
+                             "you need to specify either *-scp or rootdir.")
+    parser.add_argument("--feats-scp", default=None, type=str,
+                        help="kaldi-style feats.scp file. "
+                             "you need to specify either *-scp or rootdir.")
+    parser.add_argument("--segments", default=None, type=str,
+                        help="kaldi-style segments file.")
     parser.add_argument("--dumpdir", type=str, required=True,
                         help="directory to dump normalized feature files.")
     parser.add_argument("--stats", type=str, required=True,
@@ -57,29 +67,42 @@ def main():
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
 
+    # check arguments
+    if (args.feats_scp is not None and args.rootdir is not None) or \
+            (args.feats_scp is None and args.rootdir is None):
+        raise ValueError("Please specify either --rootdir or --feats-scp.")
+
     # check directory existence
     if not os.path.exists(args.dumpdir):
         os.makedirs(args.dumpdir)
 
     # get dataset
-    if config["format"] == "hdf5":
-        audio_query, mel_query = "*.h5", "*.h5"
-        audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
-        mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
-    elif config["format"] == "npy":
-        audio_query, mel_query = "*-wave.npy", "*-feats.npy"
-        audio_load_fn = np.load
-        mel_load_fn = np.load
+    if args.wav_scp is None:
+        if config["format"] == "hdf5":
+            audio_query, mel_query = "*.h5", "*.h5"
+            audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
+            mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+        elif config["format"] == "npy":
+            audio_query, mel_query = "*-wave.npy", "*-feats.npy"
+            audio_load_fn = np.load
+            mel_load_fn = np.load
+        else:
+            raise ValueError("support only hdf5 or npy format.")
+        dataset = AudioMelDataset(
+            root_dir=args.rootdir,
+            audio_query=audio_query,
+            mel_query=mel_query,
+            audio_load_fn=audio_load_fn,
+            mel_load_fn=mel_load_fn,
+            return_utt_id=True,
+        )
     else:
-        raise ValueError("support only hdf5 or npy format.")
-    dataset = AudioMelDataset(
-        root_dir=args.rootdir,
-        audio_query=audio_query,
-        mel_query=mel_query,
-        audio_load_fn=audio_load_fn,
-        mel_load_fn=mel_load_fn,
-        return_utt_id=True,
-    )
+        dataset = AudioMelSCPDataset(
+            wav_scp=args.wav_scp,
+            feats_scp=args.feats_scp,
+            segments=args.segments,
+            return_utt_id=True,
+        )
     logging.info(f"The number of files = {len(dataset)}.")
 
     # restore scaler
