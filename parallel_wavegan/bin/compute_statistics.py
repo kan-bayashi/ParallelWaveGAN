@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
 from parallel_wavegan.datasets import MelDataset
+from parallel_wavegan.datasets import MelSCPDataset
 from parallel_wavegan.utils import read_hdf5
 from parallel_wavegan.utils import write_hdf5
 
@@ -26,8 +27,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Compute mean and variance of dumped raw features "
                     "(See detail in parallel_wavegan/bin/compute_statistics.py).")
+    parser.add_argument("--feats-scp", "--scp", default=None, type=str,
+                        help="kaldi-style feats.scp file. "
+                             "you need to specify either feats-scp or rootdir.")
     parser.add_argument("--rootdir", type=str, required=True,
-                        help="directory including feature files.")
+                        help="directory including feature files. "
+                             "you need to specify either feats-scp or rootdir.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
     parser.add_argument("--dumpdir", default=None, type=str,
@@ -54,6 +59,11 @@ def main():
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
 
+    # check arguments
+    if (args.feats_scp is not None and args.rootdir is not None) or \
+            (args.feats_scp is None and args.rootdir is None):
+        raise ValueError("Please specify either --rootdir or --feats-scp.")
+
     # check directory existence
     if args.dumpdir is None:
         args.dumpdir = os.path.dirname(args.rootdir)
@@ -61,18 +71,21 @@ def main():
         os.makedirs(args.dumpdir)
 
     # get dataset
-    if config["format"] == "hdf5":
-        mel_query = "*.h5"
-        mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
-    elif config["format"] == "npy":
-        mel_query = "*-feats.npy"
-        mel_load_fn = np.load
+    if args.feats_scp is None:
+        if config["format"] == "hdf5":
+            mel_query = "*.h5"
+            mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+        elif config["format"] == "npy":
+            mel_query = "*-feats.npy"
+            mel_load_fn = np.load
+        else:
+            raise ValueError("support only hdf5 or npy format.")
+        dataset = MelDataset(
+            args.rootdir,
+            mel_query=mel_query,
+            mel_load_fn=mel_load_fn)
     else:
-        raise ValueError("support only hdf5 or npy format.")
-    dataset = MelDataset(
-        args.rootdir,
-        mel_query=mel_query,
-        mel_load_fn=mel_load_fn)
+        dataset = MelSCPDataset(args.feats_scp)
     logging.info(f"The number of files = {len(dataset)}.")
 
     # calculate statistics

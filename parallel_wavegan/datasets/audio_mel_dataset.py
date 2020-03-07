@@ -6,6 +6,7 @@
 """Dataset modules."""
 
 import logging
+import os
 
 from multiprocessing import Manager
 
@@ -28,7 +29,7 @@ class AudioMelDataset(Dataset):
                  mel_load_fn=lambda x: read_hdf5(x, "feats"),
                  audio_length_threshold=None,
                  mel_length_threshold=None,
-                 return_filename=False,
+                 return_utt_id=False,
                  allow_cache=False,
                  ):
         """Initialize dataset.
@@ -41,7 +42,7 @@ class AudioMelDataset(Dataset):
             mel_load_fn (func): Function to load feature file.
             audio_length_threshold (int): Threshold to remove short audio files.
             mel_length_threshold (int): Threshold to remove short feature files.
-            return_filename (bool): Whether to return the filename with arrays.
+            return_utt_id (bool): Whether to return the utterance id with arrays.
             allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
@@ -73,10 +74,11 @@ class AudioMelDataset(Dataset):
             f"Number of audio and mel files are different ({len(audio_files)} vs {len(mel_files)})."
 
         self.audio_files = audio_files
-        self.mel_files = mel_files
         self.audio_load_fn = audio_load_fn
         self.mel_load_fn = mel_load_fn
-        self.return_filename = return_filename
+        self.mel_files = mel_files
+        self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in audio_files]
+        self.return_utt_id = return_utt_id
         self.allow_cache = allow_cache
         if allow_cache:
             # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
@@ -91,8 +93,7 @@ class AudioMelDataset(Dataset):
             idx (int): Index of the item.
 
         Returns:
-            str: Audio filename (only in return_filename = True).
-            str: Feature filename (only in return_filename = True).
+            str: Utterance id (only in return_utt_id = True).
             ndarray: Audio signal (T,).
             ndarray: Feature (T', C).
 
@@ -100,17 +101,19 @@ class AudioMelDataset(Dataset):
         if self.allow_cache and len(self.caches[idx]) != 0:
             return self.caches[idx]
 
+        utt_id = self.utt_ids[idx]
         audio = self.audio_load_fn(self.audio_files[idx])
         mel = self.mel_load_fn(self.mel_files[idx])
 
-        if self.return_filename:
-            if self.allow_cache:
-                self.caches[idx] = self.audio_files[idx], self.mel_files[idx], audio, mel
-            return self.audio_files[idx], self.mel_files[idx], audio, mel
+        if self.return_utt_id:
+            items = utt_id, audio, mel
         else:
-            if self.allow_cache:
-                self.caches[idx] = audio, mel
-            return audio, mel
+            items = audio, mel
+
+        if self.allow_cache:
+            self.caches[idx] = items
+
+        return items
 
     def __len__(self):
         """Return dataset length.
@@ -130,7 +133,7 @@ class AudioDataset(Dataset):
                  audio_query="*-wave.npy",
                  audio_length_threshold=None,
                  audio_load_fn=np.load,
-                 return_filename=False,
+                 return_utt_id=False,
                  allow_cache=False,
                  ):
         """Initialize dataset.
@@ -140,7 +143,7 @@ class AudioDataset(Dataset):
             audio_query (str): Query to find audio files in root_dir.
             audio_load_fn (func): Function to load audio file.
             audio_length_threshold (int): Threshold to remove short audio files.
-            return_filename (bool): Whether to return the filename with arrays.
+            return_utt_id (bool): Whether to return the utterance id with arrays.
             allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
@@ -161,7 +164,8 @@ class AudioDataset(Dataset):
 
         self.audio_files = audio_files
         self.audio_load_fn = audio_load_fn
-        self.return_filename = return_filename
+        self.return_utt_id = return_utt_id
+        self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in audio_files]
         self.allow_cache = allow_cache
         if allow_cache:
             # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
@@ -176,23 +180,25 @@ class AudioDataset(Dataset):
             idx (int): Index of the item.
 
         Returns:
-            str: Filename (only in return_filename = True).
+            str: Utterance id (only in return_utt_id = True).
             ndarray: Audio (T,).
 
         """
         if self.allow_cache and len(self.caches[idx]) != 0:
             return self.caches[idx]
 
+        utt_id = self.utt_ids[idx]
         audio = self.audio_load_fn(self.audio_files[idx])
 
-        if self.return_filename:
-            if self.allow_cache:
-                self.caches[idx] = self.audio_files[idx], audio
-            return self.audio_files[idx], audio
+        if self.return_utt_id:
+            items = utt_id, audio
         else:
-            if self.allow_cache:
-                self.caches[idx] = audio
-            return audio
+            items = audio
+
+        if self.allow_cache:
+            self.caches[idx] = items
+
+        return items
 
     def __len__(self):
         """Return dataset length.
@@ -212,7 +218,7 @@ class MelDataset(Dataset):
                  mel_query="*-feats.npy",
                  mel_length_threshold=None,
                  mel_load_fn=np.load,
-                 return_filename=False,
+                 return_utt_id=False,
                  allow_cache=False,
                  ):
         """Initialize dataset.
@@ -222,7 +228,7 @@ class MelDataset(Dataset):
             mel_query (str): Query to find feature files in root_dir.
             mel_load_fn (func): Function to load feature file.
             mel_length_threshold (int): Threshold to remove short feature files.
-            return_filename (bool): Whether to return the filename with arrays.
+            return_utt_id (bool): Whether to return the utterance id with arrays.
             allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
@@ -243,7 +249,8 @@ class MelDataset(Dataset):
 
         self.mel_files = mel_files
         self.mel_load_fn = mel_load_fn
-        self.return_filename = return_filename
+        self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in mel_files]
+        self.return_utt_id = return_utt_id
         self.allow_cache = allow_cache
         if allow_cache:
             # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
@@ -258,22 +265,25 @@ class MelDataset(Dataset):
             idx (int): Index of the item.
 
         Returns:
-            str: Filename (only in return_filename = True).
+            str: Utterance id (only in return_utt_id = True).
             ndarray: Feature (T', C).
 
         """
         if self.allow_cache and len(self.caches[idx]) != 0:
             return self.caches[idx]
 
+        utt_id = self.utt_ids[idx]
         mel = self.mel_load_fn(self.mel_files[idx])
-        if self.return_filename:
-            if self.allow_cache:
-                self.caches[idx] = self.mel_files[idx], mel
-            return self.mel_files[idx], mel
+
+        if self.return_utt_id:
+            items = utt_id, mel
         else:
-            if self.allow_cache:
-                self.caches[idx] = mel
-            return mel
+            items = mel
+
+        if self.allow_cache:
+            self.caches[idx] = items
+
+        return items
 
     def __len__(self):
         """Return dataset length.

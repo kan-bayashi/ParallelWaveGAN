@@ -10,7 +10,6 @@ import argparse
 import logging
 import os
 
-import kaldiio
 import librosa
 import numpy as np
 import soundfile as sf
@@ -19,10 +18,8 @@ import yaml
 from tqdm import tqdm
 
 from parallel_wavegan.datasets import AudioDataset
+from parallel_wavegan.datasets import AudioSCPDataset
 from parallel_wavegan.utils import write_hdf5
-
-# make sure each process use single thread
-os.environ["OMP_NUM_THREADS"] = "1"
 
 
 def logmelfilterbank(audio,
@@ -71,7 +68,7 @@ def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
         description="Preprocess audio and then extract features (See detail in parallel_wavegan/bin/preprocess.py).")
-    parser.add_argument("--scp", default=None, type=str,
+    parser.add_argument("--wav-scp", "--scp", default=None, type=str,
                         help="kaldi-style wav.scp file. you need to specify either scp or rootdir.")
     parser.add_argument("--segments", default=None, type=str,
                         help="kaldi-style segments file. if use, you must to specify both scp and segments.")
@@ -103,34 +100,31 @@ def main():
     config.update(vars(args))
 
     # check arguments
-    if (args.scp is not None and args.rootdir is not None) or \
-            (args.scp is None and args.rootdir is None):
-        raise ValueError("Please specify either rootdir or scp.")
+    if (args.wav_scp is not None and args.rootdir is not None) or \
+            (args.wav_scp is None and args.rootdir is None):
+        raise ValueError("Please specify either --rootdir or --wav-scp.")
 
     # get dataset
-    if args.scp is not None:
-        dataset = kaldiio.ReadHelper(f"scp:{args.scp}",
-                                     segments=args.segments)
+    if args.wav_scp is None:
+        dataset = AudioDataset(
+            args.rootdir, "*.wav",
+            audio_load_fn=sf.read,
+            return_utt_id=True,
+        )
     else:
-        dataset = AudioDataset(args.rootdir, "*.wav",
-                               audio_load_fn=sf.read,
-                               return_filename=True)
+        dataset = AudioSCPDataset(
+            args.wav_scp,
+            segments=args.segments,
+            return_utt_id=True,
+            return_sampling_rate=True,
+        )
 
     # check directly existence
     if not os.path.exists(args.dumpdir):
         os.makedirs(args.dumpdir, exist_ok=True)
 
     # process each data
-    for data in tqdm(dataset):
-        # parse inputs
-        if args.scp is not None:
-            utt_id, (fs, audio) = data
-            audio = audio.astype(np.float32)
-            audio /= (1 << (16 - 1))  # assume that wav is PCM 16 bit
-        else:
-            name, (audio, fs) = data
-            utt_id = os.path.basename(name).replace(".wav", "")
-
+    for utt_id, (audio, fs) in tqdm(dataset):
         # check
         assert len(audio.shape) == 1, \
             f"{utt_id} seems to be multi-channel signal."
@@ -147,7 +141,8 @@ def main():
                                             hop_length=config["trim_hop_size"])
 
         # extract feature
-        mel = logmelfilterbank(audio, fs,
+        mel = logmelfilterbank(audio,
+                               sampling_rate=config["sampling_rate"],
                                fft_size=config["fft_size"],
                                hop_size=config["hop_size"],
                                win_length=config["win_length"],
