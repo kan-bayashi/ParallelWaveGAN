@@ -77,7 +77,7 @@ def main():
         raise ValueError("Please specify either --dumpdir or --feats-scp.")
 
     # get dataset
-    if args.scp is None:
+    if args.feats_scp is None:
         if config["format"] == "hdf5":
             mel_query = "*.h5"
             mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
