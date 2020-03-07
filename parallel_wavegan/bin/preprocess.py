@@ -68,7 +68,7 @@ def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
         description="Preprocess audio and then extract features (See detail in parallel_wavegan/bin/preprocess.py).")
-    parser.add_argument("--wav-scp", default=None, type=str,
+    parser.add_argument("--wav-scp", "--scp", default=None, type=str,
                         help="kaldi-style wav.scp file. you need to specify either scp or rootdir.")
     parser.add_argument("--segments", default=None, type=str,
                         help="kaldi-style segments file. if use, you must to specify both scp and segments.")
