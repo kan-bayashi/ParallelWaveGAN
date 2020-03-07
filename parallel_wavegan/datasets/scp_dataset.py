@@ -19,8 +19,8 @@ class AudioMelSCPDataset(Dataset):
     """PyTorch compatible audio and mel dataset based on kaldi-stype scp files."""
 
     def __init__(self,
-                 wavscp,
-                 featscp,
+                 wav_scp,
+                 feats_scp,
                  segments=None,
                  audio_length_threshold=None,
                  mel_length_threshold=None,
@@ -30,8 +30,8 @@ class AudioMelSCPDataset(Dataset):
         """Initialize dataset.
 
         Args:
-            wavscp (str): Kaldi-style wav.scp file.
-            featscp (str): Kaldi-style fests.scp file.
+            wav_scp (str): Kaldi-style wav.scp file.
+            feats_scp (str): Kaldi-style fests.scp file.
             segments (str): Kaldi-style segments file.
             audio_length_threshold (int): Threshold to remove short audio files.
             mel_length_threshold (int): Threshold to remove short feature files.
@@ -40,8 +40,8 @@ class AudioMelSCPDataset(Dataset):
 
         """
         # load scp as lazy dict
-        audio_loader = kaldiio.load_scp(wavscp, segments=segments)
-        mel_loader = kaldiio.load_scp(featscp)
+        audio_loader = kaldiio.load_scp(wav_scp, segments=segments)
+        mel_loader = kaldiio.load_scp(feats_scp)
         audio_keys = list(audio_loader.keys())
         mel_keys = list(mel_loader.keys())
 
@@ -126,7 +126,7 @@ class AudioSCPDataset(Dataset):
     """PyTorch compatible audio dataset based on kaldi-stype scp files."""
 
     def __init__(self,
-                 wavscp,
+                 wav_scp,
                  segments=None,
                  audio_length_threshold=None,
                  return_utt_id=False,
@@ -135,8 +135,8 @@ class AudioSCPDataset(Dataset):
         """Initialize dataset.
 
         Args:
-            wavscp (str): Kaldi-style wav.scp file.
-            featscp (str): Kaldi-style fests.scp file.
+            wav_scp (str): Kaldi-style wav.scp file.
+            feats_scp (str): Kaldi-style fests.scp file.
             segments (str): Kaldi-style segments file.
             audio_length_threshold (int): Threshold to remove short audio files.
             return_utt_id (bool): Whether to return utterance id.
@@ -144,7 +144,7 @@ class AudioSCPDataset(Dataset):
 
         """
         # load scp as lazy dict
-        audio_loader = kaldiio.load_scp(wavscp, segments=segments)
+        audio_loader = kaldiio.load_scp(wav_scp, segments=segments)
         audio_keys = list(audio_loader.keys())
 
         # filter by threshold
@@ -212,7 +212,7 @@ class MelSCPDataset(Dataset):
     """PyTorch compatible mel dataset based on kaldi-stype scp files."""
 
     def __init__(self,
-                 featscp,
+                 feats_scp,
                  mel_length_threshold=None,
                  return_utt_id=False,
                  allow_cache=False,
@@ -220,14 +220,14 @@ class MelSCPDataset(Dataset):
         """Initialize dataset.
 
         Args:
-            featscp (str): Kaldi-style fests.scp file.
+            feats_scp (str): Kaldi-style fests.scp file.
             mel_length_threshold (int): Threshold to remove short feature files.
             return_utt_id (bool): Whether to return utterance id.
             allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
         # load scp as lazy dict
-        mel_loader = kaldiio.load_scp(featscp)
+        mel_loader = kaldiio.load_scp(feats_scp)
         mel_keys = list(mel_loader.keys())
 
         # filter by threshold
