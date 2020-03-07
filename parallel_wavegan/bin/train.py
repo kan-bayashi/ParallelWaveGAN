@@ -625,10 +625,10 @@ def main():
 
     # check arguments
     if (args.train_feats_scp is not None and args.train_dumpdir is not None) or \
-            (args.train_feats_scp is None and args.train_dumpdi is None):
+            (args.train_feats_scp is None and args.train_dumpdir is None):
         raise ValueError("Please specify either --train-dumpdir or --train-*-scp.")
     if (args.dev_feats_scp is not None and args.dev_dumpdir is not None) or \
-            (args.dev_feats_scp is None and args.dev_dumpdi is None):
+            (args.dev_feats_scp is None and args.dev_dumpdir is None):
         raise ValueError("Please specify either --dev-dumpdir or --dev-*-scp.")
 
     # load and save config
