@@ -10,7 +10,6 @@ import argparse
 import logging
 import os
 
-import kaldiio
 import librosa
 import numpy as np
 import soundfile as sf
@@ -19,6 +18,7 @@ import yaml
 from tqdm import tqdm
 
 from parallel_wavegan.datasets import AudioDataset
+from parallel_wavegan.datasets import AudioSCPDataset
 from parallel_wavegan.utils import write_hdf5
 
 # make sure each process use single thread
@@ -109,33 +109,23 @@ def main():
 
     # get dataset
     if args.scp is not None:
-        dataset = kaldiio.ReadHelper(f"scp:{args.scp}",
-                                     segments=args.segments)
+        dataset = AudioSCPDataset(args.scp,
+                                  segments=args.segments,
+                                  return_utt_id=True)
     else:
         dataset = AudioDataset(args.rootdir, "*.wav",
                                audio_load_fn=sf.read,
-                               return_filename=True)
+                               return_utt_id=True)
 
     # check directly existence
     if not os.path.exists(args.dumpdir):
         os.makedirs(args.dumpdir, exist_ok=True)
 
     # process each data
-    for data in tqdm(dataset):
-        # parse inputs
-        if args.scp is not None:
-            utt_id, (fs, audio) = data
-            audio = audio.astype(np.float32)
-            audio /= (1 << (16 - 1))  # assume that wav is PCM 16 bit
-        else:
-            name, (audio, fs) = data
-            utt_id = os.path.basename(name).replace(".wav", "")
-
+    for utt_id, audio in tqdm(dataset):
         # check
         assert len(audio.shape) == 1, \
             f"{utt_id} seems to be multi-channel signal."
-        assert fs == config["sampling_rate"], \
-            f"{utt_id} seems to have a different sampling rate."
         assert np.abs(audio).max() <= 1.0, \
             f"{utt_id} seems to be different from 16 bit PCM."
 
@@ -147,7 +137,8 @@ def main():
                                             hop_length=config["trim_hop_size"])
 
         # extract feature
-        mel = logmelfilterbank(audio, fs,
+        mel = logmelfilterbank(audio,
+                               sampling_rate=config["sampling_rate"],
                                fft_size=config["fft_size"],
                                hop_size=config["hop_size"],
                                win_length=config["win_length"],
