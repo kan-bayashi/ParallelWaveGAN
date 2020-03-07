@@ -510,7 +510,7 @@ class Collater(object):
         for idx in range(len(batch)):
             x, c = batch[idx]
             x, c = self._adjust_length(x, c)
-            self._assert_length(x, c, self.hop_size, 0)
+            self._check_length(x, c, self.hop_size, 0)
             if len(c) - 2 * self.aux_context_window > self.batch_max_frames:
                 # randomly pickup with the batch_max_steps length of the part
                 interval_start = self.aux_context_window
@@ -520,7 +520,7 @@ class Collater(object):
                 y = x[start_step: start_step + self.batch_max_steps]
                 c = c[start_frame - self.aux_context_window:
                       start_frame + self.aux_context_window + self.batch_max_frames]
-                self._assert_length(y, c, self.hop_size, self.aux_context_window)
+                self._check_length(y, c, self.hop_size, self.aux_context_window)
             else:
                 logging.warn(f"Removed short sample from batch (length={len(x)}).")
                 continue
@@ -551,7 +551,7 @@ class Collater(object):
         return x, c
 
     @staticmethod
-    def _assert_legnth(x, c, hop_size, context_window):
+    def _check_length(x, c, hop_size, context_window):
         """Assert the audio and feature lengths are correctly adjusted for upsamping."""
         assert len(x) == (len(c) - 2 * context_window) * hop_size
 
