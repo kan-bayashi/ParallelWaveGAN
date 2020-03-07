@@ -105,24 +105,31 @@ def main():
         raise ValueError("Please specify either --rootdir or --wav-scp.")
 
     # get dataset
-    if args.wav_scp is not None:
-        dataset = AudioSCPDataset(args.wav_scp,
-                                  segments=args.segments,
-                                  return_utt_id=True)
+    if args.wav_scp is None:
+        dataset = AudioDataset(
+            args.rootdir, "*.wav",
+            audio_load_fn=sf.read,
+            return_utt_id=True,
+        )
     else:
-        dataset = AudioDataset(args.rootdir, "*.wav",
-                               audio_load_fn=sf.read,
-                               return_utt_id=True)
+        dataset = AudioSCPDataset(
+            args.wav_scp,
+            segments=args.segments,
+            return_utt_id=True,
+            return_sampling_rate=True,
+        )
 
     # check directly existence
     if not os.path.exists(args.dumpdir):
         os.makedirs(args.dumpdir, exist_ok=True)
 
     # process each data
-    for utt_id, audio in tqdm(dataset):
+    for utt_id, (audio, fs) in tqdm(dataset):
         # check
         assert len(audio.shape) == 1, \
             f"{utt_id} seems to be multi-channel signal."
+        assert fs == config["sampling_rate"], \
+            f"{utt_id} seems to have a different sampling rate."
         assert np.abs(audio).max() <= 1.0, \
             f"{utt_id} seems to be different from 16 bit PCM."
 
