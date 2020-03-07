@@ -71,7 +71,7 @@ def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
         description="Preprocess audio and then extract features (See detail in parallel_wavegan/bin/preprocess.py).")
-    parser.add_argument("--scp", default=None, type=str,
+    parser.add_argument("--wav-scp", default=None, type=str,
                         help="kaldi-style wav.scp file. you need to specify either scp or rootdir.")
     parser.add_argument("--segments", default=None, type=str,
                         help="kaldi-style segments file. if use, you must to specify both scp and segments.")
@@ -103,13 +103,13 @@ def main():
     config.update(vars(args))
 
     # check arguments
-    if (args.scp is not None and args.rootdir is not None) or \
-            (args.scp is None and args.rootdir is None):
-        raise ValueError("Please specify either rootdir or scp.")
+    if (args.wav_scp is not None and args.rootdir is not None) or \
+            (args.wav_scp is None and args.rootdir is None):
+        raise ValueError("Please specify either --rootdir or --wav-scp.")
 
     # get dataset
-    if args.scp is not None:
-        dataset = AudioSCPDataset(args.scp,
+    if args.wav_scp is not None:
+        dataset = AudioSCPDataset(args.wav_scp,
                                   segments=args.segments,
                                   return_utt_id=True)
     else:
