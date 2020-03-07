@@ -27,7 +27,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Compute mean and variance of dumped raw features "
                     "(See detail in parallel_wavegan/bin/compute_statistics.py).")
-    parser.add_argument("--feats-scp", default=None, type=str,
+    parser.add_argument("--feats-scp", "--scp", default=None, type=str,
                         help="kaldi-style feats.scp file. "
                              "you need to specify either feats-scp or rootdir.")
     parser.add_argument("--rootdir", type=str, required=True,
