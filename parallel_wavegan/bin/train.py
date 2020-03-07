@@ -27,6 +27,7 @@ import parallel_wavegan
 import parallel_wavegan.models
 
 from parallel_wavegan.datasets import AudioMelDataset
+from parallel_wavegan.datasets import AudioMelSCPDataset
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.optimizers import RAdam
 from parallel_wavegan.utils import read_hdf5
@@ -546,10 +547,28 @@ def main():
     """Run training process."""
     parser = argparse.ArgumentParser(
         description="Train Parallel WaveGAN (See detail in parallel_wavegan/bin/train.py).")
+    parser.add_argument("--train-wav-scp", default=None, type=str,
+                        help="kaldi-style wav.scp file for training. "
+                             "you need to specify either train-*-scp or train-dumpdir.")
+    parser.add_argument("--train-feats-scp", default=None, type=str,
+                        help="kaldi-style feats.scp file for training. "
+                             "you need to specify either train-*-scp or train-dumpdir.")
+    parser.add_argument("--train-segments", default=None, type=str,
+                        help="kaldi-style segments file for training.")
     parser.add_argument("--train-dumpdir", type=str, required=True,
-                        help="directory including training data.")
+                        help="directory including training data. "
+                             "you need to specify either train-*-scp or train-dumpdir.")
+    parser.add_argument("--dev-wav-scp", default=None, type=str,
+                        help="kaldi-style wav.scp file for validation. "
+                             "you need to specify either dev-*-scp or dev-dumpdir.")
+    parser.add_argument("--dev-feats-scp", default=None, type=str,
+                        help="kaldi-style feats.scp file for vaidation. "
+                             "you need to specify either dev-*-scp or dev-dumpdir.")
+    parser.add_argument("--dev-segments", default=None, type=str,
+                        help="kaldi-style segments file for validation.")
     parser.add_argument("--dev-dumpdir", type=str, required=True,
-                        help="directory including development data.")
+                        help="directory including development data. "
+                             "you need to specify either dev-*-scp or dev-dumpdir.")
     parser.add_argument("--outdir", type=str, required=True,
                         help="directory to save checkpoints.")
     parser.add_argument("--config", type=str, required=True,
@@ -604,6 +623,14 @@ def main():
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir)
 
+    # check arguments
+    if (args.train_feats_scp is not None and args.train_dumpdir is not None) or \
+            (args.train_feats_scp is None and args.train_dumpdi is None):
+        raise ValueError("Please specify either --train-dumpdir or --train-*-scp.")
+    if (args.dev_feats_scp is not None and args.dev_dumpdir is not None) or \
+            (args.dev_feats_scp is None and args.dev_dumpdi is None):
+        raise ValueError("Please specify either --dev-dumpdir or --dev-*-scp.")
+
     # load and save config
     with open(args.config) as f:
         config = yaml.load(f, Loader=yaml.Loader)
@@ -620,18 +647,19 @@ def main():
             2 * config["generator_params"].get("aux_context_window", 0)
     else:
         mel_length_threshold = None
-    if config["format"] == "hdf5":
-        audio_query, mel_query = "*.h5", "*.h5"
-        audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
-        mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
-    elif config["format"] == "npy":
-        audio_query, mel_query = "*-wave.npy", "*-feats.npy"
-        audio_load_fn = np.load
-        mel_load_fn = np.load
-    else:
-        raise ValueError("support only hdf5 or npy format.")
-    dataset = {
-        "train": AudioMelDataset(
+    if args.train_wav_scp is None or args.dev_wav_scp is None:
+        if config["format"] == "hdf5":
+            audio_query, mel_query = "*.h5", "*.h5"
+            audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
+            mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+        elif config["format"] == "npy":
+            audio_query, mel_query = "*-wave.npy", "*-feats.npy"
+            audio_load_fn = np.load
+            mel_load_fn = np.load
+        else:
+            raise ValueError("support only hdf5 or npy format.")
+    if args.train_wav_scp is None:
+        train_dataset = AudioMelDataset(
             root_dir=args.train_dumpdir,
             audio_query=audio_query,
             mel_query=mel_query,
@@ -639,8 +667,18 @@ def main():
             mel_load_fn=mel_load_fn,
             mel_length_threshold=mel_length_threshold,
             allow_cache=config.get("allow_cache", False),  # keep compatibility
-        ),
-        "dev": AudioMelDataset(
+        )
+    else:
+        train_dataset = AudioMelSCPDataset(
+            wav_scp=args.train_wav_scp,
+            feats_scp=args.train_feats_scp,
+            segments=args.train_segments,
+            mel_length_threshold=mel_length_threshold,
+            allow_cache=config.get("allow_cache", False),  # keep compatibility
+        )
+    logging.info(f"The number of training files = {len(train_dataset)}.")
+    if args.dev_wav_scp is None:
+        dev_dataset = AudioMelDataset(
             root_dir=args.dev_dumpdir,
             audio_query=audio_query,
             mel_query=mel_query,
@@ -648,7 +686,19 @@ def main():
             mel_load_fn=mel_load_fn,
             mel_length_threshold=mel_length_threshold,
             allow_cache=config.get("allow_cache", False),  # keep compatibility
-        ),
+        )
+    else:
+        dev_dataset = AudioMelSCPDataset(
+            wav_scp=args.dev_wav_scp,
+            feats_scp=args.dev_feats_scp,
+            segments=args.dev_segments,
+            mel_length_threshold=mel_length_threshold,
+            allow_cache=config.get("allow_cache", False),  # keep compatibility
+        )
+    logging.info(f"The number of development files = {len(dev_dataset)}.")
+    dataset = {
+        "train": train_dataset,
+        "dev": dev_dataset,
     }
 
     # get data loader
