@@ -167,6 +167,7 @@ class AudioSCPDataset(Dataset):
         self.audio_loader = audio_loader
         self.utt_ids = audio_keys
         self.return_utt_id = return_utt_id
+        self.return_sampling_rate = return_sampling_rate
         self.allow_cache = allow_cache
 
         if allow_cache:
