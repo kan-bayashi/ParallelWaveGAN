@@ -78,7 +78,7 @@ def main():
         os.makedirs(args.dumpdir)
 
     # get dataset
-    if args.wav_scp is None:
+    if args.rootdir is not None:
         if config["format"] == "hdf5":
             audio_query, mel_query = "*.h5", "*.h5"
             audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA

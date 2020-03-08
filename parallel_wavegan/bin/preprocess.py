@@ -107,7 +107,7 @@ def main():
         raise ValueError("Please specify either --rootdir or --wav-scp.")
 
     # get dataset
-    if args.wav_scp is None:
+    if args.rootdir is not None:
         dataset = AudioDataset(
             args.rootdir, "*.wav",
             audio_load_fn=sf.read,
