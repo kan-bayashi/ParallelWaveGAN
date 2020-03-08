@@ -53,7 +53,11 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     dev_data_dirs=""
     eval_data_dirs=""
     # if set to "all", use all of the speakers in the corpus
-    [ "${spks}" = "all" ] && spks=$(ls ${download_dir}/VCTK-Corpus/wav48)
+    if [ "${spks}" = "all" ]; then
+        # NOTE(kan-bayashi): p315 will not be used since it lacks txt data
+        spks=$(find "${download_dir}/VCTK-Corpus/wav48" \
+            -maxdepth 1 -name "p*" -exec basename {} \; | sort | grep -v p315)
+    fi
     for spk in ${spks}; do
         local/data_prep.sh \
             --fs "$(yq ".sampling_rate" "${conf}")" \
@@ -87,6 +91,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
             parallel-wavegan-preprocess \
                 --config "${conf}" \
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
+                --segments "${dumpdir}/${name}/raw/segments.JOB" \
                 --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
                 --verbose "${verbose}"
         echo "Successfully finished feature extraction of ${name} set."

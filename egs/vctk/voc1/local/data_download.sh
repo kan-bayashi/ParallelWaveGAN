@@ -25,3 +25,13 @@ if [ ! -e "${download_dir}/VCTK-Corpus" ]; then
 else
     echo "Already exists. Skipped."
 fi
+
+if [ ! -e "${download_dir}/VCTK-Corpus/lab" ]; then
+    cd "${download_dir}" || exit 1;
+    git clone https://github.com/kan-bayashi/VCTKCorpusFullContextLabel.git
+    cp -r VCTKCorpusFullContextLabel/lab ./VCTK-Corpus
+    cd "${cwd}" || exit 1;
+    echo "Successfully downloaded label data."
+else
+    echo "Already exists. Skipped."
+fi
