@@ -29,7 +29,7 @@ fi
 if [ ! -e "${download_dir}/VCTK-Corpus/lab" ]; then
     cd "${download_dir}" || exit 1;
     git clone https://github.com/kan-bayashi/VCTKCorpusFullContextLabel.git
-    cp -r VCTKCorpusFullContextLabel/lab ../VCTK-Corpus
+    cp -r VCTKCorpusFullContextLabel/lab ./VCTK-Corpus
     cd "${cwd}" || exit 1;
     echo "Successfully downloaded label data."
 else
