@@ -55,8 +55,8 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     # if set to "all", use all of the speakers in the corpus
     if [ "${spks}" = "all" ]; then
         # NOTE(kan-bayashi): p315 will not be used since it lacks txt data
-        spks=$(find ${download_dir}/VCTK-Corpus/wav48 -print0 | \
-            xargs -0 -I{} basename {} | grep -v p315)
+        spks=$(find "${download_dir}/VCTK-Corpus/wav48" \
+            -maxdepth 1 -name "p*" -exec basename {} \; | grep -v p315)
     fi
     for spk in ${spks}; do
         local/data_prep.sh \
