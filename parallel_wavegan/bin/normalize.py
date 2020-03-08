@@ -28,7 +28,7 @@ def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
         description="Normalize dumped raw features (See detail in parallel_wavegan/bin/normalize.py).")
-    parser.add_argument("--rootdir", type=str, required=True,
+    parser.add_argument("--rootdir", default=None, type=str,
                         help="directory including feature files to be normalized. "
                              "you need to specify either *-scp or rootdir.")
     parser.add_argument("--wav-scp", default=None, type=str,
