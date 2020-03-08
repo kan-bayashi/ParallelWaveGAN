@@ -18,6 +18,8 @@ from tqdm import tqdm
 
 from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.datasets import AudioMelSCPDataset
+from parallel_wavegan.datasets import MelDataset
+from parallel_wavegan.datasets import MelSCPDataset
 from parallel_wavegan.utils import read_hdf5
 from parallel_wavegan.utils import write_hdf5
 
@@ -41,6 +43,8 @@ def main():
                         help="directory to dump normalized feature files.")
     parser.add_argument("--stats", type=str, required=True,
                         help="statistics file.")
+    parser.add_argument("--skip-wav-copy", default=False, action="store_true",
+                        help="whether to skip the copy of wav files.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
     parser.add_argument("--verbose", type=int, default=1,
@@ -85,21 +89,35 @@ def main():
             mel_load_fn = np.load
         else:
             raise ValueError("support only hdf5 or npy format.")
-        dataset = AudioMelDataset(
-            root_dir=args.rootdir,
-            audio_query=audio_query,
-            mel_query=mel_query,
-            audio_load_fn=audio_load_fn,
-            mel_load_fn=mel_load_fn,
-            return_utt_id=True,
-        )
+        if not args.skip_wav_copy:
+            dataset = AudioMelDataset(
+                root_dir=args.rootdir,
+                audio_query=audio_query,
+                mel_query=mel_query,
+                audio_load_fn=audio_load_fn,
+                mel_load_fn=mel_load_fn,
+                return_utt_id=True,
+            )
+        else:
+            dataset = MelDataset(
+                root_dir=args.rootdir,
+                mel_query=mel_query,
+                mel_load_fn=mel_load_fn,
+                return_utt_id=True,
+            )
     else:
-        dataset = AudioMelSCPDataset(
-            wav_scp=args.wav_scp,
-            feats_scp=args.feats_scp,
-            segments=args.segments,
-            return_utt_id=True,
-        )
+        if not args.skip_wav_copy:
+            dataset = AudioMelSCPDataset(
+                wav_scp=args.wav_scp,
+                feats_scp=args.feats_scp,
+                segments=args.segments,
+                return_utt_id=True,
+            )
+        else:
+            dataset = MelSCPDataset(
+                feats_scp=args.feats_scp,
+                return_utt_id=True,
+            )
     logging.info(f"The number of files = {len(dataset)}.")
 
     # restore scaler
@@ -114,21 +132,28 @@ def main():
         raise ValueError("support only hdf5 or npy format.")
 
     # process each file
-    for utt_id, audio, mel in tqdm(dataset):
+    for items in tqdm(dataset):
+        if not args.skip_wav_copy:
+            utt_id, audio, mel = items
+        else:
+            utt_id, mel = items
+
         # normalize
         mel = scaler.transform(mel)
 
         # save
         if config["format"] == "hdf5":
             write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"),
-                       "wave", audio.astype(np.float32))
-            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"),
                        "feats", mel.astype(np.float32))
+            if not args.skip_wav_copy:
+                write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"),
+                           "wave", audio.astype(np.float32))
         elif config["format"] == "npy":
-            np.save(os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
-                    audio.astype(np.float32), allow_pickle=False)
             np.save(os.path.join(args.dumpdir, f"{utt_id}-feats.npy"),
                     mel.astype(np.float32), allow_pickle=False)
+            if not args.skip_wav_copy:
+                np.save(os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
+                        audio.astype(np.float32), allow_pickle=False)
         else:
             raise ValueError("support only hdf5 or npy format.")
 
