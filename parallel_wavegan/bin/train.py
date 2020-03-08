@@ -671,7 +671,7 @@ def main():
             mel_load_fn = np.load
         else:
             raise ValueError("support only hdf5 or npy format.")
-    if args.train_wav_scp is None:
+    if args.train_dumpdir is not None:
         train_dataset = AudioMelDataset(
             root_dir=args.train_dumpdir,
             audio_query=audio_query,
@@ -690,7 +690,7 @@ def main():
             allow_cache=config.get("allow_cache", False),  # keep compatibility
         )
     logging.info(f"The number of training files = {len(train_dataset)}.")
-    if args.dev_wav_scp is None:
+    if args.dev_dumpdir is not None:
         dev_dataset = AudioMelDataset(
             root_dir=args.dev_dumpdir,
             audio_query=audio_query,

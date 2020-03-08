@@ -78,6 +78,8 @@ def main():
                         help="directory to dump feature files.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
+    parser.add_argument("--allow-different-sampling-rate", default=False, action="store_true",
+                        help="whether to allow different sampling rate in config.")
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level. higher is more logging. (default=1)")
     args = parser.parse_args()
@@ -105,7 +107,7 @@ def main():
         raise ValueError("Please specify either --rootdir or --wav-scp.")
 
     # get dataset
-    if args.wav_scp is None:
+    if args.rootdir is not None:
         dataset = AudioDataset(
             args.rootdir, "*.wav",
             audio_load_fn=sf.read,
@@ -128,10 +130,11 @@ def main():
         # check
         assert len(audio.shape) == 1, \
             f"{utt_id} seems to be multi-channel signal."
-        assert fs == config["sampling_rate"], \
-            f"{utt_id} seems to have a different sampling rate."
         assert np.abs(audio).max() <= 1.0, \
             f"{utt_id} seems to be different from 16 bit PCM."
+        if not args.allow_different_sampling_rate:
+            assert fs == config["sampling_rate"], \
+                f"{utt_id} seems to have a different sampling rate."
 
         # trim silence
         if config["trim_silence"]:
