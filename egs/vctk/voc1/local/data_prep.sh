@@ -47,14 +47,45 @@ set -euo pipefail
 
 # set filenames
 scp="${data_dir}/all/wav.scp"
+segments="${data_dir}/all/segments"
 
 # check file existence
 [ -e "${scp}" ] && rm "${scp}"
+[ -e "${segments}" ] && rm "${segments}"
 
 # make scp
 find "${db_root}/wav48/${spk}" -follow -name "*.wav" | sort | while read -r filename; do
     id=$(basename "${filename}" | sed -e "s/\.[^\.]*$//g")
     echo "${id} cat ${filename} | sox -t wav - -c 1 -b 16 -t wav - rate ${fs} |" >> "${scp}"
+done
+
+# make segments
+find "${db_root}/lab/mono/${spk}" -name "*.lab" -follow | sort | while read -r filename; do
+    id=$(basename "${filename}" | sed -e "s/\.[^\.]*$//g")
+    # parse start and end time from HTS-style mono label
+    idx=1
+    while true; do
+        next_idx=$((idx+1))
+        next_symbol=$(sed -n "${next_idx}p" "${filename}" | awk '{print $3}')
+        if [ "${next_symbol}" != "pau" ]; then
+            start_nsec=$(sed -n "${idx}p" "${filename}" | awk '{print $2}')
+            break
+        fi
+        idx=${next_idx}
+    done
+    idx=$(wc -l < "${filename}")
+    while true; do
+        prev_idx=$((idx-1))
+        prev_symbol=$(sed -n "${prev_idx}p" "${filename}" | awk '{print $3}')
+        if [ "${prev_symbol}" != "pau" ]; then
+            end_nsec=$(sed -n "${idx}p" "${filename}" | awk '{print $1}')
+            break
+        fi
+        idx=${prev_idx}
+    done
+    start_sec=$(echo "${start_nsec}*0.0000001" | bc | sed "s/^\./0./")
+    end_sec=$(echo "${end_nsec}*0.0000001" | bc | sed "s/^\./0./")
+    echo "${id} ${id} ${start_sec} ${end_sec}" >> "${segments}"
 done
 
 # split
