@@ -18,7 +18,6 @@ conf=conf/parallel_wavegan.v1.yaml
 
 # speaker setting
 spks="all" # all or you can choose speakers e.g., "p225 p226 p227 ..."
-           # Note: p315 lacks txt data, please do not use.
 
 # directory path setting
 download_dir=downloads # directory to save database
@@ -54,7 +53,11 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     dev_data_dirs=""
     eval_data_dirs=""
     # if set to "all", use all of the speakers in the corpus
-    [ "${spks}" = "all" ] && spks=$(ls ${download_dir}/VCTK-Corpus/lab/mono)
+    if [ "${spks}" = "all" ]; then
+        # NOTE(kan-bayashi): p315 will not be used since it lacks txt data
+        spks=$(find ${download_dir}/VCTK-Corpus/wav48 -print0 | \
+            xargs -0 -I{} basename {} | grep -v p315)
+    fi
     for spk in ${spks}; do
         local/data_prep.sh \
             --fs "$(yq ".sampling_rate" "${conf}")" \
