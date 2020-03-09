@@ -150,9 +150,9 @@ def main():
             #   using 16 kHz audio and 24 kHz audio as a target waveform
             x = librosa.resample(audio, fs, config["sampling_rate_for_feats"])
             sampling_rate = config["sampling_rate_for_feats"]
-            hop_size = config["hop_size"] * config["sampling_rate_for_feats"] / fs
-            assert hop_size == int(hop_size), "hop_size must be int value."
-            hop_size = int(hop_size)
+            assert config["hop_size"] * config["sampling_rate_for_feats"] % fs == 0, \
+                "hop_size must be int value. please check sampling_rate_for_feats is correct."
+            hop_size = config["hop_size"] * config["sampling_rate_for_feats"] // fs
 
         # extract feature
         mel = logmelfilterbank(x,
