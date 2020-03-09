@@ -78,8 +78,6 @@ def main():
                         help="directory to dump feature files.")
     parser.add_argument("--config", type=str, required=True,
                         help="yaml format configuration file.")
-    parser.add_argument("--allow-different-sampling-rate", default=False, action="store_true",
-                        help="whether to allow different sampling rate in config.")
     parser.add_argument("--verbose", type=int, default=1,
                         help="logging level. higher is more logging. (default=1)")
     args = parser.parse_args()
@@ -132,9 +130,8 @@ def main():
             f"{utt_id} seems to be multi-channel signal."
         assert np.abs(audio).max() <= 1.0, \
             f"{utt_id} seems to be different from 16 bit PCM."
-        if not args.allow_different_sampling_rate:
-            assert fs == config["sampling_rate"], \
-                f"{utt_id} seems to have a different sampling rate."
+        assert fs == config["sampling_rate"], \
+            f"{utt_id} seems to have a different sampling rate."
 
         # trim silence
         if config["trim_silence"]:
@@ -143,11 +140,25 @@ def main():
                                             frame_length=config["trim_frame_size"],
                                             hop_length=config["trim_hop_size"])
 
+        if "sampling_rate_for_feats" not in config:
+            x = audio
+            sampling_rate = config["sampling_rate"]
+            hop_size = config["hop_size"]
+        else:
+            # NOTE(kan-bayashi): this procedure enables to train the model with different
+            #   sampling rate for feature and audio, e.g., training with mel extracted
+            #   using 16 kHz audio and 24 kHz audio as a target waveform
+            x = librosa.resample(audio, fs, config["sampling_rate_for_feats"])
+            sampling_rate = config["sampling_rate_for_feats"]
+            hop_size = config["hop_size"] * config["sampling_rate_for_feats"] / fs
+            assert hop_size == int(hop_size), "hop_size must be int value."
+            hop_size = int(hop_size)
+
         # extract feature
-        mel = logmelfilterbank(audio,
-                               sampling_rate=config["sampling_rate"],
+        mel = logmelfilterbank(x,
+                               sampling_rate=sampling_rate,
+                               hop_size=hop_size,
                                fft_size=config["fft_size"],
-                               hop_size=config["hop_size"],
                                win_length=config["win_length"],
                                window=config["window"],
                                num_mels=config["num_mels"],
