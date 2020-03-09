@@ -64,6 +64,7 @@ jobs:
           - "melgan.v1.debug.yaml"
           - "melgan.v3.debug.yaml"
           - "parallel_wavegan.v1.debug.npy.yaml"
+          - "parallel_wavegan.v1.diff_fs.debug.yaml"
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v1
