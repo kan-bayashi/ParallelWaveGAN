@@ -53,7 +53,7 @@ jobs:
           pytest test
 
   integration:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     strategy:
       max-parallel: 5
       matrix:
@@ -64,6 +64,7 @@ jobs:
           - "melgan.v1.debug.yaml"
           - "melgan.v3.debug.yaml"
           - "parallel_wavegan.v1.debug.npy.yaml"
+          - "parallel_wavegan.v1.debug.diff_fs.yaml"
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v1
