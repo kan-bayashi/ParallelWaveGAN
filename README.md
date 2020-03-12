@@ -73,13 +73,14 @@ If you want to use different cuda version, please check `tools/Makefile` to chan
 ## Run
 
 This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).  
-Currently, five recipes are supported.
+Currently, the following recipes are supported.
 
-- [CMU Arctic](http://www.festvox.org/cmu_arctic/): English speakers
 - [LJSpeech](https://keithito.com/LJ-Speech-Dataset/): English female speaker
 - [JSUT](https://sites.google.com/site/shinnosuketakamichi/publication/jsut): Japanese female speaker
 - [CSMSC](https://www.data-baker.com/open_source.html): Mandarin female speaker
-- [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi speaker
+- [CMU Arctic](http://www.festvox.org/cmu_arctic/): English speakers
+- [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi-speaker
+- [VCTK](https://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html): English multi-speaker
 
 To run the recipe, please follow the below instruction.
 
