@@ -77,7 +77,10 @@ class AudioMelDataset(Dataset):
         self.audio_load_fn = audio_load_fn
         self.mel_load_fn = mel_load_fn
         self.mel_files = mel_files
-        self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in audio_files]
+        if ".npy" in audio_query:
+            self.utt_ids = [os.path.basename(f).replace("-wave.npy", "") for f in audio_files]
+        else:
+            self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in audio_files]
         self.return_utt_id = return_utt_id
         self.allow_cache = allow_cache
         if allow_cache:
@@ -165,7 +168,10 @@ class AudioDataset(Dataset):
         self.audio_files = audio_files
         self.audio_load_fn = audio_load_fn
         self.return_utt_id = return_utt_id
-        self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in audio_files]
+        if ".npy" in audio_query:
+            self.utt_ids = [os.path.basename(f).replace("-wave.npy", "") for f in audio_files]
+        else:
+            self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in audio_files]
         self.allow_cache = allow_cache
         if allow_cache:
             # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
@@ -250,6 +256,10 @@ class MelDataset(Dataset):
         self.mel_files = mel_files
         self.mel_load_fn = mel_load_fn
         self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in mel_files]
+        if ".npy" in mel_query:
+            self.utt_ids = [os.path.basename(f).replace("-feats.npy", "") for f in mel_files]
+        else:
+            self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in mel_files]
         self.return_utt_id = return_utt_id
         self.allow_cache = allow_cache
         if allow_cache:
