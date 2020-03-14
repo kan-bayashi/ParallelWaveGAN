@@ -47,9 +47,9 @@ find "${db_root}/${part}" -follow -name "*.wav" | sort | while read -r wav; do
         continue
     fi
 
-    echo "${id} cat ${wav}" >> "${scp}"
+    echo "${id} ${wav}" >> "${scp}"
 
-    # parse start and end time from HTS-style mono label
+    # parse label
     idx=1
     while true; do
         next_idx=$((idx+1))
@@ -75,4 +75,4 @@ find "${db_root}/${part}" -follow -name "*.wav" | sort | while read -r wav; do
     echo "${id} ${id} ${start_sec} ${end_sec}" >> "${segments}"
 done
 
-echo "Successfully prepared data."
+echo "Successfully prepared ${part} data."
