@@ -125,7 +125,7 @@ def main():
             # setup input
             x = ()
             if use_noise_input:
-                z = torch.randn(1, 1, len(x) * config["hop_size"]).to(device)
+                z = torch.randn(1, 1, len(c) * config["hop_size"]).to(device)
                 x += (z,)
             c = pad_fn(torch.from_numpy(c).unsqueeze(0).transpose(2, 1)).to(device)
             x += (c,)
