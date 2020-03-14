@@ -21,14 +21,15 @@ if [ ! -e "${download_dir}/LibriTTS/.all_done" ]; then
     mkdir -p "${download_dir}"
     cd "${download_dir}" || exit 1;
     for part in ${parts}; do
-        if [ -e ".${part}.all_done" ]; then
+        if [ -e "./LibriTTS/.${part}_done" ]; then
             echo "Download of ${part} is already finished. skipped."
+            continue
         fi
         wget --no-check-certificate "${base_url}/${part}.tar.gz"
         tar xvzf "${part}.tar.gz"
-        touch "LibriTTS/.${part}_done"
+        touch "./LibriTTS/.${part}_done"
     done
-    touch LibriTTS/.all_done
+    touch ./LibriTTS/.all_done
     cd "${cwd}" || exit 1;
     echo "Successfully downloaded data."
 else
@@ -41,7 +42,7 @@ if [ ! -e "${download_dir}/LibriTTS/.lab_done" ]; then
     for part in ${parts}; do
         cp -r "LibriTTS-Alignment/${part}" ./LibriTTS
     done
-    touch LibriTTS/.lab_done
+    touch ./LibriTTS/.lab_done
     cd "${cwd}" || exit 1;
     echo "Successfully downloaded label data."
 else
