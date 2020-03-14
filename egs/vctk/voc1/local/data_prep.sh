@@ -27,7 +27,7 @@ if [ $# != 3 ]; then
     echo "e.g.: $0 downloads/VCTK-Corpus p225 data"
     echo ""
     echo "Options:"
-    echo "    --fs: sampling frequency (default=24000)."
+    echo "    --fs: target sampling rate (default=24000)."
     echo "    --num_dev: number of development uttreances (default=10)."
     echo "    --num_eval: number of evaluation uttreances (default=10)."
     echo "    --train_set: name of train set (default=train_nodev)."

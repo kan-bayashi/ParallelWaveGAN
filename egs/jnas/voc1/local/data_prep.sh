@@ -10,6 +10,7 @@ num_dev=500
 train_set="train_nodev"
 dev_set="dev"
 eval_set="eval"
+shuffle=false
 
 # shellcheck disable=SC1091
 . parse_options.sh || exit 1;
@@ -24,6 +25,7 @@ if [ $# != 3 ]; then
     echo "    --train_set: name of train set (default=train_nodev)."
     echo "    --dev_set: name of dev set (default=dev)."
     echo "    --eval_set: name of eval set (default=eval)."
+    echo "    --shuffle: whether to perform shuffle in making dev / eval set (default=false)."
     exit 1
 fi
 
@@ -63,7 +65,9 @@ sort -R "${scp}.tmp" > "${scp}"
 rm -r "${scp}.tmp"
 
 # split
-split_data.sh --num_second ${num_dev} \
+split_data.sh \
+    --num_second ${num_dev} \
+    --shuffle "${shuffle}" \
     "${data_dir}/train" \
     "${data_dir}/${train_set}" \
     "${data_dir}/${dev_set}"
