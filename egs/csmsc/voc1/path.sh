@@ -32,3 +32,8 @@ if ! command -v yq > /dev/null; then
     echo "Error: Please install via \`pip install yq\`." >&2
     return 1
 fi
+if ! command -v nkf > /dev/null; then
+    echo "Error: It seems nkf is not installed." >&2
+    echo "Error: Please install via \`sudo apt install nkf\`." >&2
+    return 1
+fi
