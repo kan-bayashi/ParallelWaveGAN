@@ -60,6 +60,8 @@ find "${db_root}/PhoneLabeling" -name "*.interval" -follow | sort | while read -
     id="$(basename "${filename}" .interval)"
     start_sec=$(tail -n +14 "${filename}" | head -n 1)
     end_sec=$(head -n -2 "${filename}" | tail -n 1)
+    [ -z "${start_sec}" ] && echo "Start second is missing (utt_id=${id}). " >&2 && exit 1;
+    [ -z "${end_sec}" ] && echo "End second is missing (utt_id=${id})." >&2 && exit 1;
     echo "csmsc_${id} csmsc_${id} ${start_sec} ${end_sec}" >> "${segments}"
 done
 
