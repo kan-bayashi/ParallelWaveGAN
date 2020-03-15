@@ -35,16 +35,3 @@ if [ ! -e "${download_dir}/LibriTTS/.all_done" ]; then
 else
     echo "Already exists. Skipped."
 fi
-
-if [ ! -e "${download_dir}/LibriTTS/.lab_done" ]; then
-    cd "${download_dir}" || exit 1;
-    git clone https://github.com/kan-bayashi/LibriTTSCorpusLabel.git
-    for part in ${parts}; do
-        cp -r "LibriTTS-Alignment/${part}" ./LibriTTS
-    done
-    touch ./LibriTTS/.lab_done
-    cd "${cwd}" || exit 1;
-    echo "Successfully downloaded label data."
-else
-    echo "Already exists. Skipped."
-fi
