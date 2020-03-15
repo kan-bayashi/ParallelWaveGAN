@@ -123,12 +123,12 @@ def main():
     with torch.no_grad(), tqdm(dataset, desc="[decode]") as pbar:
         for idx, (utt_id, c) in enumerate(pbar, 1):
             # setup input
-            c = pad_fn(torch.from_numpy(c).unsqueeze(0).transpose(2, 1)).to(device)
-            x = (c,)
+            x = ()
             if use_noise_input:
-                z_size = (1, 1, (c.size(2) - sum(pad_fn.padding)) * config["hop_size"])
-                z = torch.randn(z_size).to(device)
-                x = (z,) + x
+                z = torch.randn(1, 1, len(c) * config["hop_size"]).to(device)
+                x += (z,)
+            c = pad_fn(torch.from_numpy(c).unsqueeze(0).transpose(2, 1)).to(device)
+            x += (c,)
 
             # generate
             start = time.time()
