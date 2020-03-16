@@ -66,15 +66,18 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     dev_data_dirs=""
     eval_data_dirs=""
     for train_part in ${train_parts}; do
-        local/data_prep.sh downloads/LibriTTS "${train_part}" data
+        local/data_prep.sh "${download_dir}/LibriTTS" \
+            "${train_part}" data "${download_dir}/LibriTTSLabel"
         train_data_dirs+=" data/${train_part}"
     done
     for dev_part in ${dev_parts}; do
-        local/data_prep.sh downloads/LibriTTS "${dev_part}" data
+        local/data_prep.sh "${download_dir}/LibriTTS" \
+            "${dev_part}" data "${download_dir}/LibriTTSLabel"
         dev_data_dirs+=" data/${dev_part}"
     done
     for eval_part in ${eval_parts}; do
-        local/data_prep.sh downloads/LibriTTS "${eval_part}" data
+        local/data_prep.sh "${download_dir}/LibriTTS" \
+            "${eval_part}" data "${download_dir}/LibriTTSLabel"
         eval_data_dirs+=" data/${eval_part}"
     done
     # shellcheck disable=SC2086
@@ -99,6 +102,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
             parallel-wavegan-preprocess \
                 --config "${conf}" \
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
+                --segments "${dumpdir}/${name}/raw/segments.JOB" \
                 --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
                 --verbose "${verbose}"
         echo "Successfully finished feature extraction of ${name} set."
