@@ -60,7 +60,7 @@ find "${db_root}/wav48/${spk}" -follow -name "*.wav" | sort | while read -r wav;
 
     # check lab existence
     if [ ! -e "${lab}" ]; then
-        echo "${id} has not label file. skipped."
+        echo "${id} does not have a label file. skipped."
         continue
     fi
 

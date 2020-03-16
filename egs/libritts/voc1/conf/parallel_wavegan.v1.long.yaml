@@ -16,8 +16,8 @@ num_mels: 80             # Number of mel basis.
 fmin: 80                 # Minimum freq in mel basis calculation.
 fmax: 7600               # Maximum frequency in mel basis calculation.
 global_gain_scale: 1.0   # Will be multiplied to all of waveform.
-trim_silence: true       # Whether to trim the start and end of silence.
-trim_threshold_in_db: 35 # Need to tune carefully if the recording is not good.
+trim_silence: false      # Whether to trim the start and end of silence.
+trim_threshold_in_db: 20 # Need to tune carefully if the recording is not good.
 trim_frame_size: 1024    # Frame size in trimming.
 trim_hop_size: 256       # Hop size in trimming.
 format: "hdf5"           # Feature file format. "npy" or "hdf5" is supported.
@@ -83,7 +83,7 @@ batch_max_steps: 24000     # Length of each audio in batch. Make sure dividable 
 pin_memory: true           # Whether to pin memory in Pytorch DataLoader.
 num_workers: 2             # Number of workers in Pytorch DataLoader.
 remove_short_samples: true # Whether to remove samples the length of which are less than batch_max_steps.
-allow_cache: true          # Whether to allow cache in dataset. If true, it requires cpu memory.
+allow_cache: false         # Whether to allow cache in dataset. If true, it requires cpu memory.
 
 ###########################################################
 #             OPTIMIZER & SCHEDULER SETTING               #
