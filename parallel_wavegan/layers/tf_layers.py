@@ -9,7 +9,7 @@ import tensorflow as tf
 
 
 class TFReflectionPad1d(tf.keras.layers.Layer):
-    """TensorFlow ReflectionPad1d module."""
+    """Tensorflow ReflectionPad1d module."""
 
     def __init__(self, padding_size):
         """Initialize TFReflectionPad1d module."""
