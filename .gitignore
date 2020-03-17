@@ -19,6 +19,7 @@ __pycache__/
 coverage.xml*
 .vscode*
 .nfs*
+.ipynb_checkpoints
 
 # recipe related
 egs/*/*/data
