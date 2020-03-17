@@ -83,6 +83,7 @@ Currently, the following recipes are supported.
 - [CMU Arctic](http://www.festvox.org/cmu_arctic/): English speakers
 - [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi-speaker
 - [VCTK](https://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html): English multi-speaker
+- [LibriTTS](https://arxiv.org/abs/1904.02882): English multi-speaker
 
 To run the recipe, please follow the below instruction.
 
