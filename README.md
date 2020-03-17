@@ -19,8 +19,10 @@ You can try the realtime end-to-end text-to-speech demonstraion in Google Colab!
 
 ## What's new
 
-- 2020/03/12 **(New!)** [PWG G + MelGAN D + STFT-loss samples](#Results) are available!
-- 2020/03/12 **(New!)** Multi-speaker English recipe [egs/vctk/voc1](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/vctk/voc1) is available!
+- 2020/03/17 **(New!)** [Tensorflow conversion example notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) is available (Thanks, @dathudeptrai)!
+- 2020/03/16 **(New!)** [LibriTTS recipe](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1) is available!
+- 2020/03/12 [PWG G + MelGAN D + STFT-loss samples](#Results) are available!
+- 2020/03/12 Multi-speaker English recipe [egs/vctk/voc1](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/vctk/voc1) is available!
 - 2020/02/22 [MelGAN G + MelGAN D + STFT-loss samples](#Results) are available!
 - 2020/02/12 Support [MelGAN](https://arxiv.org/abs/1910.06711)'s discriminator!
 - 2020/02/08 Support [MelGAN](https://arxiv.org/abs/1910.06711)'s generator!
@@ -157,6 +159,9 @@ If you use MelGAN's generator, the decoding speed will be further faster.
 [decode]: 100%|██████████| 250/250 [00:06<00:00, 36.38it/s, RTF=0.00189]
 2020-02-08 05:44:42,231 (decode:142) INFO: Finished generation of 250 utterances (RTF = 0.002).
 ```
+
+If you want to accelerate the inference more, it is worthwhile to try the conversion from pytorch to tensorflow.  
+The example of the conversion is available in [the notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) (Provided by @dathudeptrai).  
 
 ## Results
 
