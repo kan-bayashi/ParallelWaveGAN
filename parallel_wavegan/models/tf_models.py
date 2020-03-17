@@ -77,9 +77,9 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
             layers += [
                 getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params),
                 TFConvTranspose1d(
-                    filters=channels // (2 ** (i + 1)),
+                    channels=channels // (2 ** (i + 1)),
                     kernel_size=upsample_scale * 2,
-                    strides=upsample_scale,
+                    stride=upsample_scale,
                     padding="same",
                 )
             ]
@@ -117,10 +117,10 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
         """Calculate forward propagation.
 
         Args:
-            c (Tensor): Input tensor (B, T, channels).
+            c (Tensor): Input tensor (B, T, in_channels).
 
         Returns:
-            Tensor: Output tensor (B, T ** prod(upsample_scales), 1).
+            Tensor: Output tensor (B, T ** prod(upsample_scales), out_channels).
 
         """
         c = tf.expand_dims(c, 2)
