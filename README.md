@@ -19,7 +19,7 @@ You can try the realtime end-to-end text-to-speech demonstraion in Google Colab!
 
 ## What's new
 
-- 2020/03/17 **(New!)** [Tensorflow conversion example notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) is available (Thanks, @dathudeptrai)!
+- 2020/03/17 **(New!)** [Tensorflow conversion example notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) is available (Thanks, [@dathudeptrai](https://github.com/dathudeptrai))!
 - 2020/03/16 **(New!)** [LibriTTS recipe](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1) is available!
 - 2020/03/12 [PWG G + MelGAN D + STFT-loss samples](#Results) are available!
 - 2020/03/12 Multi-speaker English recipe [egs/vctk/voc1](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/vctk/voc1) is available!
@@ -161,7 +161,7 @@ If you use MelGAN's generator, the decoding speed will be further faster.
 ```
 
 If you want to accelerate the inference more, it is worthwhile to try the conversion from pytorch to tensorflow.  
-The example of the conversion is available in [the notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) (Provided by @dathudeptrai).  
+The example of the conversion is available in [the notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) (Provided by [@dathudeptrai](https://github.com/dathudeptrai)).  
 
 ## Results
 
