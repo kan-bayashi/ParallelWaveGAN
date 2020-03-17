@@ -65,12 +65,12 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
             # add upsampling layer
             layers += [
                 getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params),
-				TFTransposeConv1d(
-				    filters= channels // (2 ** (i + 1)),
-				    kernel_size=upsample_scale * 2,
-				    strides=upsample_scale,
-				    padding='same'
-				)
+                TFTransposeConv1d(
+                    filters= channels // (2 ** (i + 1)),
+                    kernel_size=upsample_scale * 2,
+                    strides=upsample_scale,
+                    padding='same'
+                )
             ]
 
             # add residual stack
