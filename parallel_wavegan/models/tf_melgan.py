@@ -50,8 +50,7 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
             pad (str): Padding function module name before dilated convolution layer.
             pad_params (dict): Hyperparameters for padding function.
             use_final_nolinear_activation (torch.nn.Module): Activation function for the final layer.
-            use_weight_norm (bool): Whether to use weight norm.
-                If set to true, it will be applied to all of the conv layers.
+            use_weight_norm (bool): No effect but keep it as is to be the same as pytorch version.
             use_causal_conv (bool): Whether to use causal convolution.
 
         """
@@ -61,6 +60,7 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
         assert not use_causal_conv, "Not supported yet."
         assert channels >= np.prod(upsample_scales)
         assert channels % (2 ** len(upsample_scales)) == 0
+        assert pad != "ReflectionPad1d", f"Not supported (pad={pad})."
 
         # add initial layer
         layers = []
