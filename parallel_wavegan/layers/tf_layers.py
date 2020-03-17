@@ -38,11 +38,11 @@ class TFReflectionPad1d(tf.keras.layers.Layer):
 class TFConvTranspose1d(tf.keras.layers.Layer):
     """Tensorflow ConvTranspose1d module."""
 
-    def __init__(self, filters, kernel_size, stride, padding):
+    def __init__(self, channels, kernel_size, stride, padding):
         """Initialize TFConvTranspose1d( module.
 
         Args:
-            filters (int): Number of filters.
+            channels (int): Number of channels.
             kernel_size (int): kernel size.
             strides (int): Stride width.
             padding (str): Padding type ("same" or "valid").
@@ -50,7 +50,7 @@ class TFConvTranspose1d(tf.keras.layers.Layer):
         """
         super(TFConvTranspose1d, self).__init__()
         self.conv1d_transpose = tf.keras.layers.Conv2DTranspose(
-            filters=filters,
+            filters=channels,
             kernel_size=(kernel_size, 1),
             strides=(stride, 1),
             padding=padding,

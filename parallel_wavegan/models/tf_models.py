@@ -77,7 +77,7 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
             layers += [
                 getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params),
                 TFConvTranspose1d(
-                    filters=channels // (2 ** (i + 1)),
+                    channels=channels // (2 ** (i + 1)),
                     kernel_size=upsample_scale * 2,
                     stride=upsample_scale,
                     padding="same",
