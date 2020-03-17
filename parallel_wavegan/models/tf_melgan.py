@@ -1,10 +1,21 @@
+# -*- coding: utf-8 -*-
+
+# Copyright 2020 MINH ANH (@dathudeptrai)
+#  MIT License (https://opensource.org/licenses/MIT)
+
+"""Tensorflow MelGAN modules complatible with pytorch."""
+
 import tensorflow as tf
-from parallel_wavegan.layers import TFReflectionPad1d, TFTransposeConv1d, TFResnetBlock
 
 import numpy as np
 
+from parallel_wavegan.layers import TFConvTranspose1d
+from parallel_wavegan.layers import TFReflectionPad1d
+from parallel_wavegan.layers import TFResidualStack
+
+
 class TFMelGANGenerator(tf.keras.layers.Layer):
-    """Tensorflow MelGAN generator layer."""
+    """Tensorflow MelGAN generator module."""
 
     def __init__(self,
                  in_channels=80,
@@ -23,7 +34,7 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
                  use_weight_norm=True,
                  use_causal_conv=False,
                  ):
-        """Initialize TFMelGANGenerator layers.
+        """Initialize TFMelGANGenerator module.
 
         Args:
             in_channels (int): Number of input channels.
@@ -55,9 +66,9 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
         layers = []
         layers += [
             TFReflectionPad1d((kernel_size - 1) // 2),
-            tf.keras.layers.Conv2D(filters=channels, 
-                                   kernel_size=(kernel_size, 1), 
-                                   padding='valid', 
+            tf.keras.layers.Conv2D(filters=channels,
+                                   kernel_size=(kernel_size, 1),
+                                   padding="valid",
                                    use_bias=bias)
         ]
 
@@ -65,25 +76,25 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
             # add upsampling layer
             layers += [
                 getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params),
-                TFTransposeConv1d(
-                    filters= channels // (2 ** (i + 1)),
+                TFConvTranspose1d(
+                    filters=channels // (2 ** (i + 1)),
                     kernel_size=upsample_scale * 2,
                     strides=upsample_scale,
-                    padding='same'
+                    padding="same",
                 )
             ]
 
             # add residual stack
             for j in range(stacks):
                 layers += [
-                    TFResnetBlock(
+                    TFResidualStack(
                         kernel_size=stack_kernel_size,
                         channels=channels // (2 ** (i + 1)),
                         dilation=stack_kernel_size ** j,
                         bias=bias,
                         nonlinear_activation=nonlinear_activation,
                         nonlinear_activation_params=nonlinear_activation_params,
-                        padding='same'
+                        padding="same",
                     )
                 ]
 
@@ -91,16 +102,17 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
         layers += [
             getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params),
             TFReflectionPad1d((kernel_size - 1) // 2),
-            tf.keras.layers.Conv2D(filters=out_channels, 
-                                   kernel_size=(kernel_size,1),
+            tf.keras.layers.Conv2D(filters=out_channels,
+                                   kernel_size=(kernel_size, 1),
                                    use_bias=bias),
         ]
         if use_final_nolinear_activation:
-            layers += [tf.keras.layers.Activation('tanh')]
+            layers += [tf.keras.layers.Activation("tanh")]
 
         self.melgan = tf.keras.models.Sequential(layers)
 
-    @tf.function(input_signature=[tf.TensorSpec(shape=[None,None,80], dtype=tf.float32)])
+    # TODO(kan-bayashi): Fix hard coded dimension
+    @tf.function(input_signature=[tf.TensorSpec(shape=[None, None, 80], dtype=tf.float32)])
     def call(self, c):
         """Calculate forward propagation.
 
