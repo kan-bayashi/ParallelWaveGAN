@@ -19,7 +19,7 @@ You can try the realtime end-to-end text-to-speech demonstraion in Google Colab!
 
 ## What's new
 
-- 2020/03/16 **(New!)** [LibriTTS pretrained models](#Results) are available!
+- 2020/03/25 **(New!)** [LibriTTS pretrained models](#Results) are available!
 - 2020/03/17  [Tensorflow conversion example notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) is available (Thanks, [@dathudeptrai](https://github.com/dathudeptrai))!
 - 2020/03/16 [LibriTTS recipe](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1) is available!
 - 2020/03/12 [PWG G + MelGAN D + STFT-loss samples](#Results) are available!
