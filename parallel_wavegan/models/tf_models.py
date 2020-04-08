@@ -30,7 +30,7 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
                  nonlinear_activation_params={"alpha": 0.2},
                  pad="ReflectionPad1d",
                  pad_params={},
-                 use_final_nolinear_activation=True,
+                 use_final_nonlinear_activation=True,
                  use_weight_norm=True,
                  use_causal_conv=False,
                  ):
@@ -49,7 +49,7 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
             nonlinear_activation_params (dict): Hyperparameters for activation function.
             pad (str): Padding function module name before dilated convolution layer.
             pad_params (dict): Hyperparameters for padding function.
-            use_final_nolinear_activation (torch.nn.Module): Activation function for the final layer.
+            use_final_nonlinear_activation (torch.nn.Module): Activation function for the final layer.
             use_weight_norm (bool): No effect but keep it as is to be the same as pytorch version.
             use_causal_conv (bool): Whether to use causal convolution.
 
@@ -106,7 +106,7 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
                                    kernel_size=(kernel_size, 1),
                                    use_bias=bias),
         ]
-        if use_final_nolinear_activation:
+        if use_final_nonlinear_activation:
             layers += [tf.keras.layers.Activation("tanh")]
 
         self.melgan = tf.keras.models.Sequential(layers)

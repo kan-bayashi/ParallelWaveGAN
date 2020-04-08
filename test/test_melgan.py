@@ -40,7 +40,7 @@ def make_melgan_generator_args(**kwargs):
         nonlinear_activation_params={"negative_slope": 0.2},
         pad="ReflectionPad1d",
         pad_params={},
-        use_final_nolinear_activation=True,
+        use_final_nonlinear_activation=True,
         use_weight_norm=True,
     )
     defaults.update(kwargs)
@@ -88,7 +88,7 @@ def make_melgan_discriminator_args(**kwargs):
         ({"pad": "ConstantPad1d", "pad_params": {"value": 0.0}}, {}, {}),
         ({"nonlinear_activation": "ReLU", "nonlinear_activation_params": {}}, {}, {}),
         ({"bias": False}, {}, {}),
-        ({"use_final_nolinear_activation": False}, {}, {}),
+        ({"use_final_nonlinear_activation": False}, {}, {}),
         ({"use_weight_norm": False}, {}, {}),
     ])
 def test_melgan_trainable(dict_g, dict_d, dict_loss):
@@ -144,7 +144,7 @@ def test_melgan_trainable(dict_g, dict_d, dict_loss):
         ({"pad": "ConstantPad1d", "pad_params": {"value": 0.0}}, {}, {}),
         ({"nonlinear_activation": "ReLU", "nonlinear_activation_params": {}}, {}, {}),
         ({"bias": False}, {}, {}),
-        ({"use_final_nolinear_activation": False}, {}, {}),
+        ({"use_final_nonlinear_activation": False}, {}, {}),
         ({"use_weight_norm": False}, {}, {}),
     ])
 def test_melgan_trainable_with_residual_discriminator(dict_g, dict_d, dict_loss):
