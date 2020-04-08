@@ -29,7 +29,7 @@ class MelGANGenerator(torch.nn.Module):
                  nonlinear_activation_params={"negative_slope": 0.2},
                  pad="ReflectionPad1d",
                  pad_params={},
-                 use_final_nolinear_activation=True,
+                 use_final_nonlinear_activation=True,
                  use_weight_norm=True,
                  use_causal_conv=False,
                  ):
@@ -48,7 +48,7 @@ class MelGANGenerator(torch.nn.Module):
             nonlinear_activation_params (dict): Hyperparameters for activation function.
             pad (str): Padding function module name before dilated convolution layer.
             pad_params (dict): Hyperparameters for padding function.
-            use_final_nolinear_activation (torch.nn.Module): Activation function for the final layer.
+            use_final_nonlinear_activation (torch.nn.Module): Activation function for the final layer.
             use_weight_norm (bool): Whether to use weight norm.
                 If set to true, it will be applied to all of the conv layers.
             use_causal_conv (bool): Whether to use causal convolution.
@@ -104,7 +104,7 @@ class MelGANGenerator(torch.nn.Module):
             getattr(torch.nn, pad)((kernel_size - 1) // 2, **pad_params),
             torch.nn.Conv1d(channels // (2 ** (i + 1)), out_channels, kernel_size, bias=bias),
         ]
-        if use_final_nolinear_activation:
+        if use_final_nonlinear_activation:
             layers += [torch.nn.Tanh()]
 
         self.melgan = torch.nn.Sequential(*layers)
