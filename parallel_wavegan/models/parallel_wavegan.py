@@ -86,7 +86,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                 assert aux_context_window == 0
                 upsample_params.update({
                     "use_weight_norm": False,  # not to apply twice
-                    "use_final_nolinear_activation": False,
+                    "use_final_nonlinear_activation": False,
                 })
                 self.upsample_net = getattr(models, upsample_net)(**upsample_params)
             else:
