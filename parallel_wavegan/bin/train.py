@@ -224,7 +224,7 @@ class Trainer(object):
                 y_ = self.model["generator"](*x)
             # calculate discriminator loss
             p = self.model["discriminator"](y.unsqueeze(1))
-            p_ = self.model["discriminator"](y_.unsqueeze(1).detach())
+            p_ = self.model["discriminator"](y_.detach())
             if not isinstance(p, list):
                 # for standard discriminator
                 real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
