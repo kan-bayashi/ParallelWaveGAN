@@ -40,7 +40,7 @@ This repository is tested on Ubuntu 16.04 with a GPU Titan V.
 - jq (you can install via `sudo apt install jq` in ubuntu)
 
 Different cuda version should be working but not explicitly tested.  
-All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3.1 and 1.4.
+All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3.1, 1.4 and 1.5.
 
 ## Setup
 
