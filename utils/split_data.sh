@@ -13,7 +13,7 @@ num_first=0
 num_second=0
 
 # shellcheck disable=SC1091
-. parse_options.sh || exit 1;
+. utils/parse_options.sh || exit 1;
 
 if [ $# -ne 3 ]; then
     echo "Usage: $0 <src_dir> <dist_dir_1> <dist_dir_2> ..."

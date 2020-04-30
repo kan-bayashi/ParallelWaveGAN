@@ -13,7 +13,7 @@ eval_set="eval"
 shuffle=false
 
 # shellcheck disable=SC1091
-. parse_options.sh || exit 1;
+. utils/parse_options.sh || exit 1;
 
 # check arguments
 if [ $# != 3 ]; then
@@ -65,7 +65,7 @@ sort -R "${scp}.tmp" > "${scp}"
 rm -r "${scp}.tmp"
 
 # split
-split_data.sh \
+utils/split_data.sh \
     --num_second ${num_dev} \
     --shuffle "${shuffle}" \
     "${data_dir}/train" \

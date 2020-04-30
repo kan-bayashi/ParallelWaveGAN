@@ -28,27 +28,27 @@
 
 
 # Select the backend used by run.sh from "local", "stdout", "sge", "slurm", or "ssh"
-cmd_backend='local'
+cmd_backend="local"
 
 # Local machine, without any Job scheduling system
 if [ "${cmd_backend}" = local ]; then
 
     # The other usage
-    export train_cmd="run.pl"
+    export train_cmd="utils/run.pl"
     # Used for "*_train.py": "--gpu" is appended optionally by run.sh
-    export cuda_cmd="run.pl"
+    export cuda_cmd="utils/run.pl"
     # Used for "*_recog.py"
-    export decode_cmd="run.pl"
+    export decode_cmd="utils/run.pl"
 
 # Local machine, without any Job scheduling system
 elif [ "${cmd_backend}" = stdout ]; then
 
     # The other usage
-    export train_cmd="stdout.pl"
+    export train_cmd="utils/stdout.pl"
     # Used for "*_train.py": "--gpu" is appended optionally by run.sh
-    export cuda_cmd="stdout.pl"
+    export cuda_cmd="utils/stdout.pl"
     # Used for "*_recog.py"
-    export decode_cmd="stdout.pl"
+    export decode_cmd="utils/stdout.pl"
 
 # "qsub" (SGE, Torque, PBS, etc.)
 elif [ "${cmd_backend}" = sge ]; then
@@ -57,9 +57,9 @@ elif [ "${cmd_backend}" = sge ]; then
     # To know the "queue" names, type "qhost -q"
     # Note that to use "--gpu *", you have to setup "complex_value" for the system scheduler.
 
-    export train_cmd="queue.pl"
-    export cuda_cmd="queue.pl"
-    export decode_cmd="queue.pl"
+    export train_cmd="utils/queue.pl"
+    export cuda_cmd="utils/queue.pl"
+    export decode_cmd="utils/queue.pl"
 
 # "sbatch" (Slurm)
 elif [ "${cmd_backend}" = slurm ]; then
@@ -69,9 +69,9 @@ elif [ "${cmd_backend}" = slurm ]; then
     # You can use "--gpu * " by defualt for slurm and it is interpreted as "--gres gpu:*"
     # The devices are allocated exclusively using "${CUDA_VISIBLE_DEVICES}".
 
-    export train_cmd="slurm.pl"
-    export cuda_cmd="slurm.pl"
-    export decode_cmd="slurm.pl"
+    export train_cmd="utils/slurm.pl"
+    export cuda_cmd="utils/slurm.pl"
+    export decode_cmd="utils/slurm.pl"
 
 elif [ "${cmd_backend}" = ssh ]; then
     # You have to create ".queue/machines" to specify the host to execute jobs.
@@ -81,17 +81,9 @@ elif [ "${cmd_backend}" = ssh ]; then
     #   host3
     # Assuming you can login them without any password, i.e. You have to set ssh keys.
 
-    export train_cmd="ssh.pl"
-    export cuda_cmd="ssh.pl"
-    export decode_cmd="ssh.pl"
-
-# This is an example of specifying several unique options in the JHU CLSP cluster setup.
-# Users can modify/add their own command options according to their cluster environments.
-elif [ "${cmd_backend}" = jhu ]; then
-
-    export train_cmd="queue.pl --mem 2G"
-    export cuda_cmd="queue-freegpu.pl --mem 2G --gpu 1 --config conf/gpu.conf"
-    export decode_cmd="queue.pl --mem 4G"
+    export train_cmd="utils/ssh.pl"
+    export cuda_cmd="utils/ssh.pl"
+    export decode_cmd="utils/ssh.pl"
 
 else
     echo "$0: Error: Unknown cmd_backend=${cmd_backend}" 1>&2

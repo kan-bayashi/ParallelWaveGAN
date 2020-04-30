@@ -15,7 +15,7 @@ eval_set="eval"
 shuffle=false
 
 # shellcheck disable=SC1091
-. parse_options.sh || exit 1;
+. utils/parse_options.sh || exit 1;
 
 db_root=$1
 data_dir=$2
@@ -71,14 +71,14 @@ diff -q <(awk '{print $1}' "${scp}") <(awk '{print $1}' "${segments}") > /dev/nu
 num_all=$(wc -l < "${scp}")
 num_deveval=$((num_dev + num_eval))
 num_train=$((num_all - num_deveval))
-split_data.sh \
+utils/split_data.sh \
     --num_first "${num_train}" \
     --num_second "${num_deveval}" \
     --shuffle "${shuffle}" \
     "${data_dir}/all" \
     "${data_dir}/${train_set}" \
     "${data_dir}/deveval"
-split_data.sh \
+utils/split_data.sh \
     --num_first "${num_dev}" \
     --num_second "${num_eval}" \
     --shuffle "${shuffle}" \
