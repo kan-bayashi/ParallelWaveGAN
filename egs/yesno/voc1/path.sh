@@ -8,7 +8,6 @@ if [ -e "${PRJ_ROOT}/tools/venv/bin/activate" ]; then
     # shellcheck disable=SC1090
     . "${PRJ_ROOT}/tools/venv/bin/activate"
 fi
-export PATH="${PATH}:${PRJ_ROOT}/utils"
 
 # python related
 export OMP_NUM_THREADS=1
