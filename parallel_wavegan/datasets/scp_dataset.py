@@ -143,7 +143,6 @@ class AudioSCPDataset(Dataset):
 
         Args:
             wav_scp (str): Kaldi-style wav.scp file.
-            feats_scp (str): Kaldi-style fests.scp file.
             segments (str): Kaldi-style segments file.
             audio_length_threshold (int): Threshold to remove short audio files.
             return_utt_id (bool): Whether to return utterance id.
