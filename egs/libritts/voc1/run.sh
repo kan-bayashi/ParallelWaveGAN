@@ -36,7 +36,7 @@ checkpoint="" # checkpoint path to be used for decoding
               # (e.g. <path>/<to>/checkpoint-400000steps.pkl)
 
 # shellcheck disable=SC1091
-. parse_options.sh || exit 1;
+. utils/parse_options.sh || exit 1;
 
 train_set="train_nodev_${part}" # name of training data directory
 dev_set="dev_${part}"           # name of development data directory
@@ -81,11 +81,11 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
         eval_data_dirs+=" data/${eval_part}"
     done
     # shellcheck disable=SC2086
-    combine_data.sh "data/${train_set}" ${train_data_dirs}
+    utils/combine_data.sh "data/${train_set}" ${train_data_dirs}
     # shellcheck disable=SC2086
-    combine_data.sh "data/${dev_set}" ${dev_data_dirs}
+    utils/combine_data.sh "data/${dev_set}" ${dev_data_dirs}
     # shellcheck disable=SC2086
-    combine_data.sh "data/${eval_set}" ${eval_data_dirs}
+    utils/combine_data.sh "data/${eval_set}" ${eval_data_dirs}
 fi
 
 stats_ext=$(grep -q "hdf5" <(yq ".format" "${conf}") && echo "h5" || echo "npy")
@@ -97,7 +97,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.*.log."
-        make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
+        utils/make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
         ${train_cmd} JOB=1:${n_jobs} "${dumpdir}/${name}/raw/preprocessing.JOB.log" \
             parallel-wavegan-preprocess \
                 --config "${conf}" \

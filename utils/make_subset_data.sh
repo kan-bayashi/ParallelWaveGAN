@@ -46,13 +46,13 @@ for i in $(seq 1 "${num_split}"); do
     split_scps+=" ${dst_dir}/wav.${i}.scp"
 done
 # shellcheck disable=SC2086
-split_scp.pl "${src_scp}" ${split_scps}
+utils/split_scp.pl "${src_scp}" ${split_scps}
 if ${has_segments}; then
     split_segments=""
     for i in $(seq 1 "${num_split}"); do
         split_segments+=" ${dst_dir}/segments.${i}"
     done
     # shellcheck disable=SC2086
-    split_scp.pl "${src_segments}" ${split_segments}
+    utils/split_scp.pl "${src_segments}" ${split_segments}
 fi
 echo "Successfully make subsets."

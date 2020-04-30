@@ -34,7 +34,7 @@ checkpoint="" # checkpoint path to be used for decoding
               # (e.g. <path>/<to>/checkpoint-400000steps.pkl)
 
 # shellcheck disable=SC1091
-. parse_options.sh || exit 1;
+. utils/parse_options.sh || exit 1;
 
 train_set="train_nodev_${spk}" # name of training data directory
 dev_set="dev_${spk}"           # name of development data direcotry
@@ -65,7 +65,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.*.log."
-        make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
+        utils/make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
         ${train_cmd} JOB=1:${n_jobs} "${dumpdir}/${name}/raw/preprocessing.JOB.log" \
             parallel-wavegan-preprocess \
                 --config "${conf}" \
