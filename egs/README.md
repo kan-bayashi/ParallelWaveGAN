@@ -106,3 +106,5 @@ Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/
     # Specify CUDA device
     CUDA_VISIBLE_DEVICES=0 ./run.sh
     ```
+
+If you want to try the other advanced model, please check the config files in `egs/ljspeech/voc1/conf`.
