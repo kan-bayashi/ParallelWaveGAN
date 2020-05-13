@@ -130,6 +130,8 @@ def main():
         scaler.scale_ = np.load(args.stats)[1]
     else:
         raise ValueError("support only hdf5 or npy format.")
+    # from version 0.23.0, this information is needed
+    scaler.n_features_in_ = scaler.mean_.shape[0]
 
     # process each file
     for items in tqdm(dataset):
