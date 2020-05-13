@@ -104,3 +104,65 @@ def write_hdf5(hdf5_name, hdf5_path, write_data, is_overwrite=True):
     hdf5_file.create_dataset(hdf5_path, data=write_data)
     hdf5_file.flush()
     hdf5_file.close()
+
+
+class HDF5ScpLoader(object):
+    """Loader class for a fests.scp file of hdf5 file.
+
+    Examples:
+        key1 /some/path/a.h5:feats
+        key2 /some/path/b.h5:feats
+        key3 /some/path/c.h5:feats
+        key4 /some/path/d.h5:feats
+        ...
+        >>> loader = HDF5ScpLoader("hdf5.scp")
+        >>> array = loader["key1"]
+
+        key1 /some/path/a.h5
+        key2 /some/path/b.h5
+        key3 /some/path/c.h5
+        key4 /some/path/d.h5
+        ...
+        >>> loader = HDF5ScpLoader("hdf5.scp", "feats")
+        >>> array = loader["key1"]
+
+    """
+
+    def __init__(self, feats_scp, default_hdf5_path="feats"):
+        """Initialize HDF5 scp loader.
+
+        Args:
+            feats_scp (str): Kaldi-style feats.scp file with hdf5 format.
+            default_hdf5_path (str): Path in hdf5 file. If the scp contain the info, not used.
+        """
+        self.default_hdf5_path = default_hdf5_path
+        with open(feats_scp) as f:
+            lines = [line.replace("\n", "") for line in f.readlines()]
+        self.data = {}
+        for line in lines:
+            key, value = line.split()
+            self.data[key] = value
+
+    def get_path(self, key):
+        """Get hdf5 file path for a given key."""
+        return self.data[key]
+
+    def __getitem__(self, key):
+        """Get ndarray for a given key."""
+        p = self.data[key]
+        if ":" in p:
+            return read_hdf5(*p.split(":"))
+        else:
+            return read_hdf5(p, self.default_hdf5_path)
+
+    def __len__(self):
+        """Return the length of the scp file."""
+        return len(self.data)
+
+    def __iter__(self):
+        """Return the iterator of the scp file."""
+        return iter(self.data)
+
+    def keys(self):
+        """Return the keys of the scp file."""
+        return self.data.keys()
