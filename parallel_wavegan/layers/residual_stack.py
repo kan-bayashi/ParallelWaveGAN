@@ -7,6 +7,8 @@
 
 import torch
 
+from parallel_wavegan.layers import CausalConv1d
+
 
 class ResidualStack(torch.nn.Module):
     """Residual stack module introduced in MelGAN."""
@@ -38,18 +40,26 @@ class ResidualStack(torch.nn.Module):
         """
         super(ResidualStack, self).__init__()
 
-        assert not use_causal_conv, "Not supported yet."
-        assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
-        padding = (kernel_size - 1) // 2 * dilation
+        # defile residual stack part
+        if not use_causal_conv:
+            assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
+            self.stack = torch.nn.Sequential(
+                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
+                getattr(torch.nn, pad)((kernel_size - 1) // 2 * dilation, **pad_params),
+                torch.nn.Conv1d(channels, channels, kernel_size, dilation=dilation, bias=bias),
+                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
+                torch.nn.Conv1d(channels, channels, 1, bias=bias),
+            )
+        else:
+            self.stack = torch.nn.Sequential(
+                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
+                CausalConv1d(channels, channels, kernel_size,
+                             bias=bias, pad=pad, pad_params=pad_params),
+                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
+                torch.nn.Conv1d(channels, channels, 1, bias=bias),
+            )
 
-        self.stack = torch.nn.Sequential(
-            getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
-            getattr(torch.nn, pad)(padding, **pad_params),
-            torch.nn.Conv1d(channels, channels, kernel_size, dilation=dilation, bias=bias),
-            getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
-            torch.nn.Conv1d(channels, channels, 1, bias=bias),
-        )
-
+        # defile extra layer for skip connection
         self.skip_layer = torch.nn.Conv1d(channels, channels, 1, bias=bias)
 
     def forward(self, c):
