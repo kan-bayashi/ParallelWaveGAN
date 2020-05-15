@@ -134,6 +134,7 @@ class HDF5ScpLoader(object):
         Args:
             feats_scp (str): Kaldi-style feats.scp file with hdf5 format.
             default_hdf5_path (str): Path in hdf5 file. If the scp contain the info, not used.
+
         """
         self.default_hdf5_path = default_hdf5_path
         with open(feats_scp) as f:
