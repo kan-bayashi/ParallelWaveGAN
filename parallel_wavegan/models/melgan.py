@@ -10,6 +10,8 @@ import logging
 import numpy as np
 import torch
 
+from parallel_wavegan.layers import CausalConv1d
+from parallel_wavegan.layers import CausalConvTranspose1d
 from parallel_wavegan.layers import ResidualStack
 
 
@@ -57,30 +59,47 @@ class MelGANGenerator(torch.nn.Module):
         super(MelGANGenerator, self).__init__()
 
         # check hyper parameters is valid
-        assert not use_causal_conv, "Not supported yet."
         assert channels >= np.prod(upsample_scales)
         assert channels % (2 ** len(upsample_scales)) == 0
+        if not use_causal_conv:
+            assert (kernel_size - 1) % 2 == 0, "Not support even number kernel size."
 
         # add initial layer
         layers = []
-        layers += [
-            getattr(torch.nn, pad)((kernel_size - 1) // 2, **pad_params),
-            torch.nn.Conv1d(in_channels, channels, kernel_size, bias=bias),
-        ]
+        if not use_causal_conv:
+            layers += [
+                getattr(torch.nn, pad)((kernel_size - 1) // 2, **pad_params),
+                torch.nn.Conv1d(in_channels, channels, kernel_size, bias=bias),
+            ]
+        else:
+            layers += [
+                CausalConv1d(in_channels, channels, kernel_size,
+                             bias=bias, pad=pad, pad_params=pad_params),
+            ]
 
         for i, upsample_scale in enumerate(upsample_scales):
             # add upsampling layer
-            layers += [
-                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
-                torch.nn.ConvTranspose1d(
-                    channels // (2 ** i),
-                    channels // (2 ** (i + 1)),
-                    upsample_scale * 2,
-                    stride=upsample_scale,
-                    padding=upsample_scale // 2 + upsample_scale % 2,
-                    output_padding=upsample_scale % 2,
-                )
-            ]
+            layers += [getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params)]
+            if not use_causal_conv:
+                layers += [
+                    torch.nn.ConvTranspose1d(
+                        channels // (2 ** i),
+                        channels // (2 ** (i + 1)),
+                        upsample_scale * 2,
+                        stride=upsample_scale,
+                        padding=upsample_scale // 2 + upsample_scale % 2,
+                        output_padding=upsample_scale % 2,
+                    )
+                ]
+            else:
+                layers += [
+                    CausalConvTranspose1d(
+                        channels // (2 ** i),
+                        channels // (2 ** (i + 1)),
+                        upsample_scale * 2,
+                        stride=upsample_scale,
+                    )
+                ]
 
             # add residual stack
             for j in range(stacks):
@@ -99,14 +118,21 @@ class MelGANGenerator(torch.nn.Module):
                 ]
 
         # add final layer
-        layers += [
-            getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
-            getattr(torch.nn, pad)((kernel_size - 1) // 2, **pad_params),
-            torch.nn.Conv1d(channels // (2 ** (i + 1)), out_channels, kernel_size, bias=bias),
-        ]
+        layers += [getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params)]
+        if not use_causal_conv:
+            layers += [
+                getattr(torch.nn, pad)((kernel_size - 1) // 2, **pad_params),
+                torch.nn.Conv1d(channels // (2 ** (i + 1)), out_channels, kernel_size, bias=bias),
+            ]
+        else:
+            layers += [
+                CausalConv1d(channels // (2 ** (i + 1)), out_channels, kernel_size,
+                             bias=bias, pad=pad, pad_params=pad_params),
+            ]
         if use_final_nonlinear_activation:
             layers += [torch.nn.Tanh()]
 
+        # define the model as a single function
         self.melgan = torch.nn.Sequential(*layers)
 
         # apply weight norm
