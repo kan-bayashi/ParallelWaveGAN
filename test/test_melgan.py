@@ -42,6 +42,7 @@ def make_melgan_generator_args(**kwargs):
         pad_params={},
         use_final_nonlinear_activation=True,
         use_weight_norm=True,
+        use_causal_conv=False,
     )
     defaults.update(kwargs)
     return defaults
@@ -90,6 +91,7 @@ def make_melgan_discriminator_args(**kwargs):
         ({"bias": False}, {}, {}),
         ({"use_final_nonlinear_activation": False}, {}, {}),
         ({"use_weight_norm": False}, {}, {}),
+        ({"use_causal_conv": True}, {}, {}),
     ])
 def test_melgan_trainable(dict_g, dict_d, dict_loss):
     # setup
@@ -254,3 +256,37 @@ def test_melgan_trainable_with_melgan_discriminator(dict_g, dict_d, dict_loss):
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
+
+
+@pytest.mark.parametrize(
+    "dict_g", [
+        ({"use_causal_conv": True}),
+        ({"use_causal_conv": True, "upsample_scales": [4, 4, 2, 2]}),
+        ({"use_causal_conv": True, "upsample_scales": [4, 5, 4, 3]}),
+    ])
+def test_causal_melgan(dict_g):
+    batch_size = 4
+    batch_length = 4096
+    args_g = make_melgan_generator_args(**dict_g)
+    upsampling_factor = np.prod(args_g["upsample_scales"])
+    c = torch.randn(batch_size, args_g["in_channels"],
+                    batch_length // upsampling_factor)
+    model_g = MelGANGenerator(**args_g)
+    c_ = c.clone()
+    c_[..., c.size(-1) // 2:] = torch.randn(c[..., c.size(-1) // 2:].shape)
+    try:
+        # check not equal
+        np.testing.assert_array_equal(c.numpy(), c_.numpy())
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Must be different.")
+
+    # check causality
+    y = model_g(c)
+    y_ = model_g(c_)
+    assert y.size(2) == c.size(2) * upsampling_factor
+    np.testing.assert_array_equal(
+        y[..., :c.size(-1) // 2 * upsampling_factor].detach().cpu().numpy(),
+        y_[..., :c_.size(-1) // 2 * upsampling_factor].detach().cpu().numpy(),
+    )
