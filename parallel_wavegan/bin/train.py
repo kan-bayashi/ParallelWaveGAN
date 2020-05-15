@@ -801,11 +801,11 @@ def main():
     optimizer = {
         "generator": generator_optimizer_class(
             model["generator"].parameters(),
-            **config["generator_optimizer_params"]
+            **config["generator_optimizer_params"],
         ),
         "discriminator": discriminator_optimizer_class(
             model["discriminator"].parameters(),
-            **config["discriminator_optimizer_params"]
+            **config["discriminator_optimizer_params"],
         ),
     }
     generator_scheduler_class = getattr(
@@ -821,11 +821,11 @@ def main():
     scheduler = {
         "generator": generator_scheduler_class(
             optimizer=optimizer["generator"],
-            **config["generator_scheduler_params"]
+            **config["generator_scheduler_params"],
         ),
         "discriminator": discriminator_scheduler_class(
             optimizer=optimizer["discriminator"],
-            **config["discriminator_scheduler_params"]
+            **config["discriminator_scheduler_params"],
         ),
     }
     if args.distributed:
