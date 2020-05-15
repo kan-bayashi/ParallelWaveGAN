@@ -25,11 +25,11 @@ from tqdm import tqdm
 
 import parallel_wavegan
 import parallel_wavegan.models
+import parallel_wavegan.optimizers
 
 from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.datasets import AudioMelSCPDataset
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
-from parallel_wavegan.optimizers import RAdam
 from parallel_wavegan.utils import read_hdf5
 
 # set to avoid matplotlib error in CLI environment
@@ -788,21 +788,45 @@ def main():
     }
     if config.get("use_feat_match_loss", False):  # keep compatibility
         criterion["l1"] = torch.nn.L1Loss().to(device)
+    generator_optimizer_class = getattr(
+        parallel_wavegan.optimizers,
+        # keep compatibility
+        config.get("generator_optimizer_type", "RAdam"),
+    )
+    discriminator_optimizer_class = getattr(
+        parallel_wavegan.optimizers,
+        # keep compatibility
+        config.get("discriminator_optimizer_type", "RAdam"),
+    )
     optimizer = {
-        "generator": RAdam(
+        "generator": generator_optimizer_class(
             model["generator"].parameters(),
-            **config["generator_optimizer_params"]),
-        "discriminator": RAdam(
+            **config["generator_optimizer_params"],
+        ),
+        "discriminator": discriminator_optimizer_class(
             model["discriminator"].parameters(),
-            **config["discriminator_optimizer_params"]),
+            **config["discriminator_optimizer_params"],
+        ),
     }
+    generator_scheduler_class = getattr(
+        torch.optim.lr_scheduler,
+        # keep compatibility
+        config.get("generator_scheduler_type", "StepLR"),
+    )
+    discriminator_scheduler_class = getattr(
+        torch.optim.lr_scheduler,
+        # keep compatibility
+        config.get("discriminator_scheduler_type", "StepLR"),
+    )
     scheduler = {
-        "generator": torch.optim.lr_scheduler.StepLR(
+        "generator": generator_scheduler_class(
             optimizer=optimizer["generator"],
-            **config["generator_scheduler_params"]),
-        "discriminator": torch.optim.lr_scheduler.StepLR(
+            **config["generator_scheduler_params"],
+        ),
+        "discriminator": discriminator_scheduler_class(
             optimizer=optimizer["discriminator"],
-            **config["discriminator_scheduler_params"]),
+            **config["discriminator_scheduler_params"],
+        ),
     }
     if args.distributed:
         # wrap model for distributed training
