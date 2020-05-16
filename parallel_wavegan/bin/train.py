@@ -29,6 +29,7 @@ import parallel_wavegan.optimizers
 
 from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.datasets import AudioMelSCPDataset
+from parallel_wavegan.layers import PQMF
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.utils import read_hdf5
 
@@ -164,15 +165,35 @@ class Trainer(object):
         #######################
         #      Generator      #
         #######################
-        # calculate generator loss
         y_ = self.model["generator"](*x)
-        y, y_ = y.squeeze(1), y_.squeeze(1)
-        sc_loss, mag_loss = self.criterion["stft"](y_, y)
+
+        # reconstruct the signal from multi-band signal
+        if self.config.get("use_multi_band", False):  # keep compatibility
+            y_mb_ = y_
+            y_ = self.criterion["pqmf"].synthesis(y_mb_)
+
+        # multi-resolution sfft loss
+        sc_loss, mag_loss = self.criterion["stft"](y_.squeeze(1), y.squeeze(1))
+        self.total_train_loss["train/spectral_convergence_loss"] += sc_loss.item()
+        self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
         gen_loss = sc_loss + mag_loss
+
+        # subband multi-resolution stft loss for multi-band model
+        if self.config.get("use_subband_stft_loss", False):
+            gen_loss *= 0.5  # for balancing with subband stft loss
+            y_mb = self.criterion["pqmf"].analysis(y)
+            y_mb = y_mb.view(-1, y_mb.size(2))  # (B, C, T) -> (B x C, T)
+            y_mb_ = y_mb_.view(-1, y_mb_.size(2))  # (B, C, T) -> (B x C, T)
+            sub_sc_loss, sub_mag_loss = self.criterion["sub_stft"](y_mb_, y_mb)
+            self.total_train_loss[
+                "train/sub_spectral_convergence_loss"] += sub_sc_loss.item()
+            self.total_train_loss[
+                "train/sub_log_stft_magnitude_loss"] += sub_mag_loss.item()
+            gen_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
+
         if self.steps > self.config["discriminator_train_start_steps"]:
-            # keep compatibility
-            gen_loss *= self.config.get("lambda_aux_after_introduce_adv_loss", 1.0)
-            p_ = self.model["discriminator"](y_.unsqueeze(1))
+            # caculate adversarial loss
+            p_ = self.model["discriminator"](y_)
             if not isinstance(p_, list):
                 # for standard discriminator
                 adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
@@ -190,7 +211,7 @@ class Trainer(object):
                 if self.config["use_feat_match_loss"]:
                     # no need to track gradients
                     with torch.no_grad():
-                        p = self.model["discriminator"](y.unsqueeze(1))
+                        p = self.model["discriminator"](y)
                     fm_loss = 0.0
                     for i in range(len(p_)):
                         for j in range(len(p_[i]) - 1):
@@ -199,10 +220,9 @@ class Trainer(object):
                     self.total_train_loss["train/feature_matching_loss"] += fm_loss.item()
                     adv_loss += self.config["lambda_feat_match"] * fm_loss
 
+            # add adversarial loss to generator loss
             gen_loss += self.config["lambda_adv"] * adv_loss
 
-        self.total_train_loss["train/spectral_convergence_loss"] += sc_loss.item()
-        self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
         self.total_train_loss["train/generator_loss"] += gen_loss.item()
 
         # update generator
@@ -222,17 +242,17 @@ class Trainer(object):
             # re-compute y_ which leads better quality
             with torch.no_grad():
                 y_ = self.model["generator"](*x)
+            if self.config.get("use_multi_band", False):  # keep compatibility
+                y_ = self.criterion["pqmf"].synthesis(y_)
+
             # calculate discriminator loss
-            p = self.model["discriminator"](y.unsqueeze(1))
+            p = self.model["discriminator"](y)
             p_ = self.model["discriminator"](y_.detach())
             if not isinstance(p, list):
                 # for standard discriminator
                 real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
                 fake_loss = self.criterion["mse"](p_, p_.new_zeros(p_.size()))
                 dis_loss = real_loss + fake_loss
-                self.total_train_loss["train/real_loss"] += real_loss.item()
-                self.total_train_loss["train/fake_loss"] += fake_loss.item()
-                self.total_train_loss["train/discriminator_loss"] += dis_loss.item()
             else:
                 # for multi-scale discriminator
                 real_loss = 0.0
@@ -245,9 +265,10 @@ class Trainer(object):
                 real_loss /= (i + 1)
                 fake_loss /= (i + 1)
                 dis_loss = real_loss + fake_loss
-                self.total_train_loss["train/real_loss"] += real_loss.item()
-                self.total_train_loss["train/fake_loss"] += fake_loss.item()
-                self.total_train_loss["train/discriminator_loss"] += dis_loss.item()
+
+            self.total_train_loss["train/real_loss"] += real_loss.item()
+            self.total_train_loss["train/fake_loss"] += fake_loss.item()
+            self.total_train_loss["train/discriminator_loss"] += dis_loss.item()
 
             # update discriminator
             self.optimizer["discriminator"].zero_grad()
@@ -298,13 +319,23 @@ class Trainer(object):
         #      Generator      #
         #######################
         y_ = self.model["generator"](*x)
+        if self.config.get("use_multi_band", False):  # keep compatibility
+            y_mb_ = y_
+            y_ = self.criterion["pqmf"].synthesis(y_mb_)
         p_ = self.model["discriminator"](y_)
-        y, y_ = y.squeeze(1), y_.squeeze(1)
-        sc_loss, mag_loss = self.criterion["stft"](y_, y)
+        sc_loss, mag_loss = self.criterion["stft"](y_.squeeze(1), y.squeeze(1))
         aux_loss = sc_loss + mag_loss
-        if self.steps > self.config["discriminator_train_start_steps"]:
-            # keep compatibility
-            aux_loss *= self.config.get("lambda_aux_after_introduce_adv_loss", 1.0)
+        if self.config.get("use_subband_stft_loss", False):
+            aux_loss *= 0.5  # for balancing with subband stft loss
+            y_mb = self.criterion["pqmf"].analysis(y)
+            y_mb = y_mb.view(-1, y_mb.size(2))  # (B, C, T) -> (B x C, T)
+            y_mb_ = y_mb_.view(-1, y_mb_.size(2))  # (B, C, T) -> (B x C, T)
+            sub_sc_loss, sub_mag_loss = self.criterion["sub_stft"](y_mb_, y_mb)
+            self.total_train_loss[
+                "eval/sub_spectral_convergence_loss"] += sub_sc_loss.item()
+            self.total_train_loss[
+                "eval/sub_log_stft_magnitude_loss"] += sub_mag_loss.item()
+            aux_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
         if not isinstance(p_, list):
             # for standard discriminator
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
@@ -320,7 +351,7 @@ class Trainer(object):
 
             # feature matching loss
             if self.config["use_feat_match_loss"]:
-                p = self.model["discriminator"](y.unsqueeze(1))
+                p = self.model["discriminator"](y)
                 fm_loss = 0.0
                 for i in range(len(p_)):
                     for j in range(len(p_[i]) - 1):
@@ -332,8 +363,8 @@ class Trainer(object):
         #######################
         #    Discriminator    #
         #######################
-        p = self.model["discriminator"](y.unsqueeze(1))
-        p_ = self.model["discriminator"](y_.unsqueeze(1))
+        p = self.model["discriminator"](y)
+        p_ = self.model["discriminator"](y_)
         if not isinstance(p_, list):
             # for standard discriminator
             real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
@@ -406,6 +437,8 @@ class Trainer(object):
         x_batch = tuple([x.to(self.device) for x in x_batch])
         y_batch = y_batch.to(self.device)
         y_batch_ = self.model["generator"](*x_batch)
+        if self.config.get("use_multi_band", False):  # keep compatibility
+            y_batch_ = self.criterion["pqmf"].synthesis(y_batch_)
 
         # check directory
         dirname = os.path.join(self.config["outdir"], f"predictions/{self.steps}steps")
@@ -788,6 +821,13 @@ def main():
     }
     if config.get("use_feat_match_loss", False):  # keep compatibility
         criterion["l1"] = torch.nn.L1Loss().to(device)
+    if config.get("use_multi_band", False):  # keep compatibility
+        criterion["pqmf"] = PQMF(
+            config["generator_params"]["out_channels"]).to(device)
+    if config.get("use_subband_stft_loss", False):  # keep compatibility
+        assert config.get("use_multi_band", False)
+        criterion["sub_stft"] = MultiResolutionSTFTLoss(
+            **config["subband_stft_loss_params"]).to(device)
     generator_optimizer_class = getattr(
         parallel_wavegan.optimizers,
         # keep compatibility
