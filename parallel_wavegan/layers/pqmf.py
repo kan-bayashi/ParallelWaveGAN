@@ -36,8 +36,9 @@ def design_prototype_filter(taps=62, cutoff_ratio=0.15, beta=9.0):
 
     # make initial filter
     omega_c = np.pi * cutoff_ratio
-    h_i = np.sin(omega_c * (np.arange(taps + 1) - 0.5 * taps)) \
-        / (np.pi * (np.arange(taps + 1) - 0.5 * taps))
+    with np.errstate(invalid='ignore'):
+        h_i = np.sin(omega_c * (np.arange(taps + 1) - 0.5 * taps)) \
+            / (np.pi * (np.arange(taps + 1) - 0.5 * taps))
     h_i[taps // 2] = np.cos(0) * cutoff_ratio  # fix nan due to indeterminate form
 
     # apply kaiser window
@@ -71,7 +72,7 @@ class PQMF(torch.nn.Module):
 
         # define filter coefficient
         h_proto = design_prototype_filter(taps, cutoff_ratio, beta)
-        h_analysis = np.zeros(subbands, (len(h_proto)))
+        h_analysis = np.zeros((subbands, len(h_proto)))
         h_synthesis = np.zeros((subbands, len(h_proto)))
         for k in range(subbands):
             h_analysis[k] = 2 * h_proto * np.cos(
@@ -94,7 +95,7 @@ class PQMF(torch.nn.Module):
         # filter for downsampling & upsampling
         updown_filter = torch.zeros((subbands, subbands, subbands)).float()
         updown_filter[:, :, 0] = 1.0
-        self.resister_buffer("updown_filter", updown_filter)
+        self.register_buffer("updown_filter", updown_filter)
         self.subbands = subbands
 
         # keep padding info
