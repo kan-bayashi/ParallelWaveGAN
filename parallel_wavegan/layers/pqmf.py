@@ -94,7 +94,8 @@ class PQMF(torch.nn.Module):
 
         # filter for downsampling & upsampling
         updown_filter = torch.zeros((subbands, subbands, subbands)).float()
-        updown_filter[:, :, 0] = 1.0
+        for k in range(subbands):
+            updown_filter[k, k, 0] = 1.0
         self.register_buffer("updown_filter", updown_filter)
         self.subbands = subbands
 
@@ -124,5 +125,8 @@ class PQMF(torch.nn.Module):
             Tensor: Output tensor (B, 1, T).
 
         """
-        x = F.conv_transpose1d(x, self.updown_filter, stride=self.subbands)
+        # NOTE(kan-bayashi): Power will be dreased so here multipy by # subbands.
+        #   Not sure this is the correct way, it is better to check again.
+        # TODO(kan-bayashi): Understand the reconstruction procedure
+        x = F.conv_transpose1d(x, self.updown_filter * self.subbands, stride=self.subbands)
         return F.conv1d(self.pad_fn(x), self.synthesis_filter)
