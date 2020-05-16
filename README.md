@@ -1,8 +1,8 @@
-# Parallel WaveGAN (+ MelGAN) implementation with Pytorch
+# Parallel WaveGAN (+ MelGAN & Multi-band MelGAN) implementation with Pytorch
 
 ![](https://github.com/kan-bayashi/ParallelWaveGAN/workflows/CI/badge.svg) [![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/pypi/pyversions/parallel-wavegan) ![](https://img.shields.io/pypi/l/parallel-wavegan) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
-This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480) and [MelGAN](https://arxiv.org/abs/1910.06711) implementations with Pytorch.  
+This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480), [MelGAN](https://arxiv.org/abs/1910.06711), and [Multi-band MelGAN](https://arxiv.org/abs/2005.05106) implementations with Pytorch.  
 You can combine these state-of-the-art non-autoregressive models to build your own great vocoder!
 
 Please check our samples in [our demo HP](https://kan-bayashi.github.io/ParallelWaveGAN).
@@ -19,8 +19,9 @@ You can try the realtime end-to-end text-to-speech demonstraion in Google Colab!
 
 ## What's new
 
-- 2020/03/25 **(New!)** [LibriTTS pretrained models](#Results) are available!
-- 2020/03/17  [Tensorflow conversion example notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) is available (Thanks, [@dathudeptrai](https://github.com/dathudeptrai))!
+- 2020/05/16 **(New!)** [Multi-band MelGAN](https://arxiv.org/abs/2005.05106) is available!
+- 2020/03/25 [LibriTTS pretrained models](#Results) are available!
+- 2020/03/17 [Tensorflow conversion example notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) is available (Thanks, [@dathudeptrai](https://github.com/dathudeptrai))!
 - 2020/03/16 [LibriTTS recipe](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1) is available!
 - 2020/03/12 [PWG G + MelGAN D + STFT-loss samples](#Results) are available!
 - 2020/03/12 Multi-speaker English recipe [egs/vctk/voc1](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/vctk/voc1) is available!
@@ -252,6 +253,7 @@ If you want to combine with TTS models, you can try the realtime demonstraion in
 - [LiyuanLucasLiu/RAdam](https://github.com/LiyuanLucasLiu/RAdam)
 - [MelGAN](https://arxiv.org/abs/1910.06711)
 - [descriptinc/melgan-neurips](https://github.com/descriptinc/melgan-neurips)
+- [Multi-band MelGAN](arxiv.org/abs/2005.05106)
 
 ## Acknowledgement
 
