@@ -168,7 +168,7 @@ class Trainer(object):
         y_ = self.model["generator"](*x)
 
         # reconstruct the signal from multi-band signal
-        if self.config.get("use_multi_band", False):  # keep compatibility
+        if self.config["generator_params"]["out_channels"] > 1:
             y_mb_ = y_
             y_ = self.criterion["pqmf"].synthesis(y_mb_)
 
@@ -242,7 +242,7 @@ class Trainer(object):
             # re-compute y_ which leads better quality
             with torch.no_grad():
                 y_ = self.model["generator"](*x)
-            if self.config.get("use_multi_band", False):  # keep compatibility
+            if self.config["generator_params"]["out_channels"] > 1:
                 y_ = self.criterion["pqmf"].synthesis(y_)
 
             # calculate discriminator loss
@@ -319,7 +319,7 @@ class Trainer(object):
         #      Generator      #
         #######################
         y_ = self.model["generator"](*x)
-        if self.config.get("use_multi_band", False):  # keep compatibility
+        if self.config["generator_params"]["out_channels"] > 1:
             y_mb_ = y_
             y_ = self.criterion["pqmf"].synthesis(y_mb_)
         p_ = self.model["discriminator"](y_)
@@ -437,7 +437,7 @@ class Trainer(object):
         x_batch = tuple([x.to(self.device) for x in x_batch])
         y_batch = y_batch.to(self.device)
         y_batch_ = self.model["generator"](*x_batch)
-        if self.config.get("use_multi_band", False):  # keep compatibility
+        if self.config["generator_params"]["out_channels"] > 1:
             y_batch_ = self.criterion["pqmf"].synthesis(y_batch_)
 
         # check directory
@@ -821,11 +821,11 @@ def main():
     }
     if config.get("use_feat_match_loss", False):  # keep compatibility
         criterion["l1"] = torch.nn.L1Loss().to(device)
-    if config.get("use_multi_band", False):  # keep compatibility
+    if config["generator_params"]["out_channels"] > 1:
         criterion["pqmf"] = PQMF(
             config["generator_params"]["out_channels"]).to(device)
     if config.get("use_subband_stft_loss", False):  # keep compatibility
-        assert config.get("use_multi_band", False)
+        assert config["generator_params"]["out_channels"] > 1
         criterion["sub_stft"] = MultiResolutionSTFTLoss(
             **config["subband_stft_loss_params"]).to(device)
     generator_optimizer_class = getattr(

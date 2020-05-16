@@ -66,7 +66,6 @@ stft_loss_params:
     hop_sizes: [120, 240, 50]     # List of hop size for STFT-based loss
     win_lengths: [600, 1200, 240] # List of window length for STFT-based loss.
     window: "hann_window"         # Window function for STFT-based loss
-use_multi_band: true
 use_subband_stft_loss: true
 subband_stft_loss_params:
     fft_sizes: [384, 683, 171]  # List of FFT size for STFT-based loss.
