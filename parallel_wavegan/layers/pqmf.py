@@ -84,12 +84,18 @@ class PQMF(torch.nn.Module):
                 (-1) ** k * np.pi / 4)
 
         # convert to tensor
-        h_analysis = torch.from_numpy(h_analysis).float().unsqueeze(1)
-        h_synthesis = torch.from_numpy(h_synthesis).float().unsqueeze(0)
+        analysis_filter = torch.from_numpy(h_analysis).float().unsqueeze(1)
+        synthesis_filter = torch.from_numpy(h_synthesis).float().unsqueeze(0)
 
         # register coefficients as beffer
-        self.register_buffer("analysis_filter", h_analysis)
-        self.register_buffer("synthesis_filter", h_synthesis)
+        self.register_buffer("analysis_filter", analysis_filter)
+        self.register_buffer("synthesis_filter", synthesis_filter)
+
+        # filter for downsampling & upsampling
+        updown_filter = torch.zeros((subbands, subbands, subbands)).float()
+        updown_filter[:, :, 0] = 1.0
+        self.resister_buffer("updown_filter", updown_filter)
+        self.subbands = subbands
 
         # keep padding info
         self.pad_fn = torch.nn.ConstantPad1d(taps // 2, 0.0)
@@ -101,19 +107,21 @@ class PQMF(torch.nn.Module):
             x (Tensor): Input tensor (B, 1, T).
 
         Returns:
-            Tensor: Output tensor (B, subbands, T).
+            Tensor: Output tensor (B, subbands, T // subbands).
 
         """
-        return F.conv1d(self.pad_fn(x), self.analysis_filter)
+        x = F.conv1d(self.pad_fn(x), self.analysis_filter)
+        return F.conv1d(x, self.updown_filter, stride=self.subbands)
 
     def synthesis(self, x):
         """Synthesis with PQMF.
 
         Args:
-            x (Tensor): Input tensor (B, subbands, T).
+            x (Tensor): Input tensor (B, subbands, T // subbands).
 
         Returns:
             Tensor: Output tensor (B, 1, T).
 
         """
+        x = F.conv_transpose1d(x, self.updown_filter, stride=self.subbands)
         return F.conv1d(self.pad_fn(x), self.synthesis_filter)
