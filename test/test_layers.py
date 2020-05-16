@@ -16,6 +16,7 @@ from parallel_wavegan.layers import Conv1d
 from parallel_wavegan.layers import Conv1d1x1
 from parallel_wavegan.layers import Conv2d
 from parallel_wavegan.layers import ConvInUpsampleNetwork
+from parallel_wavegan.layers import PQMF
 from parallel_wavegan.layers import UpsampleNetwork
 
 logging.basicConfig(
@@ -112,3 +113,17 @@ def test_causal_conv_transpose(kernel_size, stride):
         y1[:, :, :19 * stride].cpu().numpy(),
         y2[:, :, :19 * stride].cpu().numpy(),
     )
+
+
+@pytest.mark.parametrize(
+    "subbands", [
+        (3),
+        (4),
+    ])
+def test_pqmf(subbands):
+    pqmf = PQMF(subbands)
+    x = torch.randn(1, 1, subbands * 32)
+    y = pqmf.analysis(x)
+    assert y.shape[2] * subbands == x.shape[2]
+    x_hat = pqmf.synthesis(y)
+    assert x.shape[2] == x_hat.shape[2]
