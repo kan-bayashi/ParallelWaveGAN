@@ -331,9 +331,9 @@ class Trainer(object):
             y_mb = y_mb.view(-1, y_mb.size(2))  # (B, C, T) -> (B x C, T)
             y_mb_ = y_mb_.view(-1, y_mb_.size(2))  # (B, C, T) -> (B x C, T)
             sub_sc_loss, sub_mag_loss = self.criterion["sub_stft"](y_mb_, y_mb)
-            self.total_train_loss[
+            self.total_eval_loss[
                 "eval/sub_spectral_convergence_loss"] += sub_sc_loss.item()
-            self.total_train_loss[
+            self.total_eval_loss[
                 "eval/sub_log_stft_magnitude_loss"] += sub_mag_loss.item()
             aux_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
         if not isinstance(p_, list):
