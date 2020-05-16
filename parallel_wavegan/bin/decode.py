@@ -138,7 +138,7 @@ def main():
             if not config.get("use_multi_band", False):
                 y = model(*x).view(-1).cpu().numpy()
             else:
-                y = pqmf.synthesis(model(*x)).cpu().numpy()
+                y = pqmf.synthesis(model(*x)).view(-1).cpu().numpy()
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf
