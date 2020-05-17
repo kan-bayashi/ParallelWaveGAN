@@ -550,7 +550,7 @@ class Collater(object):
         # check length
         batch = [self._adjust_length(*b) for b in batch]
         xs = [b[0] for b in batch if len(b[0]) > self.audio_threshold]
-        cs = [b[1] for b in batch if len(b[1]) > self.mel_threshold]]
+        cs = [b[1] for b in batch if len(b[1]) > self.mel_threshold]
         assert len(xs) == len(cs)
         if len(batch) != len(xs):
             logging.warning("Removed short samples from batch.")
