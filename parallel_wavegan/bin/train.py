@@ -529,6 +529,12 @@ class Collater(object):
         self.aux_context_window = aux_context_window
         self.use_noise_input = use_noise_input
 
+        # set useful values in random cutting
+        self.start_offset = aux_context_window
+        self.end_offset = -(self.batch_max_frames + aux_context_window)
+        self.mel_threshold = self.batch_max_frames + 2 * aux_context_window
+        self.audio_threshold = self.mel_threshold * hop_size
+
     def __call__(self, batch):
         """Convert into batch tensors.
 
@@ -541,31 +547,28 @@ class Collater(object):
             Tensor: Target signal batch (B, 1, T).
 
         """
-        # time resolution check
-        y_batch, c_batch = [], []
-        for idx in range(len(batch)):
-            x, c = batch[idx]
-            x, c = self._adjust_length(x, c)
-            self._check_length(x, c, self.hop_size, 0)
-            if len(c) - 2 * self.aux_context_window > self.batch_max_frames:
-                # randomly pickup with the batch_max_steps length of the part
-                interval_start = self.aux_context_window
-                interval_end = len(c) - self.batch_max_frames - self.aux_context_window
-                start_frame = np.random.randint(interval_start, interval_end)
-                start_step = start_frame * self.hop_size
-                y = x[start_step: start_step + self.batch_max_steps]
-                c = c[start_frame - self.aux_context_window:
-                      start_frame + self.aux_context_window + self.batch_max_frames]
-                self._check_length(y, c, self.hop_size, self.aux_context_window)
-            else:
-                logging.warn(f"Removed short sample from batch (length={len(x)}).")
-                continue
-            y_batch += [y.astype(np.float32).reshape(-1, 1)]  # [(T, 1), (T, 1), ...]
-            c_batch += [c.astype(np.float32)]  # [(T' C), (T' C), ...]
+        # check length
+        batch = [self._adjust_length(*b) for b in batch]
+        xs = [b[0] for b in batch if len(b[0]) > self.audio_threshold]
+        cs = [b[1] for b in batch if len(b[1]) > self.mel_threshold]]
+        assert len(xs) == len(cs)
+        if len(batch) != len(xs):
+            logging.warning("Removed short samples from batch.")
+
+        # make batch with random cut
+        c_lengths = [len(c) for c in cs]
+        start_frames = np.array([np.random.randint(
+            self.start_offset, cl + self.end_offset) for cl in c_lengths])
+        x_starts = start_frames * self.hop_size
+        x_ends = x_starts + self.batch_max_steps
+        c_starts = start_frames - self.aux_context_window
+        c_ends = start_frames + self.batch_max_frames + self.aux_context_window
+        y_batch = [x[start: end] for x, start, end in zip(xs, x_starts, x_ends)]
+        c_batch = [c[start: end] for c, start, end in zip(cs, c_starts, c_ends)]
 
         # convert each batch to tensor, asuume that each item in batch has the same length
-        y_batch = torch.FloatTensor(np.array(y_batch)).transpose(2, 1)  # (B, 1, T)
-        c_batch = torch.FloatTensor(np.array(c_batch)).transpose(2, 1)  # (B, C, T')
+        y_batch = torch.tensor(y_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T)
+        c_batch = torch.tensor(c_batch, dtype=torch.float).transpose(2, 1)  # (B, C, T')
 
         # make input noise signal batch tensor
         if self.use_noise_input:
@@ -577,19 +580,19 @@ class Collater(object):
     def _adjust_length(self, x, c):
         """Adjust the audio and feature lengths.
 
-        NOTE that basically we assume that the length of x and c are adjusted
-        in preprocessing stage, but if we use ESPnet processed features, this process
-        will be needed because the length of x is not adjusted.
+        Note:
+            Basically we assume that the length of x and c are adjusted
+            through preprocessing stage, but if we use other library processed
+            features, this process will be needed.
 
         """
         if len(x) < len(c) * self.hop_size:
             x = np.pad(x, (0, len(c) * self.hop_size - len(x)), mode="edge")
-        return x, c
 
-    @staticmethod
-    def _check_length(x, c, hop_size, context_window):
-        """Assert the audio and feature lengths are correctly adjusted for upsamping."""
-        assert len(x) == (len(c) - 2 * context_window) * hop_size
+        # check the legnth is valid
+        assert len(x) == len(c) * self.hop_size
+
+        return x, c
 
 
 def main():
