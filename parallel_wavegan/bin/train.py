@@ -533,7 +533,6 @@ class Collater(object):
         self.start_offset = aux_context_window
         self.end_offset = -(self.batch_max_frames + aux_context_window)
         self.mel_threshold = self.batch_max_frames + 2 * aux_context_window
-        self.audio_threshold = self.mel_threshold * hop_size
 
     def __call__(self, batch):
         """Convert into batch tensors.
@@ -543,17 +542,14 @@ class Collater(object):
 
         Returns:
             Tensor: Gaussian noise batch (B, 1, T).
-            Tensor: Auxiliary feature batch (B, C, T'), where T = (T' - 2 * aux_context_window) * hop_size
+            Tensor: Auxiliary feature batch (B, C, T'), where
+                T = (T' - 2 * aux_context_window) * hop_size.
             Tensor: Target signal batch (B, 1, T).
 
         """
         # check length
-        batch = [self._adjust_length(*b) for b in batch]
-        xs = [b[0] for b in batch if len(b[0]) > self.audio_threshold]
-        cs = [b[1] for b in batch if len(b[1]) > self.mel_threshold]
-        assert len(xs) == len(cs)
-        if len(batch) != len(xs):
-            logging.warning("Removed short samples from batch.")
+        batch = [self._adjust_length(*b) for b in batch if len(b[1]) > self.mel_threshold]
+        xs, cs = [b[0] for b in batch], [b[1] for b in batch]
 
         # make batch with random cut
         c_lengths = [len(c) for c in cs]
