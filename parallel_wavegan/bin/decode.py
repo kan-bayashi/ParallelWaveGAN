@@ -118,7 +118,7 @@ def main():
         model, parallel_wavegan.models.MelGANGenerator)
     pad_fn = torch.nn.ReplicationPad1d(
         config["generator_params"].get("aux_context_window", 0))
-    if config.get("use_multi_band", False):
+    if config["generator_params"]["out_channels"] > 1:
         pqmf = PQMF(config["generator_params"]["out_channels"])
 
     # start generation
@@ -135,7 +135,7 @@ def main():
 
             # generate
             start = time.time()
-            if not config.get("use_multi_band", False):
+            if config["generator_params"]["out_channels"] == 1:
                 y = model(*x).view(-1).cpu().numpy()
             else:
                 y = pqmf.synthesis(model(*x)).view(-1).cpu().numpy()
