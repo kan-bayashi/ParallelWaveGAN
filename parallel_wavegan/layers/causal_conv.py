@@ -39,7 +39,8 @@ class CausalConvTranspose1d(torch.nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, bias=True):
         """Initialize CausalConvTranspose1d module."""
         super(CausalConvTranspose1d, self).__init__()
-        self.deconv = torch.nn.ConvTranspose1d(in_channels, out_channels, kernel_size, stride)
+        self.deconv = torch.nn.ConvTranspose1d(
+            in_channels, out_channels, kernel_size, stride, bias=bias)
         self.stride = stride
 
     def forward(self, x):
