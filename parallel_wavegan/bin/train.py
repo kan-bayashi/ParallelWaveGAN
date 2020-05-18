@@ -149,9 +149,6 @@ class Trainer(object):
             self.epochs = state_dict["epochs"]
             self.optimizer["generator"].load_state_dict(state_dict["optimizer"]["generator"])
             self.optimizer["discriminator"].load_state_dict(state_dict["optimizer"]["discriminator"])
-            # overwrite schedular argument parameters
-            state_dict["scheduler"]["generator"].update(**self.config["generator_scheduler_params"])
-            state_dict["scheduler"]["discriminator"].update(**self.config["discriminator_scheduler_params"])
             self.scheduler["generator"].load_state_dict(state_dict["scheduler"]["generator"])
             self.scheduler["discriminator"].load_state_dict(state_dict["scheduler"]["discriminator"])
 
