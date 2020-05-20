@@ -34,7 +34,7 @@ def _check_feats_scp_type(feats_scp):
         else:
             raise ValueError("Not supported feats.scp type.")
     else:
-        if value_1.endswith(".h5"):
+        if value.endswith(".h5"):
             # hdf5 case without path in hdf5: utt_id_1 /path/to/utt_id_1.h5
             return "hdf5"
         else:
