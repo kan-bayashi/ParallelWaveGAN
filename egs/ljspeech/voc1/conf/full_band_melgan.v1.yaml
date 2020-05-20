@@ -1,12 +1,12 @@
 # This is the hyperparameter configuration file for MelGAN.
 # Please make sure this is adjusted for the LJSpeech dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
+# This cofiguration requires ~ 11 GB memory and takes ~10 days on Titan V.
 
-# This configuration is based on full-band MelGAN while we use default generator
-# and discriminator architecture except for the number of residual stacks bacause
-# the hop size and sampling rate is different from the paper (16kHz vs 22.05kHz).
-# And we use RAdam instaed of Adam. Tne number of iteraions is now shown in the
-# paper so currently we train 2M iterations (not sure enough to converge).
+# This configuration is based on full-band MelGAN but the hop size and sampling
+# rate is different from the paper (16kHz vs 22.05kHz). And we use RAdam instaed
+# of Adam. Tne number of iteraions is now shown in the paper so currently we train
+# 1M iterations (not sure enough to converge).
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -36,7 +36,7 @@ generator_params:
     out_channels: 1               # Number of output channels.
     kernel_size: 7                # Kernel size of initial and final conv layers.
     channels: 512                 # Initial number of channels for conv layers.
-    upsample_scales: [8, 8, 2, 2] # List of Upsampling scales.
+    upsample_scales: [8, 8, 4]    # List of Upsampling scales.
     stack_kernel_size: 3          # Kernel size of dilated conv layers in residual stack.
     stacks: 4                     # Number of stacks in a single residual stack module.
     use_weight_norm: True         # Whether to use weight normalization.
@@ -58,8 +58,8 @@ discriminator_params:
         count_include_pad: False
     kernel_sizes: [5, 3]              # List of kernel size.
     channels: 16                      # Number of channels of the initial conv layer.
-    max_downsample_channels: 1024     # Maximum number of channels of downsampling layers.
-    downsample_scales: [4, 4, 4, 4]   # List of downsampling scales.
+    max_downsample_channels: 512      # Maximum number of channels of downsampling layers.
+    downsample_scales: [4, 4, 4]      # List of downsampling scales.
     nonlinear_activation: "LeakyReLU" # Nonlinear activation function.
     nonlinear_activation_params:      # Parameters of nonlinear activation function.
         negative_slope: 0.2
@@ -130,10 +130,10 @@ discriminator_scheduler_params:
 #                    INTERVAL SETTING                     #
 ###########################################################
 discriminator_train_start_steps: 200000 # Number of steps to start to train discriminator.
-train_max_steps: 2000000                # Number of training steps.
+train_max_steps: 1000000                # Number of training steps.
 save_interval_steps: 50000              # Interval steps to save checkpoint.
 eval_interval_steps: 1000               # Interval steps to evaluate the network.
-log_interval_steps: 100                 # Interval steps to record the training log.
+log_interval_steps: 1000                # Interval steps to record the training log.
 
 ###########################################################
 #                     OTHER SETTING                       #
