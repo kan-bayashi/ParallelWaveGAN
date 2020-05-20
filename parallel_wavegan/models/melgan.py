@@ -89,6 +89,7 @@ class MelGANGenerator(torch.nn.Module):
                         stride=upsample_scale,
                         padding=upsample_scale // 2 + upsample_scale % 2,
                         output_padding=upsample_scale % 2,
+                        bias=bias,
                     )
                 ]
             else:
@@ -98,6 +99,7 @@ class MelGANGenerator(torch.nn.Module):
                         channels // (2 ** (i + 1)),
                         upsample_scale * 2,
                         stride=upsample_scale,
+                        bias=bias,
                     )
                 ]
 

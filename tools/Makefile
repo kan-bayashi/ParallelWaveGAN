@@ -1,6 +1,6 @@
 PYTHON:= python3.6
 CUDA_VERSION:= 10.0
-PYTORCH_VERSION:= 1.3.1
+PYTORCH_VERSION:= 1.5
 DOT:= .
 .PHONY: all clean
 
