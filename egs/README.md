@@ -10,6 +10,7 @@ Currently, the following recipes are supported.
 - [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi-speaker
 - [VCTK](https://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html): English multi-speaker
 - [LibriTTS](https://arxiv.org/abs/1904.02882): English multi-speaker
+- [YesNo](https://arxiv.org/abs/1904.02882): English speaker (For debugging)
 
 
 ## How to run the recipe
@@ -42,7 +43,29 @@ If you want to use it, please check [this page](https://kaldi-asr.org/doc/queue.
 All of the hyperparameters is written in a single yaml format configuration file.  
 Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
 
+You can monitor the training progress via tensorboard.
+
+```bash
+$ tensorboard --logdir exp
+```
+
+![](https://user-images.githubusercontent.com/22779813/68100080-58bbc500-ff09-11e9-9945-c835186fd7c2.png)
+
+If you want to accelerate the training, you can try distributed multi-gpu training based on apex.  
+You need to install apex for distributed training. Please make sure you already installed it.  
+Then you can run distributed multi-gpu training via following command:
+
+```bash
+# in the case of the number of gpus = 8
+$ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" ./run.sh --stage 2 --n_gpus 8
+```
+
+In the case of distributed training, batch size will be automatically multiplied by the number of gpus.  
+Please be careful.
+
 ## How to make the recipe for your own dateset
+
+Here, I will show how to make the recipe for your own dataset.
 
 1. Setup your dataset to be the following structure.
 

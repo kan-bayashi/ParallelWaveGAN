@@ -13,7 +13,7 @@ Please check our samples in [our demo HP](https://kan-bayashi.github.io/Parallel
 
 The goal of this repository is to provide the real-time neural vocoder which is compatible with [ESPnet-TTS](https://github.com/espnet/espnet).  
 
-You can try the realtime end-to-end text-to-speech demonstraion in Google Colab!
+You can try the real-time end-to-end text-to-speech demonstration in Google Colab!
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
@@ -74,7 +74,7 @@ $ make apex
 Note that we specify cuda version used to compile pytorch wheel.  
 If you want to use different cuda version, please check `tools/Makefile` to change the pytorch wheel to be installed.
 
-## Run
+## Recipe
 
 This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).  
 Currently, the following recipes are supported.
@@ -86,6 +86,7 @@ Currently, the following recipes are supported.
 - [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi-speaker
 - [VCTK](https://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html): English multi-speaker
 - [LibriTTS](https://arxiv.org/abs/1904.02882): English multi-speaker
+- [YesNo](https://arxiv.org/abs/1904.02882): English speaker (For debugging)
 
 To run the recipe, please follow the below instruction.
 
@@ -109,33 +110,9 @@ $ CUDA_VISIBLE_DEVICES=1 ./run.sh --stage 2
 $ ./run.sh --stage 2 --resume <path>/<to>/checkpoint-10000steps.pkl
 ```
 
-The integration with job schedulers such as [slurm](https://slurm.schedmd.com/documentation.html) can be done via `cmd.sh` and  `conf/slurm.conf`.  
-If you want to use it, please check [this page](https://kaldi-asr.org/doc/queue.html).
+See more info about the recipes in [this README](./egs/README.md).
 
-All of the hyperparameters is written in a single yaml format configuration file.  
-Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
-
-The training requires ~3 days with a single GPU (TITAN V).  
-The speed of the training is 0.5 seconds per an iteration, in total ~ 200000 sec (= 2.31 days).  
-You can monitor the training progress via tensorboard.
-
-```bash
-$ tensorboard --logdir exp
-```
-
-![](https://user-images.githubusercontent.com/22779813/68100080-58bbc500-ff09-11e9-9945-c835186fd7c2.png)
-
-If you want to accelerate the training, you can try distributed multi-gpu training based on apex.  
-You need to install apex for distributed training. Please make sure you already installed it.  
-Then you can run distributed multi-gpu training via following command:
-
-```bash
-# in the case of the number of gpus = 8
-$ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" ./run.sh --stage 2 --n_gpus 8
-```
-
-In the case of distributed training, batch size will be automatically multiplied by the number of gpus.  
-Please be careful.
+## Speed
 
 The decoding speed is RTF = 0.016 with TITAN V, much faster than the real-time.
 
@@ -196,6 +173,8 @@ If you want to check more results, please access at [our google drive](https://d
 
 ## How-to-use pretrained models
 
+### Analysis-synthesis
+
 Here the minimal code is shown to perform analysis-synthesis using the pretrained model.
 
 ```bash
@@ -213,25 +192,25 @@ $ ls sample/
 
 # Then perform feature extraction -> feature normalization -> sysnthesis
 $ parallel-wavegan-preprocess \
-	--config pretrain_model/config.yml \
-	--rootdir sample \
-	--dumpdir dump/sample/raw
+    --config pretrain_model/config.yml \
+    --rootdir sample \
+    --dumpdir dump/sample/raw
 100%|████████████████████████████████████████| 1/1 [00:00<00:00, 914.19it/s]
 [Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
 [Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    1.2s finished
 $ parallel-wavegan-normalize \
-	--config pretrain_model/config.yml \
-	--rootdir dump/sample/raw \
-	--dumpdir dump/sample/norm \
-	--stats pretrain_model/stats.h5
+    --config pretrain_model/config.yml \
+    --rootdir dump/sample/raw \
+    --dumpdir dump/sample/norm \
+    --stats pretrain_model/stats.h5
 2019-11-13 13:44:29,574 (normalize:87) INFO: the number of files = 1.
 100%|████████████████████████████████████████| 1/1 [00:00<00:00, 513.13it/s]
 [Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
 [Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    0.6s finished
 $ parallel-wavegan-decode \
-	--checkpoint pretrain_model/checkpoint-400000steps.pkl \
-	--dumpdir dump/sample/norm \
-	--outdir sample
+    --checkpoint pretrain_model/checkpoint-400000steps.pkl \
+    --dumpdir dump/sample/norm \
+    --outdir sample
 2019-11-13 13:44:31,229 (decode:91) INFO: the number of features to be decoded = 1.
 2019-11-13 13:44:37,074 (decode:105) INFO: loaded model parameters from pretrain_model/checkpoint-400000steps.pkl.
 [decode]: 100%|███████████████████| 1/1 [00:00<00:00, 18.33it/s, RTF=0.0146]
@@ -242,7 +221,72 @@ $ ls sample
   sample.wav    sample_gen.wav
 ```
 
-If you want to combine with TTS models, you can try the realtime demonstraion in Google Colab!
+### Decoding with ESPnet-TTS model's features
+
+Here, I show the procedure to generate waveforms with features generated with [ESPnet-TTS](https://github.com/espnet/espnet) models.
+
+```bash
+# Make sure you already finished running the recipe of ESPnet-TTS.
+# You must use the same feature settings for both Text2Mel and Mel2Wav models.
+# Let us move on "ESPnet" recipe directory
+$ pwd
+/path/to/espnet/egs/<recipe_name>/tts1
+
+# Please install this repository in ESPnet conda (or virtualenv) environment
+$ . ./path.sh && pip install -U parallel_wavegan
+
+# Please download pretrained models and put them in `pretrain_model` directory
+$ ls pretrain_model
+  checkpoint-400000steps.pkl    config.yml    stats.h5
+```
+
+**Case 1**: If you use exactly the same dataset for both Text2Mel and Mel2Wav
+
+```bash
+# In this case, you can directory use generated feature for decoding
+# Please specify `feats.scp` path for `--feats-scp`, which is located in
+# exp/<your_model_name>/outputs_*_decode/<set_name>/feats.scp.
+# Note that do not use outputs_*decode_denorm/<set_name>/feats.scp since
+# it is de-normalized features (the input for PWG is normalized features).
+$ parallel-wavegan-decode \
+    --checkpoint pretrain_model/checkpoint-400000steps.pkl \
+    --feats-scp exp/<your_model_name>/outputs_*_decode/<name>/feats.scp \
+    --outdir <path_to_outdir>
+
+# You find the generated waveform in <path_to_outdir>/.
+$ ls <path_to_outdir>
+  utt_id_1_gen.wav    utt_id_2_gen.wav  ...    utt_id_N_gen.wav
+```
+
+**Case 2**: If you use different datasets for Text2Mel and Mel2Wav
+
+```bash
+# In this case, you must perform normlization at first.
+# Please specify `feats.scp` path for `--feats-scp`, which is located in
+# exp/<your_model_name>/outputs_*_decode_denorm/<set_name>/feats.scp.
+$ parallel-wavegan-normalize \
+    --skip-wav-copy \
+    --config pretrain_model/config.yml \
+    --stats pretrain_model/stats.h5 \
+    --feats-scp exp/<your_model_name>/outputs_*_decode_denorm/<set_name>/feats.scp \
+    --dumpdir <path_to_dumpdir>
+
+# Normalized features in dumped in <path_to_dumpdir>/.
+$ ls <path_to_dumpdir>
+  utt_id_1.h5    utt_id_2.h5  ...    utt_id_N.h5
+
+# Then, decode normalzied features.
+$ parallel-wavegan-decode \
+    --checkpoint pretrain_model/checkpoint-400000steps.pkl \
+    --dumpdir <path_to_dumpdir>  \
+    --outdir <path_to_outdir>
+
+# You find the generated waveform in <path_to_outdir>/.
+$ ls <path_to_outdir>
+  utt_id_1_gen.wav    utt_id_2_gen.wav  ...    utt_id_N_gen.wav
+```
+
+If you want to combine these models in python, you can try the real-time demonstration in Google Colab!
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
