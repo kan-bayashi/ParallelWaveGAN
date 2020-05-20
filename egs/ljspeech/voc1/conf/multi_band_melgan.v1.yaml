@@ -1,11 +1,12 @@
 # This is the hyperparameter configuration file for MelGAN.
 # Please make sure this is adjusted for the LJSpeech dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
+# This configuration requires ~ 8GB memory and takes around 1 week on Titan V.
 
 # This configuration is based on multi-band MelGAN. Hop size and sampling rate are
-# different from the paper (16kHz vs 22.05kHz). And we use RAdam instaed of Adam.
-# Tne number of iteraions is now shown in the paper so currently we train 2M
-# iterations (not sure enough to converge).
+# different from the paper (16kHz vs 22.05kHz). And we use RAdam instaed of Adam
+# with batch size = 64 instaed of 128. Tne number of iteraions is now shown in
+# the paper so currently we train 1M iterations (not sure enough to converge).
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -135,10 +136,10 @@ discriminator_scheduler_params:
 #                    INTERVAL SETTING                     #
 ###########################################################
 discriminator_train_start_steps: 200000 # Number of steps to start to train discriminator.
-train_max_steps: 2000000                # Number of training steps.
+train_max_steps: 1000000                # Number of training steps.
 save_interval_steps: 50000              # Interval steps to save checkpoint.
-eval_interval_steps: 5000               # Interval steps to evaluate the network.
-log_interval_steps: 5000                # Interval steps to record the training log.
+eval_interval_steps: 1000               # Interval steps to evaluate the network.
+log_interval_steps: 1000                # Interval steps to record the training log.
 
 ###########################################################
 #                     OTHER SETTING                       #
