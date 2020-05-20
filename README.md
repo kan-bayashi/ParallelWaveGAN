@@ -237,13 +237,16 @@ $ . ./path.sh && pip install -U parallel_wavegan
 # Please download pretrained models and put them in `pretrain_model` directory
 $ ls pretrain_model
   checkpoint-400000steps.pkl    config.yml    stats.h5
+```
 
-# Case 1: If you use exactly the same dataset for both Text2Mel and Mel2Wav
-#   In this case, you can directory use generated feature for decoding
-#   Please specify `feats.scp` path for `--feats-scp`, which is located in
-#   exp/<your_model_name>/outputs_*_decode/<set_name>/feats.scp.
-#   Note that do not use outputs_*decode_denorm/<set_name>/feats.scp since
-#   it is de-normalized features (the input for PWG is normalized features).
+**Case 1**: If you use exactly the same dataset for both Text2Mel and Mel2Wav
+
+```bash
+# In this case, you can directory use generated feature for decoding
+# Please specify `feats.scp` path for `--feats-scp`, which is located in
+# exp/<your_model_name>/outputs_*_decode/<set_name>/feats.scp.
+# Note that do not use outputs_*decode_denorm/<set_name>/feats.scp since
+# it is de-normalized features (the input for PWG is normalized features).
 $ parallel-wavegan-decode \
     --checkpoint pretrain_model/checkpoint-400000steps.pkl \
     --feats-scp exp/<your_model_name>/outputs_*_decode/<name>/feats.scp \
@@ -252,11 +255,14 @@ $ parallel-wavegan-decode \
 # You find the generated waveform in <path_to_outdir>/.
 $ ls <path_to_outdir>
   utt_id_1_gen.wav    utt_id_2_gen.wav  ...    utt_id_N_gen.wav
+```
 
-# Case 2: If you use different datasets for Text2Mel and Mel2Wav
-#   In this case, you must perform normlization at first.
-#   Please specify `feats.scp` path for `--feats-scp`, which is located in
-#   exp/<your_model_name>/outputs_*_decode_denorm/<set_name>/feats.scp.
+**Case 2**: If you use different datasets for Text2Mel and Mel2Wav
+
+```bash
+# In this case, you must perform normlization at first.
+# Please specify `feats.scp` path for `--feats-scp`, which is located in
+# exp/<your_model_name>/outputs_*_decode_denorm/<set_name>/feats.scp.
 $ parallel-wavegan-normalize \
     --skip-wav-copy \
     --config pretrain_model/config.yml \
@@ -267,6 +273,7 @@ $ parallel-wavegan-normalize \
 # Normalized features in dumped in <path_to_dumpdir>/.
 $ ls <path_to_dumpdir>
   utt_id_1.h5    utt_id_2.h5  ...    utt_id_N.h5
+
 # Then, decode normalzied features.
 $ parallel-wavegan-decode \
     --checkpoint pretrain_model/checkpoint-400000steps.pkl \
