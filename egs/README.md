@@ -108,17 +108,19 @@ Here, I will show how to make the recipe for your own dataset.
     cd egs/<your_dataset_name>/voc1
     ```
 
-3. Modify the options in `run.sh`.
+3. Modify the options in `run.sh`.  
+   What you need to change at least in `run.sh` is as follows:
+   - `db_root`: Root path of database.
+   - `num_dev`: The number of utterances for development set.
+   - `num_eval`: The number of utterances for evalation set.
 
-    > What you need to change at least in `run.sh` is `db_root` option.
+4. Modify the hyperpameters in `conf/parallel_wavegan.v1.yaml`.  
+   What you need to change at least in config is as follows:
+   - `sampling_rate`: If you can specify lower sampling rate, the audio will be downsampled with sox.
 
-4. Modify the hyperpameters in `conf/parallel_wavegan.v1.yaml`.
-
-    > What you need to change at least is `sampling_rate`
-
-5. (Optional) Change command backend in `cmd.sh`.
-
-    > If you are not familiar with kaldi and run in your local env, you do not need to change.
+5. (Optional) Change command backend in `cmd.sh`.  
+   If you are not familiar with kaldi and run in your local env, you do not need to change.  
+   See more info on https://kaldi-asr.org/doc/queue.html.
 
 6. Run your recipe.
 
@@ -126,7 +128,7 @@ Here, I will show how to make the recipe for your own dataset.
     # Run all stages from the first stage
     ./run.sh
 
-    # Specify CUDA device
+    # If you want to specify CUDA device
     CUDA_VISIBLE_DEVICES=0 ./run.sh
     ```
 
