@@ -1,4 +1,4 @@
-# Kaldi-sytle all-in-one recipes
+# Kaldi-style all-in-one recipes
 
 This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).  
 Currently, the following recipes are supported.
@@ -40,7 +40,7 @@ You can check the command line options in `run.sh`.
 The integration with job schedulers such as [slurm](https://slurm.schedmd.com/documentation.html) can be done via `cmd.sh` and  `conf/slurm.conf`.  
 If you want to use it, please check [this page](https://kaldi-asr.org/doc/queue.html).
 
-All of the hyperparameters is written in a single yaml format configuration file.  
+All of the hyperparameters are written in a single yaml format configuration file.  
 Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
 
 You can monitor the training progress via tensorboard.
@@ -60,7 +60,7 @@ Then you can run distributed multi-gpu training via following command:
 $ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" ./run.sh --stage 2 --n_gpus 8
 ```
 
-In the case of distributed training, batch size will be automatically multiplied by the number of gpus.  
+In the case of distributed training, the batch size will be automatically multiplied by the number of gpus.  
 Please be careful.
 
 ## How to make the recipe for your own dateset
@@ -110,13 +110,13 @@ Here, I will show how to make the recipe for your own dataset.
 
 3. Modify the options in `run.sh`.  
    What you need to change at least in `run.sh` is as follows:
-   - `db_root`: Root path of database.
+   - `db_root`: Root path of the database.
    - `num_dev`: The number of utterances for development set.
-   - `num_eval`: The number of utterances for evalation set.
+   - `num_eval`: The number of utterances for evaluation set.
 
 4. Modify the hyperpameters in `conf/parallel_wavegan.v1.yaml`.  
    What you need to change at least in config is as follows:
-   - `sampling_rate`: If you can specify lower sampling rate, the audio will be downsampled with sox.
+    - `sampling_rate`: If you can specify the lower sampling rate, the audio will be downsampled by sox.
 
 5. (Optional) Change command backend in `cmd.sh`.  
    If you are not familiar with kaldi and run in your local env, you do not need to change.  
