@@ -175,7 +175,7 @@ class Trainer(object):
         self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
         gen_loss = sc_loss + mag_loss
 
-        # subband multi-resolution stft loss for multi-band model
+        # subband multi-resolution stft loss
         if self.config.get("use_subband_stft_loss", False):
             gen_loss *= 0.5  # for balancing with subband stft loss
             y_mb = self.criterion["pqmf"].analysis(y)
@@ -188,8 +188,8 @@ class Trainer(object):
                 "train/sub_log_stft_magnitude_loss"] += sub_mag_loss.item()
             gen_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
 
+        # adversarial loss
         if self.steps > self.config["discriminator_train_start_steps"]:
-            # caculate adversarial loss
             p_ = self.model["discriminator"](y_)
             if not isinstance(p_, list):
                 # for standard discriminator
@@ -242,7 +242,7 @@ class Trainer(object):
             if self.config["generator_params"]["out_channels"] > 1:
                 y_ = self.criterion["pqmf"].synthesis(y_)
 
-            # calculate discriminator loss
+            # discriminator loss
             p = self.model["discriminator"](y)
             p_ = self.model["discriminator"](y_.detach())
             if not isinstance(p, list):
@@ -319,9 +319,12 @@ class Trainer(object):
         if self.config["generator_params"]["out_channels"] > 1:
             y_mb_ = y_
             y_ = self.criterion["pqmf"].synthesis(y_mb_)
-        p_ = self.model["discriminator"](y_)
+
+        # multi-resolution stft loss
         sc_loss, mag_loss = self.criterion["stft"](y_.squeeze(1), y.squeeze(1))
         aux_loss = sc_loss + mag_loss
+
+        # subband multi-resolution stft loss
         if self.config.get("use_subband_stft_loss", False):
             aux_loss *= 0.5  # for balancing with subband stft loss
             y_mb = self.criterion["pqmf"].analysis(y)
@@ -333,6 +336,9 @@ class Trainer(object):
             self.total_eval_loss[
                 "eval/sub_log_stft_magnitude_loss"] += sub_mag_loss.item()
             aux_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
+
+        # adversarial loss
+        p_ = self.model["discriminator"](y_)
         if not isinstance(p_, list):
             # for standard discriminator
             adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
@@ -362,6 +368,8 @@ class Trainer(object):
         #######################
         p = self.model["discriminator"](y)
         p_ = self.model["discriminator"](y_)
+
+        # discriminator loss
         if not isinstance(p_, list):
             # for standard discriminator
             real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
