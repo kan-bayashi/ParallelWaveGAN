@@ -142,6 +142,18 @@ If you use MelGAN's generator, the decoding speed will be further faster.
 2020-02-08 05:44:42,231 (decode:142) INFO: Finished generation of 250 utterances (RTF = 0.002).
 ```
 
+If you use Multi-band MelGAN's generator, the decoding speed will be much further faster.
+
+```bash
+# On CPU (Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz 16 threads)
+[decode]: 100%|██████████| 250/250 [01:47<00:00,  2.95it/s, RTF=0.048]
+2020-05-22 15:37:19,771 (decode:151) INFO: Finished generation of 250 utterances (RTF = 0.0585).
+
+# On GPU (TITAN V)
+[decode]: 100%|██████████| 250/250 [00:05<00:00, 43.67it/s, RTF=0.000928]
+2020-05-22 15:35:13,302 (decode:151) INFO: Finished generation of 250 utterances (RTF = 0.001).
+```
+
 If you want to accelerate the inference more, it is worthwhile to try the conversion from pytorch to tensorflow.  
 The example of the conversion is available in [the notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) (Provided by [@dathudeptrai](https://github.com/dathudeptrai)).  
 
