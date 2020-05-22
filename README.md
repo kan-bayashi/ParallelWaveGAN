@@ -19,7 +19,7 @@ You can try the real-time end-to-end text-to-speech demonstration in Google Cola
 
 ## What's new
 
-- 2020/05/24 **(New!)** [LJSpeech multi-band MelGAN pretrained model](#Results) is available!
+- 2020/05/22 **(New!)** [LJSpeech multi-band MelGAN pretrained model](#Results) is available!
 - 2020/05/16 **(New!)** [Multi-band MelGAN](https://arxiv.org/abs/2005.05106) is available!
 - 2020/03/25 [LibriTTS pretrained models](#Results) are available!
 - 2020/03/17 [Tensorflow conversion example notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) is available (Thanks, [@dathudeptrai](https://github.com/dathudeptrai))!
