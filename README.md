@@ -147,7 +147,7 @@ If you use Multi-band MelGAN's generator, the decoding speed will be much furthe
 ```bash
 # On CPU (Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz 16 threads)
 [decode]: 100%|██████████| 250/250 [01:47<00:00,  2.95it/s, RTF=0.048]
-2020-05-22 15:37:19,771 (decode:151) INFO: Finished generation of 250 utterances (RTF = 0.0585).
+2020-05-22 15:37:19,771 (decode:151) INFO: Finished generation of 250 utterances (RTF = 0.059).
 
 # On GPU (TITAN V)
 [decode]: 100%|██████████| 250/250 [00:05<00:00, 43.67it/s, RTF=0.000928]
