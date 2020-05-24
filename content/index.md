@@ -3,9 +3,9 @@ date: 2019-11-05T00:00:00+09:00
 type: "index"
 ---
 
-# Unofficial Parallel WaveGAN (+ MelGAN) implementation demo
+# Unofficial Parallel WaveGAN (+ MelGAN & Multi-band MelGAN) implementation demo
 
-This is the demonstration page of **UNOFFICIAL** Parallel WaveGAN and MelGAN implementations.
+This is the demonstration page of **UNOFFICIAL** Parallel WaveGAN, MelGAN and Multi-band MelGAN implementations.
 
 Github: https://github.com/kan-bayashi/ParallelWaveGAN
 
@@ -20,6 +20,8 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 - **Parallel WaveGAN (official)**: Official samples provided in [the official demo HP](https://r9y9.github.io/demos/projects/icassp2020).
 - **Parallel WaveGAN (ours)**: Our samples based [this config](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml).
 - **MelGAN + STFT-loss (ours)**: Our samples based [this config](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/melgan.v3.long.yaml).
+- **FB-MelGAN (ours)**: Our samples based [this config](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/full_band_melgan.v1.yaml).
+- **MB-MelGAN (ours)**: Our samples based [this config](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/multi_band_melgan.v1.yaml).
 
 |     |     |
 | --- | --- |
@@ -27,26 +29,36 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 |<audio controls="" ><source src="wav/ljspeech/raw/LJ050-0029.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0029.wav"/></audio>|
 | **ParallelWaveGAN (ours)** | **MelGAN + STFT-loss (ours)** |
 |<audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0029.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0029.wav"/></audio>|
+| **FB-MelGAN (ours)** | **MB-MelGAN (ours)** |
+|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_fb-melgan/LJ050-0029.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_mb-melgan/LJ050-0029.wav"/></audio>|
 |     |     |
 | **Groundtruth** | **ParallelWaveGAN (official)** |
 |<audio controls="" ><source src="wav/ljspeech/raw/LJ050-0030.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0030.wav"/></audio>|
 | **ParallelWaveGAN (ours)** | **MelGAN + STFT-loss (ours)** |
 |<audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0030.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0030.wav"/></audio>|
+| **FB-MelGAN (ours)** | **MB-MelGAN (ours)** |
+|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_fb-melgan/LJ050-0030.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_mb-melgan/LJ050-0030.wav"/></audio>|
 |     |     |
 | **Groundtruth** | **ParallelWaveGAN (official)** |
 |<audio controls="" ><source src="wav/ljspeech/raw/LJ050-0031.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0031.wav"/></audio>|
 | **ParallelWaveGAN (ours)** | **MelGAN + STFT-loss (ours)** |
 |<audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0031.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0031.wav"/></audio>|
+| **FB-MelGAN (ours)** | **MB-MelGAN (ours)** |
+|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_fb-melgan/LJ050-0031.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_mb-melgan/LJ050-0031.wav"/></audio>|
 |     |     |
 | **Groundtruth** | **ParallelWaveGAN (official)** |
 |<audio controls="" ><source src="wav/ljspeech/raw/LJ050-0032.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0032.wav"/></audio>|
 | **ParallelWaveGAN (ours)** | **MelGAN + STFT-loss (ours)** |
 |<audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0032.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0032.wav"/></audio>|
+| **FB-MelGAN (ours)** | **MB-MelGAN (ours)** |
+|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_fb-melgan/LJ050-0032.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_mb-melgan/LJ050-0032.wav"/></audio>|
 |     |     |
 | **Groundtruth** | **ParallelWaveGAN (official)** |
 |<audio controls="" ><source src="wav/ljspeech/raw/LJ050-0033.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/r9y9_wavegan/LJ050-0033.wav"/></audio>|
 | **ParallelWaveGAN (ours)** | **MelGAN + STFT-loss (ours)** |
 |<audio controls="" ><source src="wav/ljspeech/kan-bayashi_wavegan/LJ050-0033.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_melgan/LJ050-0033.wav"/></audio>|
+| **FB-MelGAN (ours)** | **MB-MelGAN (ours)** |
+|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_fb-melgan/LJ050-0033.wav"/></audio>|<audio controls="" ><source src="wav/ljspeech/kan-bayashi_mb-melgan/LJ050-0033.wav"/></audio>|
 
 ## Audio samples (Japanese)
 

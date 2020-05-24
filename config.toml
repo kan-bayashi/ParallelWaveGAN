@@ -6,3 +6,6 @@ theme = "paper"
 [params]
   AuthorName = "Tomoki Hayashi"
   GithubUser = "kan-bayashi"
+
+[markup.goldmark.renderer]
+unsafe= true
