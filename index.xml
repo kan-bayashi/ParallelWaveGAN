@@ -17,11 +17,11 @@
       <pubDate>Tue, 05 Nov 2019 00:00:00 +0900</pubDate>
       
       <guid>https://kan-bayashi.github.io/ParallelWaveGAN/</guid>
-      <description>Unofficial Parallel WaveGAN (+ MelGAN) implementation demo This is the demonstration page of UNOFFICIAL Parallel WaveGAN and MelGAN implementations.
+      <description>Unofficial Parallel WaveGAN (+ MelGAN &amp;amp; Multi-band MelGAN) implementation demo This is the demonstration page of UNOFFICIAL Parallel WaveGAN, MelGAN and Multi-band MelGAN implementations.
 Github: https://github.com/kan-bayashi/ParallelWaveGAN
 Audio samples (English) Here is the comparison in the analysis-synthesis condition using LJSpeech dataset.
 Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram calculation.
- Groundtruth: Target speech. Parallel WaveGAN (official): Official samples provided in the official demo HP. Parallel WaveGAN (ours): Our samples based this config.</description>
+ Groundtruth: Target speech. Parallel WaveGAN (official): Official samples provided in the official demo HP.</description>
     </item>
     
   </channel>
