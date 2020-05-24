@@ -22,6 +22,7 @@ import parallel_wavegan.models
 
 from parallel_wavegan.datasets import MelDataset
 from parallel_wavegan.datasets import MelSCPDataset
+from parallel_wavegan.layers import PQMF
 from parallel_wavegan.utils import read_hdf5
 
 
@@ -117,6 +118,8 @@ def main():
         model, parallel_wavegan.models.MelGANGenerator)
     pad_fn = torch.nn.ReplicationPad1d(
         config["generator_params"].get("aux_context_window", 0))
+    if config["generator_params"]["out_channels"] > 1:
+        pqmf = PQMF(config["generator_params"]["out_channels"]).to(device)
 
     # start generation
     total_rtf = 0.0
@@ -132,7 +135,10 @@ def main():
 
             # generate
             start = time.time()
-            y = model(*x).view(-1).cpu().numpy()
+            if config["generator_params"]["out_channels"] == 1:
+                y = model(*x).view(-1).cpu().numpy()
+            else:
+                y = pqmf.synthesis(model(*x)).view(-1).cpu().numpy()
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf

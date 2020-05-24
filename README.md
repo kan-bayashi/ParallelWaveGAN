@@ -1,8 +1,8 @@
-# Parallel WaveGAN (+ MelGAN) implementation with Pytorch
+# Parallel WaveGAN (+ MelGAN & Multi-band MelGAN) implementation with Pytorch
 
 ![](https://github.com/kan-bayashi/ParallelWaveGAN/workflows/CI/badge.svg) [![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/pypi/pyversions/parallel-wavegan) ![](https://img.shields.io/pypi/l/parallel-wavegan) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
-This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480) and [MelGAN](https://arxiv.org/abs/1910.06711) implementations with Pytorch.  
+This repository provides **UNOFFICIAL** [Parallel WaveGAN](https://arxiv.org/abs/1910.11480), [MelGAN](https://arxiv.org/abs/1910.06711), and [Multi-band MelGAN](https://arxiv.org/abs/2005.05106) implementations with Pytorch.  
 You can combine these state-of-the-art non-autoregressive models to build your own great vocoder!
 
 Please check our samples in [our demo HP](https://kan-bayashi.github.io/ParallelWaveGAN).
@@ -11,16 +11,18 @@ Please check our samples in [our demo HP](https://kan-bayashi.github.io/Parallel
 
 > Source of the figure: https://arxiv.org/pdf/1910.11480.pdf
 
-The goal of this repository is to provide the real-time neural vocoder which is compatible with [ESPnet-TTS](https://github.com/espnet/espnet).  
+The goal of this repository is to provide real-time neural vocoder, which is compatible with [ESPnet-TTS](https://github.com/espnet/espnet).
 
-You can try the realtime end-to-end text-to-speech demonstraion in Google Colab!
+You can try the real-time end-to-end text-to-speech demonstration in Google Colab!
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
 ## What's new
 
-- 2020/03/25 **(New!)** [LibriTTS pretrained models](#Results) are available!
-- 2020/03/17  [Tensorflow conversion example notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) is available (Thanks, [@dathudeptrai](https://github.com/dathudeptrai))!
+- 2020/05/22 **(New!)** [LJSpeech multi-band MelGAN pretrained model](#Results) is available!
+- 2020/05/16 **(New!)** [Multi-band MelGAN](https://arxiv.org/abs/2005.05106) is available!
+- 2020/03/25 [LibriTTS pretrained models](#Results) are available!
+- 2020/03/17 [Tensorflow conversion example notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) is available (Thanks, [@dathudeptrai](https://github.com/dathudeptrai))!
 - 2020/03/16 [LibriTTS recipe](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1) is available!
 - 2020/03/12 [PWG G + MelGAN D + STFT-loss samples](#Results) are available!
 - 2020/03/12 Multi-speaker English recipe [egs/vctk/voc1](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/vctk/voc1) is available!
@@ -38,9 +40,10 @@ This repository is tested on Ubuntu 16.04 with a GPU Titan V.
 - NCCL 2+ (for distributed multi-gpu training)
 - libsndfile (you can install via `sudo apt install libsndfile-dev` in ubuntu)
 - jq (you can install via `sudo apt install jq` in ubuntu)
+- sox (you can install via `sudo apt install sox` in ubuntu)
 
 Different cuda version should be working but not explicitly tested.  
-All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3.1, 1.4 and 1.5.
+All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3.1, 1.4, and 1.5.
 
 ## Setup
 
@@ -56,7 +59,7 @@ $ pip install -e .
 # apex manually by following https://github.com/NVIDIA/apex
 $ ...
 ```
-Note that your cuda version must be exactly matched with the version used for pytorch binary to install apex.  
+Note that your cuda version must be exactly matched with the version used for the pytorch binary to install apex.  
 To install pytorch compiled with different cuda version, see `tools/Makefile`.
 
 ### B. Make virtualenv
@@ -73,7 +76,7 @@ $ make apex
 Note that we specify cuda version used to compile pytorch wheel.  
 If you want to use different cuda version, please check `tools/Makefile` to change the pytorch wheel to be installed.
 
-## Run
+## Recipe
 
 This repository provides [Kaldi](https://github.com/kaldi-asr/kaldi)-style recipes, as the same as [ESPnet](https://github.com/espnet/espnet).  
 Currently, the following recipes are supported.
@@ -85,6 +88,7 @@ Currently, the following recipes are supported.
 - [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi-speaker
 - [VCTK](https://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html): English multi-speaker
 - [LibriTTS](https://arxiv.org/abs/1904.02882): English multi-speaker
+- [YesNo](https://arxiv.org/abs/1904.02882): English speaker (For debugging)
 
 To run the recipe, please follow the below instruction.
 
@@ -108,33 +112,9 @@ $ CUDA_VISIBLE_DEVICES=1 ./run.sh --stage 2
 $ ./run.sh --stage 2 --resume <path>/<to>/checkpoint-10000steps.pkl
 ```
 
-The integration with job schedulers such as [slurm](https://slurm.schedmd.com/documentation.html) can be done via `cmd.sh` and  `conf/slurm.conf`.  
-If you want to use it, please check [this page](https://kaldi-asr.org/doc/queue.html).
+See more info about the recipes in [this README](./egs/README.md).
 
-All of the hyperparameters is written in a single yaml format configuration file.  
-Please check [this example](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/parallel_wavegan.v1.yaml) in ljspeech recipe.
-
-The training requires ~3 days with a single GPU (TITAN V).  
-The speed of the training is 0.5 seconds per an iteration, in total ~ 200000 sec (= 2.31 days).  
-You can monitor the training progress via tensorboard.
-
-```bash
-$ tensorboard --logdir exp
-```
-
-![](https://user-images.githubusercontent.com/22779813/68100080-58bbc500-ff09-11e9-9945-c835186fd7c2.png)
-
-If you want to accelerate the training, you can try distributed multi-gpu training based on apex.  
-You need to install apex for distributed training. Please make sure you already installed it.  
-Then you can run distributed multi-gpu training via following command:
-
-```bash
-# in the case of the number of gpus = 8
-$ CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7" ./run.sh --stage 2 --n_gpus 8
-```
-
-In the case of distributed training, batch size will be automatically multiplied by the number of gpus.  
-Please be careful.
+## Speed
 
 The decoding speed is RTF = 0.016 with TITAN V, much faster than the real-time.
 
@@ -162,6 +142,18 @@ If you use MelGAN's generator, the decoding speed will be further faster.
 2020-02-08 05:44:42,231 (decode:142) INFO: Finished generation of 250 utterances (RTF = 0.002).
 ```
 
+If you use Multi-band MelGAN's generator, the decoding speed will be much further faster.
+
+```bash
+# On CPU (Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz 16 threads)
+[decode]: 100%|██████████| 250/250 [01:47<00:00,  2.95it/s, RTF=0.048]
+2020-05-22 15:37:19,771 (decode:151) INFO: Finished generation of 250 utterances (RTF = 0.059).
+
+# On GPU (TITAN V)
+[decode]: 100%|██████████| 250/250 [00:05<00:00, 43.67it/s, RTF=0.000928]
+2020-05-22 15:35:13,302 (decode:151) INFO: Finished generation of 250 utterances (RTF = 0.001).
+```
+
 If you want to accelerate the inference more, it is worthwhile to try the conversion from pytorch to tensorflow.  
 The example of the conversion is available in [the notebook](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/notebooks/convert_melgan_from_pytorch_to_tensorflow.ipynb) (Provided by [@dathudeptrai](https://github.com/dathudeptrai)).  
 
@@ -182,18 +174,21 @@ You can listen to the samples and download pretrained models from the link to ou
 | [ljspeech_melgan_large.v1.long](https://drive.google.com/open?id=1ogEx-wiQS7HVtdU0_TmlENURIe4v2erC)            | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/melgan_large.v1.long.yaml)         | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 1000k   |
 | [ljspeech_melgan.v3](https://drive.google.com/open?id=1eXkm_Wf1YVlk5waP4Vgqd0GzMaJtW3y5)                       | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/melgan.v3.yaml)                    | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 2000k   |
 | [ljspeech_melgan.v3.long](https://drive.google.com/open?id=1u1w4RPefjByX8nfsL59OzU2KgEksBhL1)                  | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/melgan.v3.long.yaml)               | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 4000k   |
+| [ljspeech_multi_band_melgan.v1 (**New!**)](https://drive.google.com/open?id=1ls_YxCccQD-v6ADbG6qXlZ8f30KrrhLT) | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/multi_band_melgan.v1.yaml)         | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 1000k   |
 | [jsut_parallel_wavegan.v1](https://drive.google.com/open?id=1UDRL0JAovZ8XZhoH0wi9jj_zeCKb-AIA)                 | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jsut/voc1/conf/parallel_wavegan.v1.yaml)              | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
 | [csmsc_parallel_wavegan.v1](https://drive.google.com/open?id=1C2nu9nOFdKcEd-D9xGquQ0bCia0B2v_4)                | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csmsc/voc1/conf/parallel_wavegan.v1.yaml)             | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
 | [arctic_slt_parallel_wavegan.v1](https://drive.google.com/open?id=1xG9CmSED2TzFdklD6fVxzf7kFV2kPQAJ)           | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/arctic/voc1/conf/parallel_wavegan.v1.yaml)            | EN    | 16k     | 80-7600        | 1024 / 256 / None    | 400k    |
 | [jnas_parallel_wavegan.v1](https://drive.google.com/open?id=1n_hkxPxryVXbp6oHM1NFm08q0TcoDXz1)                 | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jnas/voc1/conf/parallel_wavegan.v1.yaml)              | JP    | 16k     | 80-7600        | 1024 / 256 / None    | 400k    |
 | [vctk_parallel_wavegan.v1](https://drive.google.com/open?id=1dGTu-B7an2P5sEOepLPjpOaasgaSnLpi)                 | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/vctk/voc1/conf/parallel_wavegan.v1.yaml)              | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
-| [vctk_parallel_wavegan.v1.long](https://drive.google.com/open?id=1qoocM-VQZpjbv5B-zVJpdraazGcPL0So       )     | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/vctk/voc1/conf/parallel_wavegan.v1.long.yaml)         | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 1000k   |
-| [libritts_parallel_wavegan.v1 (New!)](https://drive.google.com/open?id=1pb18Nd2FCYWnXfStszBAEEIMe_EZUJV0)      | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.yaml)          | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
-| [libritts_parallel_wavegan.v1.long (New!)](https://drive.google.com/open?id=15ibzv-uTeprVpwT946Hl1XUYDmg5Afwz) | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.long.yaml)     | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 1000k   |
+| [vctk_parallel_wavegan.v1.long](https://drive.google.com/open?id=1qoocM-VQZpjbv5B-zVJpdraazGcPL0So)            | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/vctk/voc1/conf/parallel_wavegan.v1.long.yaml)         | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 1000k   |
+| [libritts_parallel_wavegan.v1](https://drive.google.com/open?id=1pb18Nd2FCYWnXfStszBAEEIMe_EZUJV0)             | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.yaml)          | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
+| [libritts_parallel_wavegan.v1.long](https://drive.google.com/open?id=15ibzv-uTeprVpwT946Hl1XUYDmg5Afwz)        | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.long.yaml)     | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 1000k   |
 
-If you want to check more results, please access at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi).
+Please access at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi) to check more results.
 
 ## How-to-use pretrained models
+
+### Analysis-synthesis
 
 Here the minimal code is shown to perform analysis-synthesis using the pretrained model.
 
@@ -212,25 +207,25 @@ $ ls sample/
 
 # Then perform feature extraction -> feature normalization -> sysnthesis
 $ parallel-wavegan-preprocess \
-	--config pretrain_model/config.yml \
-	--rootdir sample \
-	--dumpdir dump/sample/raw
+    --config pretrain_model/config.yml \
+    --rootdir sample \
+    --dumpdir dump/sample/raw
 100%|████████████████████████████████████████| 1/1 [00:00<00:00, 914.19it/s]
 [Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
 [Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    1.2s finished
 $ parallel-wavegan-normalize \
-	--config pretrain_model/config.yml \
-	--rootdir dump/sample/raw \
-	--dumpdir dump/sample/norm \
-	--stats pretrain_model/stats.h5
+    --config pretrain_model/config.yml \
+    --rootdir dump/sample/raw \
+    --dumpdir dump/sample/norm \
+    --stats pretrain_model/stats.h5
 2019-11-13 13:44:29,574 (normalize:87) INFO: the number of files = 1.
 100%|████████████████████████████████████████| 1/1 [00:00<00:00, 513.13it/s]
 [Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
 [Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    0.6s finished
 $ parallel-wavegan-decode \
-	--checkpoint pretrain_model/checkpoint-400000steps.pkl \
-	--dumpdir dump/sample/norm \
-	--outdir sample
+    --checkpoint pretrain_model/checkpoint-400000steps.pkl \
+    --dumpdir dump/sample/norm \
+    --outdir sample
 2019-11-13 13:44:31,229 (decode:91) INFO: the number of features to be decoded = 1.
 2019-11-13 13:44:37,074 (decode:105) INFO: loaded model parameters from pretrain_model/checkpoint-400000steps.pkl.
 [decode]: 100%|███████████████████| 1/1 [00:00<00:00, 18.33it/s, RTF=0.0146]
@@ -241,7 +236,72 @@ $ ls sample
   sample.wav    sample_gen.wav
 ```
 
-If you want to combine with TTS models, you can try the realtime demonstraion in Google Colab!
+### Decoding with ESPnet-TTS model's features
+
+Here, I show the procedure to generate waveforms with features generated by [ESPnet-TTS](https://github.com/espnet/espnet) models.
+
+```bash
+# Make sure you already finished running the recipe of ESPnet-TTS.
+# You must use the same feature settings for both Text2Mel and Mel2Wav models.
+# Let us move on "ESPnet" recipe directory
+$ pwd
+/path/to/espnet/egs/<recipe_name>/tts1
+
+# Please install this repository in ESPnet conda (or virtualenv) environment
+$ . ./path.sh && pip install -U parallel_wavegan
+
+# Please download pretrained models and put them in `pretrain_model` directory
+$ ls pretrain_model
+  checkpoint-400000steps.pkl    config.yml    stats.h5
+```
+
+**Case 1**: If you use the same dataset for both Text2Mel and Mel2Wav
+
+```bash
+# In this case, you can directly use generated features for decoding.
+# Please specify `feats.scp` path for `--feats-scp`, which is located in
+# exp/<your_model_name>/outputs_*_decode/<set_name>/feats.scp.
+# Note that do not use outputs_*decode_denorm/<set_name>/feats.scp since
+# it is de-normalized features (the input for PWG is normalized features).
+$ parallel-wavegan-decode \
+    --checkpoint pretrain_model/checkpoint-400000steps.pkl \
+    --feats-scp exp/<your_model_name>/outputs_*_decode/<name>/feats.scp \
+    --outdir <path_to_outdir>
+
+# You can find the generated waveforms in <path_to_outdir>/.
+$ ls <path_to_outdir>
+  utt_id_1_gen.wav    utt_id_2_gen.wav  ...    utt_id_N_gen.wav
+```
+
+**Case 2**: If you use different datasets for Text2Mel and Mel2Wav models
+
+```bash
+# In this case, you must perform normlization at first.
+# Please specify `feats.scp` path for `--feats-scp`, which is located in
+# exp/<your_model_name>/outputs_*_decode_denorm/<set_name>/feats.scp.
+$ parallel-wavegan-normalize \
+    --skip-wav-copy \
+    --config pretrain_model/config.yml \
+    --stats pretrain_model/stats.h5 \
+    --feats-scp exp/<your_model_name>/outputs_*_decode_denorm/<set_name>/feats.scp \
+    --dumpdir <path_to_dumpdir>
+
+# Normalized features dumped in <path_to_dumpdir>/.
+$ ls <path_to_dumpdir>
+  utt_id_1.h5    utt_id_2.h5  ...    utt_id_N.h5
+
+# Then, decode normalzied features with the pretrained model.
+$ parallel-wavegan-decode \
+    --checkpoint pretrain_model/checkpoint-400000steps.pkl \
+    --dumpdir <path_to_dumpdir>  \
+    --outdir <path_to_outdir>
+
+# You can find the generated waveforms in <path_to_outdir>/.
+$ ls <path_to_outdir>
+  utt_id_1_gen.wav    utt_id_2_gen.wav  ...    utt_id_N_gen.wav
+```
+
+If you want to combine these models in python, you can try the real-time demonstration in Google Colab!
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
@@ -252,10 +312,11 @@ If you want to combine with TTS models, you can try the realtime demonstraion in
 - [LiyuanLucasLiu/RAdam](https://github.com/LiyuanLucasLiu/RAdam)
 - [MelGAN](https://arxiv.org/abs/1910.06711)
 - [descriptinc/melgan-neurips](https://github.com/descriptinc/melgan-neurips)
+- [Multi-band MelGAN](arxiv.org/abs/2005.05106)
 
 ## Acknowledgement
 
-The author would like to thank Ryuichi Yamamoto ([@r9y9](https://github.com/r9y9)) for his great repository, paper and valuable discussions.
+The author would like to thank Ryuichi Yamamoto ([@r9y9](https://github.com/r9y9)) for his great repository, paper, and valuable discussions.
 
 ## Author
 
