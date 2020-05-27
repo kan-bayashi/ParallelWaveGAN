@@ -10,6 +10,9 @@
 # gradient norm is used, which is based on @dathudeptrai advice.
 # https://github.com/kan-bayashi/ParallelWaveGAN/issues/143#issuecomment-632539906
 
+# We found that the use of small batch_max_steps (e.g. 8192) has no bad effect for
+# the quality, so if you want to accelerate the training, please reduce it.
+
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
 ###########################################################
