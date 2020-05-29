@@ -1,32 +1,28 @@
 # This is the hyperparameter configuration file for MelGAN.
-# Please make sure this is adjusted for the LJSpeech dataset. If you want to
+# Please make sure this is adjusted for the CSMSC dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
-# This configuration requires ~ 8GB memory and will finish within 5 days on Titan V.
+# This configuration requires ~ 8GB memory and will finish within 4 days on Titan V.
 
-# This configuration is based on multi-band MelGAN but the hop size and sampling
-# rate is different from the paper (16kHz vs 22.05kHz). The number of iteraions
+# This configuration is based on full-band MelGAN but the hop size and sampling
+# rate is different from the paper (16kHz vs 24kHz). The number of iteraions
 # is now shown in the paper so currently we train 1M iterations (not sure enough
-# to converge). Compared to multi_band_melgan.v1 config, Adam optimizer without
-# gradient norm is used, which is based on @dathudeptrai advice.
+# to converge). The optimizer setting is based on @dathudeptrai advice.
 # https://github.com/kan-bayashi/ParallelWaveGAN/issues/143#issuecomment-632539906
-
-# We found that the use of small batch_max_steps (e.g. 8192) has no bad effect for
-# the quality, so if you want to accelerate the training, please reduce it.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
 ###########################################################
-sampling_rate: 22050     # Sampling rate.
-fft_size: 1024           # FFT size.
-hop_size: 256            # Hop size.
-win_length: null         # Window length.
+sampling_rate: 24000     # Sampling rate.
+fft_size: 2048           # FFT size.
+hop_size: 300            # Hop size.
+win_length: 1200         # Window length.
                          # If set to null, it will be the same as fft_size.
 window: "hann"           # Window function.
 num_mels: 80             # Number of mel basis.
 fmin: 80                 # Minimum freq in mel basis calculation.
 fmax: 7600               # Maximum frequency in mel basis calculation.
 global_gain_scale: 1.0   # Will be multiplied to all of waveform.
-trim_silence: true       # Whether to trim the start and end of silence.
+trim_silence: false      # Whether to trim the start and end of silence.
 trim_threshold_in_db: 60 # Need to tune carefully if the recording is not good.
 trim_frame_size: 2048    # Frame size in trimming.
 trim_hop_size: 512       # Hop size in trimming.
@@ -41,7 +37,7 @@ generator_params:
     out_channels: 4               # Number of output channels.
     kernel_size: 7                # Kernel size of initial and final conv layers.
     channels: 384                 # Initial number of channels for conv layers.
-    upsample_scales: [8, 4, 2]    # List of Upsampling scales.
+    upsample_scales: [5, 5, 3]    # List of Upsampling scales.
     stack_kernel_size: 3          # Kernel size of dilated conv layers in residual stack.
     stacks: 4                     # Number of stacks in a single residual stack module.
     use_weight_norm: True         # Whether to use weight normalization.
@@ -95,7 +91,7 @@ lambda_adv: 2.5            # Loss balancing coefficient for adversarial loss.
 #                  DATA LOADER SETTING                    #
 ###########################################################
 batch_size: 64             # Batch size.
-batch_max_steps: 16384     # Length of each audio in batch. Make sure dividable by hop_size.
+batch_max_steps: 16200     # Length of each audio in batch. Make sure dividable by hop_size.
 pin_memory: true           # Whether to pin memory in Pytorch DataLoader.
 num_workers: 4             # Number of workers in Pytorch DataLoader.
 remove_short_samples: true # Whether to remove samples the length of which are less than batch_max_steps.

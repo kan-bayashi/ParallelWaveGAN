@@ -1,7 +1,7 @@
 # This is the hyperparameter configuration file for MelGAN.
 # Please make sure this is adjusted for the LJSpeech dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
-# This configuration requires ~ 8GB memory and takes around 1 week on Titan V.
+# This configuration requires ~ 8GB memory and will finish within 5 days on Titan V.
 
 # This configuration is based on multi-band MelGAN. Hop size and sampling rate are
 # different from the paper (16kHz vs 22.05kHz). And we use RAdam instaed of Adam
