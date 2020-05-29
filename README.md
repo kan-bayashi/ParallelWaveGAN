@@ -19,7 +19,7 @@ You can try the real-time end-to-end text-to-speech demonstration in Google Cola
 
 ## What's new
 
-- 2020/05/29 **(New!)** [VCTK and CSMSC multi-band MelGAN pretrained model](#Results) is available!
+- 2020/05/29 **(New!)** [VCTK, JSUT, and CSMSC multi-band MelGAN pretrained model](#Results) is available!
 - 2020/05/27 [New LJSpeech multi-band MelGAN pretrained model](#Results) is available!
 - 2020/05/24 [LJSpeech full-band MelGAN pretrained model](#Results) is available!
 - 2020/05/22 [LJSpeech multi-band MelGAN pretrained model](#Results) is available!
@@ -181,6 +181,7 @@ You can listen to the samples and download pretrained models from the link to ou
 | [ljspeech_multi_band_melgan.v1](https://drive.google.com/open?id=1ls_YxCccQD-v6ADbG6qXlZ8f30KrrhLT)         | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/multi_band_melgan.v1.yaml)         | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 1000k   |
 | [ljspeech_multi_band_melgan.v2](https://drive.google.com/open?id=1wevYP2HQ7ec2fSixTpZIX0sNBtYZJz_I)         | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/multi_band_melgan.v2.yaml)         | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 1000k   |
 | [jsut_parallel_wavegan.v1](https://drive.google.com/open?id=1UDRL0JAovZ8XZhoH0wi9jj_zeCKb-AIA)              | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jsut/voc1/conf/parallel_wavegan.v1.yaml)              | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
+| [jsut_multi_band_melgan.v2 (**New!**)](https://drive.google.com/open?id=1E4fe0c5gMLtmSS0Hrzj-9nUbMwzke4PS)  | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jsut/voc1/conf/multi_band_melgan.v2.yaml)              | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 1000k    |
 | [csmsc_parallel_wavegan.v1](https://drive.google.com/open?id=1C2nu9nOFdKcEd-D9xGquQ0bCia0B2v_4)             | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csmsc/voc1/conf/parallel_wavegan.v1.yaml)             | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
 | [csmsc_multi_band_melgan.v2 (**New!**)](https://drive.google.com/open?id=1F7FwxGbvSo1Rnb5kp0dhGwimRJstzCrz) | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csmsc/voc1/conf/multi_band_melgan.v2.yaml)            | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 1000k   |
 | [arctic_slt_parallel_wavegan.v1](https://drive.google.com/open?id=1xG9CmSED2TzFdklD6fVxzf7kFV2kPQAJ)        | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/arctic/voc1/conf/parallel_wavegan.v1.yaml)            | EN    | 16k     | 80-7600        | 1024 / 256 / None    | 400k    |
