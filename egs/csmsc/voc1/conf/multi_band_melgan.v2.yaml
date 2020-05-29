@@ -1,7 +1,7 @@
 # This is the hyperparameter configuration file for MelGAN.
 # Please make sure this is adjusted for the CSMSC dataset. If you want to
 # apply to the other dataset, you might need to carefully change some parameters.
-# This configuration requires ~ 8GB memory and takes within 4 days on Titan V.
+# This configuration requires ~ 8GB memory and will finish within 4 days on Titan V.
 
 # This configuration is based on full-band MelGAN but the hop size and sampling
 # rate is different from the paper (16kHz vs 24kHz). The number of iteraions
