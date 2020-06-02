@@ -150,7 +150,7 @@ fi
 if [ -z "${tag}" ]; then
     expdir="exp/${train_set}_$(basename "${conf}" .yaml)"
     if [ -n "${pretrain}" ]; then
-        pretrain_tag=$(basename "$(dirname ${pretrain})")
+        pretrain_tag=$(basename "$(dirname "${pretrain}")")
         expdir+="_${pretrain_tag}"
     fi
 else
