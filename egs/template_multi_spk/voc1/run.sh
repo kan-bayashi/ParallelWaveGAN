@@ -83,6 +83,12 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
         dev_data_dirs+=" data/dev_${spk}"
         eval_data_dirs+=" data/eval_${spk}"
     done
+    # shellcheck disable=SC2086
+    utils/combine_data.sh "data/${train_set}" ${train_data_dirs}
+    # shellcheck disable=SC2086
+    utils/combine_data.sh "data/${dev_set}" ${dev_data_dirs}
+    # shellcheck disable=SC2086
+    utils/combine_data.sh "data/${eval_set}" ${eval_data_dirs}
 fi
 
 stats_ext=$(grep -q "hdf5" <(yq ".format" "${conf}") && echo "h5" || echo "npy")
