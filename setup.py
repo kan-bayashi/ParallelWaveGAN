@@ -24,7 +24,7 @@ requirements = {
     "install": [
         "torch>=1.0.1",
         "setuptools>=38.5.1",
-        "librosa>=0.7.0",
+        "librosa>=0.7.2",
         "soundfile>=0.10.2",
         "tensorboardX>=1.8",
         "matplotlib>=3.1.0",
