@@ -12,7 +12,7 @@ Please check our samples in [our demo HP](https://kan-bayashi.github.io/Parallel
 > Source of the figure: https://arxiv.org/pdf/1910.11480.pdf
 
 The goal of this repository is to provide real-time neural vocoder, which is compatible with [ESPnet-TTS](https://github.com/espnet/espnet).
-Also, this repository can be combined with [NVIDIA/tacotron2](https://github.com/NVIDIA/tacotron2)-based implementation (See https://github.com/kan-bayashi/ParallelWaveGAN/issues/169#issuecomment-649320778).
+Also, this repository can be combined with [NVIDIA/tacotron2](https://github.com/NVIDIA/tacotron2)-based implementation (See [this comment](https://github.com/kan-bayashi/ParallelWaveGAN/issues/169#issuecomment-649320778)).
 
 You can try the real-time end-to-end text-to-speech demonstration in Google Colab!
 
