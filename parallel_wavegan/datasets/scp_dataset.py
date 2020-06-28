@@ -15,9 +15,10 @@ import numpy as np
 from torch.utils.data import Dataset
 
 from parallel_wavegan.utils import HDF5ScpLoader
+from parallel_wavegan.utils import NpyScpLoader
 
 
-def _check_feats_scp_type(feats_scp):
+def _get_feats_scp_loader(feats_scp):
     # read the first line of feats.scp file
     with open(feats_scp) as f:
         key, value = f.readlines()[0].replace("\n", "").split()
@@ -27,16 +28,19 @@ def _check_feats_scp_type(feats_scp):
         value_1, value_2 = value.split(":")
         if value_1.endswith(".ark"):
             # kaldi-ark case: utt_id_1 /path/to/utt_id_1.ark:index
-            return "mat"
+            return kaldiio.load_scp(feats_scp)
         elif value_1.endswith(".h5"):
             # hdf5 case with path in hdf5: utt_id_1 /path/to/utt_id_1.h5:feats
-            return "hdf5"
+            return HDF5ScpLoader(feats_scp)
         else:
             raise ValueError("Not supported feats.scp type.")
     else:
         if value.endswith(".h5"):
             # hdf5 case without path in hdf5: utt_id_1 /path/to/utt_id_1.h5
-            return "hdf5"
+            return HDF5ScpLoader(feats_scp)
+        elif value.endswith(".npy"):
+            # npy case: utt_id_1 /path/to/utt_id_1.npy
+            return NpyScpLoader(feats_scp)
         else:
             raise ValueError("Not supported feats.scp type.")
 
@@ -69,10 +73,7 @@ class AudioMelSCPDataset(Dataset):
         """
         # load scp as lazy dict
         audio_loader = kaldiio.load_scp(wav_scp, segments=segments)
-        if _check_feats_scp_type(feats_scp) == "mat":
-            mel_loader = kaldiio.load_scp(feats_scp)
-        else:
-            mel_loader = HDF5ScpLoader(feats_scp)
+        mel_loader = _get_feats_scp_loader(feats_scp)
         audio_keys = list(audio_loader.keys())
         mel_keys = list(mel_loader.keys())
 
@@ -267,10 +268,7 @@ class MelSCPDataset(Dataset):
 
         """
         # load scp as lazy dict
-        if _check_feats_scp_type(feats_scp) == "mat":
-            mel_loader = kaldiio.load_scp(feats_scp)
-        else:
-            mel_loader = HDF5ScpLoader(feats_scp)
+        mel_loader = _get_feats_scp_loader(feats_scp)
         mel_keys = list(mel_loader.keys())
 
         # filter by threshold

@@ -186,3 +186,57 @@ class HDF5ScpLoader(object):
         """Return the values of the scp file."""
         for key in self.keys():
             yield self[key]
+
+
+class NpyScpLoader(object):
+    """Loader class for a fests.scp file of npy file.
+
+    Examples:
+        key1 /some/path/a.npy
+        key2 /some/path/b.npy
+        key3 /some/path/c.npy
+        key4 /some/path/d.npy
+        ...
+        >>> loader = NpyScpLoader("feats.scp")
+        >>> array = loader["key1"]
+
+    """
+
+    def __init__(self, feats_scp):
+        """Initialize npy scp loader.
+
+        Args:
+            feats_scp (str): Kaldi-style feats.scp file with npy format.
+
+        """
+        with open(feats_scp) as f:
+            lines = [line.replace("\n", "") for line in f.readlines()]
+        self.data = {}
+        for line in lines:
+            key, value = line.split()
+            self.data[key] = value
+
+    def get_path(self, key):
+        """Get npy file path for a given key."""
+        return self.data[key]
+
+    def __getitem__(self, key):
+        """Get ndarray for a given key."""
+        return np.load(self.data[key])
+
+    def __len__(self):
+        """Return the length of the scp file."""
+        return len(self.data)
+
+    def __iter__(self):
+        """Return the iterator of the scp file."""
+        return iter(self.data)
+
+    def keys(self):
+        """Return the keys of the scp file."""
+        return self.data.keys()
+
+    def values(self):
+        """Return the values of the scp file."""
+        for key in self.keys():
+            yield self[key]
