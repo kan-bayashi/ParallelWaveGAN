@@ -31,12 +31,12 @@ def stft(x, fft_size, hop_size, win_length, window):
     return torch.sqrt(torch.clamp(real ** 2 + imag ** 2, min=1e-7)).transpose(2, 1)
 
 
-class SpectralConvergengeLoss(torch.nn.Module):
+class SpectralConvergenceLoss(torch.nn.Module):
     """Spectral convergence loss module."""
 
     def __init__(self):
         """Initilize spectral convergence loss module."""
-        super(SpectralConvergengeLoss, self).__init__()
+        super(SpectralConvergenceLoss, self).__init__()
 
     def forward(self, x_mag, y_mag):
         """Calculate forward propagation.
@@ -83,7 +83,7 @@ class STFTLoss(torch.nn.Module):
         self.shift_size = shift_size
         self.win_length = win_length
         self.window = getattr(torch, window)(win_length)
-        self.spectral_convergenge_loss = SpectralConvergengeLoss()
+        self.spectral_convergence_loss = SpectralConvergenceLoss()
         self.log_stft_magnitude_loss = LogSTFTMagnitudeLoss()
 
     def forward(self, x, y):
