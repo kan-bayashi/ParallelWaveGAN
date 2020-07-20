@@ -44,6 +44,7 @@ class Trainer(object):
                  steps,
                  epochs,
                  data_loader,
+                 sampler,
                  model,
                  criterion,
                  optimizer,
@@ -68,6 +69,7 @@ class Trainer(object):
         self.steps = steps
         self.epochs = epochs
         self.data_loader = data_loader
+        self.sampler = sampler
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
@@ -303,6 +305,10 @@ class Trainer(object):
         self.train_steps_per_epoch = train_steps_per_epoch
         logging.info(f"(Steps: {self.steps}) Finished {self.epochs} epoch training "
                      f"({self.train_steps_per_epoch} steps per epoch).")
+
+        # needed for shuffle in distributed training
+        if self.config["distributed"]:
+            self.sampler["train"].set_epoch(self.epochs)
 
     @torch.no_grad()
     def _eval_step(self, batch):
@@ -764,17 +770,17 @@ def main():
         use_noise_input=config.get(
             "generator_type", "ParallelWaveGANGenerator") != "MelGANGenerator",
     )
-    train_sampler, dev_sampler = None, None
+    sampler = {"train": None, "dev": None}
     if args.distributed:
         # setup sampler for distributed training
         from torch.utils.data.distributed import DistributedSampler
-        train_sampler = DistributedSampler(
+        sampler["train"] = DistributedSampler(
             dataset=dataset["train"],
             num_replicas=args.world_size,
             rank=args.rank,
             shuffle=True,
         )
-        dev_sampler = DistributedSampler(
+        sampler["dev"] = DistributedSampler(
             dataset=dataset["dev"],
             num_replicas=args.world_size,
             rank=args.rank,
@@ -787,7 +793,7 @@ def main():
             collate_fn=collater,
             batch_size=config["batch_size"],
             num_workers=config["num_workers"],
-            sampler=train_sampler,
+            sampler=sampler["train"],
             pin_memory=config["pin_memory"],
         ),
         "dev": DataLoader(
@@ -796,7 +802,7 @@ def main():
             collate_fn=collater,
             batch_size=config["batch_size"],
             num_workers=config["num_workers"],
-            sampler=dev_sampler,
+            sampler=sampler["dev"],
             pin_memory=config["pin_memory"],
         ),
     }
@@ -888,6 +894,7 @@ def main():
         steps=0,
         epochs=0,
         data_loader=data_loader,
+        sampler=sampler,
         model=model,
         criterion=criterion,
         optimizer=optimizer,
