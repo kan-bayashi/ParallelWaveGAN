@@ -166,7 +166,7 @@ def main():
                                fmax=config["fmax"])
 
         # make sure the audio length and feature length are matched
-        audio = np.pad(audio, (0, config["fft_size"]), mode="edge")
+        audio = np.pad(audio, (0, config["fft_size"]), mode="reflect")
         audio = audio[:len(mel) * config["hop_size"]]
         assert len(mel) * config["hop_size"] == len(audio)
 
