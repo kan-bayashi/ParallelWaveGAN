@@ -119,7 +119,10 @@ def main():
     pad_fn = torch.nn.ReplicationPad1d(
         config["generator_params"].get("aux_context_window", 0))
     if config["generator_params"]["out_channels"] > 1:
-        pqmf = PQMF(config["generator_params"]["out_channels"]).to(device)
+        pqmf = PQMF(
+            subbands=config["generator_params"]["out_channels"],
+            **config.get("pqmf_params", {})
+        ).to(device)
 
     # start generation
     total_rtf = 0.0
