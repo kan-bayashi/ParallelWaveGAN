@@ -835,7 +835,7 @@ def main():
         criterion["pqmf"] = PQMF(
             subbands=config["generator_params"]["out_channels"],
             # keep compatibility
-            **config.get(["pqmf_params"], {})
+            **config.get("pqmf_params", {})
         ).to(device)
     if config.get("use_subband_stft_loss", False):  # keep compatibility
         assert config["generator_params"]["out_channels"] > 1
