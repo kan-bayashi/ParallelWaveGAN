@@ -833,7 +833,10 @@ def main():
         criterion["l1"] = torch.nn.L1Loss().to(device)
     if config["generator_params"]["out_channels"] > 1:
         criterion["pqmf"] = PQMF(
-            config["generator_params"]["out_channels"]).to(device)
+            subbands=config["generator_params"]["out_channels"],
+            # keep compatibility
+            **config.get(["pqmf_params"], {})
+        ).to(device)
     if config.get("use_subband_stft_loss", False):  # keep compatibility
         assert config["generator_params"]["out_channels"] > 1
         criterion["sub_stft"] = MultiResolutionSTFTLoss(
