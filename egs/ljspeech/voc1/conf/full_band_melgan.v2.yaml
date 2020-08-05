@@ -3,10 +3,11 @@
 # apply to the other dataset, you might need to carefully change some parameters.
 # This cofiguration requires ~ 11 GB memory and takes 1 week on Titan V.
 
-# This configuration is based on full-band MelGAN but the hop size and sampling
-# rate is different from the paper (16kHz vs 22.05kHz). And we use RAdam instaed
-# of Adam. Tne number of iteraions is now shown in the paper so currently we train
-# 1M iterations (not sure enough to converge).
+# # This configuration is based on full-band MelGAN but the hop size and sampling
+# rate is different from the paper (16kHz vs 22.05kHz). The number of iteraions
+# is now shown in the paper so currently we train 1M iterations (not sure enough
+# to converge). The optimizer setting is based on @dathudeptrai advice.
+# https://github.com/kan-bayashi/ParallelWaveGAN/issues/143#issuecomment-632539906
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -93,12 +94,13 @@ allow_cache: true          # Whether to allow cache in dataset. If true, it requ
 ###########################################################
 #             OPTIMIZER & SCHEDULER SETTING               #
 ###########################################################
-generator_optimizer_type: "RAdam"       # Generator's optimizer type.
+generator_optimizer_type: "Adam"       # Generator's optimizer type.
 generator_optimizer_params:
-    lr: 0.0001                          # Generator's learning rate.
-    eps: 1.0e-6                         # Generator's epsilon.
+    lr: 1.0e-3                          # Generator's learning rate.
+    eps: 1.0e-7                         # Generator's epsilon.
     weight_decay: 0.0                   # Generator's weight decay coefficient.
-generator_grad_norm: 10                 # Generator's gradient norm.
+    amsgrad: true
+generator_grad_norm: -1                 # Generator's gradient norm.
 generator_scheduler_type: "MultiStepLR" # Generator's scheduler type.
 generator_scheduler_params:
     gamma: 0.5                          # Generator's scheduler gamma.
@@ -109,12 +111,13 @@ generator_scheduler_params:
         - 400000
         - 500000
         - 600000
-discriminator_optimizer_type: "RAdam"       # Discriminator's optimizer type.
+discriminator_optimizer_type: "Adam"        # Discriminator's optimizer type.
 discriminator_optimizer_params:
-    lr: 0.0001                              # Discriminator's learning rate.
-    eps: 1.0e-6                             # Discriminator's epsilon.
+    lr: 1.0e-3                              # Discriminator's learning rate.
+    eps: 1.0e-7                             # Discriminator's epsilon.
     weight_decay: 0.0                       # Discriminator's weight decay coefficient.
-discriminator_grad_norm: 1                  # Discriminator's gradient norm.
+    amsgrad: true
+discriminator_grad_norm: -1                 # Discriminator's gradient norm.
 discriminator_scheduler_type: "MultiStepLR" # Discriminator's scheduler type.
 discriminator_scheduler_params:
     gamma: 0.5                              # Discriminator's scheduler gamma.
