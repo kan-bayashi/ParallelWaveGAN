@@ -58,7 +58,7 @@ class PQMF(torch.nn.Module):
 
     """
 
-    def __init__(self, subbands=4, taps=62, cutoff_ratio=0.15, beta=9.0):
+    def __init__(self, subbands=4, taps=62, cutoff_ratio=0.15, beta=9.0, use_legacy=False):
         """Initilize PQMF module.
 
         Args:
@@ -66,23 +66,17 @@ class PQMF(torch.nn.Module):
             taps (int): The number of filter taps.
             cutoff_ratio (float): Cut-off frequency ratio.
             beta (float): Beta coefficient for kaiser window.
+            use_legacy (bool): Whether to use legacy PQMF coefficients (for <= 0.4.2).
 
         """
         super(PQMF, self).__init__()
 
         # define filter coefficient
         h_proto = design_prototype_filter(taps, cutoff_ratio, beta)
-        h_analysis = np.zeros((subbands, len(h_proto)))
-        h_synthesis = np.zeros((subbands, len(h_proto)))
-        for k in range(subbands):
-            h_analysis[k] = 2 * h_proto * np.cos(
-                (2 * k + 1) * (np.pi / (2 * subbands)) *
-                (np.arange(taps + 1) - ((taps - 1) / 2)) +
-                (-1) ** k * np.pi / 4)
-            h_synthesis[k] = 2 * h_proto * np.cos(
-                (2 * k + 1) * (np.pi / (2 * subbands)) *
-                (np.arange(taps + 1) - ((taps - 1) / 2)) -
-                (-1) ** k * np.pi / 4)
+        if use_legacy:
+            h_analysis, h_synthesis = self._build_filter_lagacy(h_proto, subbands, taps)
+        else:
+            h_analysis, h_synthesis = self._build_filter(h_proto, subbands, taps)
 
         # convert to tensor
         analysis_filter = torch.from_numpy(h_analysis).float().unsqueeze(1)
@@ -101,6 +95,41 @@ class PQMF(torch.nn.Module):
 
         # keep padding info
         self.pad_fn = torch.nn.ConstantPad1d(taps // 2, 0.0)
+
+    def _build_filter(self, h_proto, subbands, taps):
+        # build analysis & synthesis filter coefficients
+        h_analysis = np.zeros((subbands, len(h_proto)))
+        h_synthesis = np.zeros((subbands, len(h_proto)))
+        for k in range(subbands):
+            h_analysis[k] = 2 * h_proto * np.cos(
+                (2 * k + 1) * (np.pi / (2 * subbands)) *
+                (np.arange(taps + 1) - (taps / 2)) +
+                (-1) ** k * np.pi / 4)
+            h_synthesis[k] = 2 * h_proto * np.cos(
+                (2 * k + 1) * (np.pi / (2 * subbands)) *
+                (np.arange(taps + 1) - (taps - 1 / 2)) -
+                (-1) ** k * np.pi / 4)
+
+        return h_analysis, h_synthesis
+
+    def _build_filter_legacy(self, h_proto, subbands, taps):
+        # NOTE(kan-bayashi): legacy version is for the <= 0.4.2 compatibility
+        # build analysis & synthesis filter coefficients
+        h_analysis = np.zeros((subbands, len(h_proto)))
+        h_synthesis = np.zeros((subbands, len(h_proto)))
+        for k in range(subbands):
+            h_analysis[k] = 2 * h_proto * np.cos(
+                (2 * k + 1) * (np.pi / (2 * subbands)) *
+                # NOTE(kan-bayashi): (taps - 1) is used for <= v.0.4.2
+                (np.arange(taps + 1) - ((taps - 1) / 2)) +
+                (-1) ** k * np.pi / 4)
+            h_synthesis[k] = 2 * h_proto * np.cos(
+                (2 * k + 1) * (np.pi / (2 * subbands)) *
+                # NOTE(kan-bayashi): (taps - 1) is used for <= v.0.4.2
+                (np.arange(taps + 1) - ((taps - 1) / 2)) -
+                (-1) ** k * np.pi / 4)
+
+        return h_analysis, h_synthesis
 
     def analysis(self, x):
         """Analysis with PQMF.
