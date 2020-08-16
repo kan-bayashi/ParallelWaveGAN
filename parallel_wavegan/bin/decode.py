@@ -11,6 +11,8 @@ import logging
 import os
 import time
 
+from distutils.version import LooseVersion
+
 import numpy as np
 import soundfile as sf
 import torch
@@ -86,7 +88,7 @@ def main():
             mel_query = "*-feats.npy"
             mel_load_fn = np.load
         else:
-            raise ValueError("support only hdf5 or npy format.")
+            raise ValueError("Support only hdf5 or npy format.")
         dataset = MelDataset(
             args.dumpdir,
             mel_query=mel_query,
@@ -121,7 +123,8 @@ def main():
     if config["generator_params"]["out_channels"] > 1:
         pqmf = PQMF(
             subbands=config["generator_params"]["out_channels"],
-            **config.get("pqmf_params", {})
+            use_legacy=LooseVersion(config.get("version", "0.1.0")) <= LooseVersion("0.4.2"),
+            **config.get("pqmf_params", {}),
         ).to(device)
 
     # start generation
