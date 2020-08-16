@@ -121,10 +121,12 @@ def main():
     pad_fn = torch.nn.ReplicationPad1d(
         config["generator_params"].get("aux_context_window", 0))
     if config["generator_params"]["out_channels"] > 1:
+        pqmf_params = {}
+        if LooseVersion(config.get("version", "0.1.0")) <= LooseVersion("0.4.2"):
+            pqmf_params.update(use_legacy=True, cutoff_ratio=0.15)
         pqmf = PQMF(
             subbands=config["generator_params"]["out_channels"],
-            use_legacy=LooseVersion(config.get("version", "0.1.0")) <= LooseVersion("0.4.2"),
-            **config.get("pqmf_params", {}),
+            **config.get("pqmf_params", pqmf_params),
         ).to(device)
 
     # start generation
