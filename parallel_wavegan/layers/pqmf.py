@@ -74,7 +74,7 @@ class PQMF(torch.nn.Module):
         # define filter coefficient
         h_proto = design_prototype_filter(taps, cutoff_ratio, beta)
         if use_legacy:
-            h_analysis, h_synthesis = self._build_filter_lagacy(h_proto, subbands, taps)
+            h_analysis, h_synthesis = self._build_filter_legacy(h_proto, subbands, taps)
         else:
             h_analysis, h_synthesis = self._build_filter(h_proto, subbands, taps)
 
@@ -107,7 +107,7 @@ class PQMF(torch.nn.Module):
                 (-1) ** k * np.pi / 4)
             h_synthesis[k] = 2 * h_proto * np.cos(
                 (2 * k + 1) * (np.pi / (2 * subbands)) *
-                (np.arange(taps + 1) - (taps - 1 / 2)) -
+                (np.arange(taps + 1) - (taps / 2)) -
                 (-1) ** k * np.pi / 4)
 
         return h_analysis, h_synthesis
