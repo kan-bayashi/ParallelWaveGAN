@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from scipy.signal import kaiser
 
 
-def design_prototype_filter(taps=62, cutoff_ratio=0.15, beta=9.0):
+def design_prototype_filter(taps=62, cutoff_ratio=0.142, beta=9.0):
     """Design prototype filter for PQMF.
 
     This method is based on `A Kaiser window approach for the design of prototype
@@ -58,8 +58,11 @@ class PQMF(torch.nn.Module):
 
     """
 
-    def __init__(self, subbands=4, taps=62, cutoff_ratio=0.15, beta=9.0, use_legacy=False):
+    def __init__(self, subbands=4, taps=62, cutoff_ratio=0.142, beta=9.0, use_legacy=False):
         """Initilize PQMF module.
+
+        The cutoff_ratio and beta parameters are optimized for #subbands = 4.
+        See dicussion in https://github.com/kan-bayashi/ParallelWaveGAN/issues/195.
 
         Args:
             subbands (int): The number of subbands.
