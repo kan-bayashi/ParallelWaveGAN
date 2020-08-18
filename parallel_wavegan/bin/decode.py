@@ -120,7 +120,7 @@ def main():
         pqmf_params = {}
         if LooseVersion(config.get("version", "0.1.0")) <= LooseVersion("0.4.2"):
             # For compatibility, here we set default values in version <= 0.4.2
-            pqmf_params.update(taps=62, cutoff_ratio=0.15, beta=9.0, use_legacy=True)
+            pqmf_params.update(taps=62, cutoff_ratio=0.15, beta=9.0)
         model.pqmf = PQMF(
             subbands=config["generator_params"]["out_channels"],
             **config.get("pqmf_params", pqmf_params),
