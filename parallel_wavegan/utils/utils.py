@@ -334,7 +334,7 @@ def download_pretrained_model(tag, download_dir=None):
     os.makedirs(f"{download_dir}", exist_ok=True)
     if not os.path.exists(output_path):
         import gdown
-        gdown.download(f"https://drive.google.com/uc?id={id_}", output_path)
+        gdown.download(f"https://drive.google.com/uc?id={id_}", output_path, quiet=False)
         with tarfile.open(output_path, 'r:*') as tar:
             tar.extractall(f"{download_dir}/{tag}")
     checkpoint_path = find_files(f"{download_dir}/{tag}", "*.pkl")
