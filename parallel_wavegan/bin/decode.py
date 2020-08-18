@@ -135,14 +135,14 @@ def main():
             # generate
             c = torch.tensor(c, dtype=torch.float).to(device)
             start = time.time()
-            y = model.inference(c).view(-1).cpu().numpy()
+            y = model.inference(c).view(-1)
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf
 
             # save as PCM 16 bit wav file
             sf.write(os.path.join(config["outdir"], f"{utt_id}_gen.wav"),
-                     y, config["sampling_rate"], "PCM_16")
+                     y.cpu().numpy(), config["sampling_rate"], "PCM_16")
 
     # report average RTF
     logging.info(f"Finished generation of {idx} utterances (RTF = {total_rtf / idx:.03f}).")
