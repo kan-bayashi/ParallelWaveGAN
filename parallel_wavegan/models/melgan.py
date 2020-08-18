@@ -197,12 +197,14 @@ class MelGANGenerator(torch.nn.Module):
         """Perform inference.
 
         Args:
-            c (Tensor): Input tensor (T, in_channels).
+            c (Union[Tensor, ndarray]): Input tensor (T, in_channels).
 
         Returns:
             Tensor: Output tensor (T ** prod(upsample_scales), out_channels).
 
         """
+        if not isinstance(c, torch.Tensor):
+            c = torch.tensor(c, dtype=torch.float).to(next(self.parameters()).device)
         c = self.melgan(c.transpose(1, 0).unsqueeze(0))
         if self.pqmf is not None:
             c = self.pqmf.synthesis(c)
