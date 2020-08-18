@@ -11,8 +11,6 @@ import logging
 import os
 import time
 
-from distutils.version import LooseVersion
-
 import numpy as np
 import soundfile as sf
 import torch
@@ -20,11 +18,9 @@ import yaml
 
 from tqdm import tqdm
 
-import parallel_wavegan.models
-
 from parallel_wavegan.datasets import MelDataset
 from parallel_wavegan.datasets import MelSCPDataset
-from parallel_wavegan.layers import PQMF
+from parallel_wavegan.utils import load_model
 from parallel_wavegan.utils import read_hdf5
 
 
@@ -102,29 +98,13 @@ def main():
         )
     logging.info(f"The number of features to be decoded = {len(dataset)}.")
 
-    # setup
+    # setup model
     if torch.cuda.is_available():
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    model_class = getattr(
-        parallel_wavegan.models,
-        config.get("generator_type", "ParallelWaveGANGenerator")
-    )
-    model = model_class(**config["generator_params"])
-    model.load_state_dict(
-        torch.load(args.checkpoint, map_location="cpu")["model"]["generator"]
-    )
+    model = load_model(args.checkpoint, config)
     logging.info(f"Loaded model parameters from {args.checkpoint}.")
-    if config["generator_params"]["out_channels"] > 1:
-        pqmf_params = {}
-        if LooseVersion(config.get("version", "0.1.0")) <= LooseVersion("0.4.2"):
-            # For compatibility, here we set default values in version <= 0.4.2
-            pqmf_params.update(taps=62, cutoff_ratio=0.15, beta=9.0)
-        model.pqmf = PQMF(
-            subbands=config["generator_params"]["out_channels"],
-            **config.get("pqmf_params", pqmf_params),
-        )
     model.remove_weight_norm()
     model = model.eval().to(device)
 
