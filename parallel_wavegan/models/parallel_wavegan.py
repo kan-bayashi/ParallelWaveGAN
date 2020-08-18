@@ -211,7 +211,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
             x = x.transpose(1, 0).unsqueeze(0)
         else:
             assert c is not None
-            x = c.new_tensor(torch.randn(1, 1, len(c) * self.upsample_factor))
+            x = torch.randn(1, 1, len(c) * self.upsample_factor).to(c.device)
         if c is not None:
             c = c.transpose(1, 0).unsqueeze(0)
             c = torch.nn.ReplicationPad1d(self.aux_context_window)(c)
