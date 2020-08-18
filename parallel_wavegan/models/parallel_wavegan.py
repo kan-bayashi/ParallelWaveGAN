@@ -8,6 +8,7 @@
 import logging
 import math
 
+import numpy as np
 import torch
 
 from parallel_wavegan.layers import Conv1d
@@ -66,6 +67,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.aux_channels = aux_channels
+        self.aux_context_window = aux_context_window
         self.layers = layers
         self.stacks = stacks
         self.kernel_size = kernel_size
@@ -96,8 +98,10 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                         "aux_context_window": aux_context_window,
                     })
                 self.upsample_net = getattr(upsample, upsample_net)(**upsample_params)
+            self.upsample_factor = np.prod(upsample_params["upsample_scales"])
         else:
             self.upsample_net = None
+            self.upsample_factor = 1
 
         # define residual blocks
         self.conv_layers = torch.nn.ModuleList()
@@ -191,6 +195,31 @@ class ParallelWaveGANGenerator(torch.nn.Module):
     def receptive_field_size(self):
         """Return receptive field size."""
         return self._get_receptive_field_size(self.layers, self.stacks, self.kernel_size)
+
+    def inference(self, c=None, x=None):
+        """Perform inference.
+
+        Args:
+            c (Union[Tensor, ndarray]): Local conditioning auxiliary features (T' ,C).
+            x (Union[Tensor, ndarray]): Input noise signal (T, 1).
+
+        Returns:
+            Tensor: Output tensor (T, out_channels)
+
+        """
+        if x is not None:
+            if not isinstance(x, torch.Tensor):
+                x = torch.tensor(x, dtype=torch.float).to(next(self.parameters()).device)
+            x = x.transpose(1, 0).unsqueeze(0)
+        else:
+            assert c is not None
+            x = torch.randn(1, 1, len(c) * self.upsample_factor).to(next(self.parameters()).device)
+        if c is not None:
+            if not isinstance(c, torch.Tensor):
+                c = torch.tensor(c, dtype=torch.float).to(next(self.parameters()).device)
+            c = c.transpose(1, 0).unsqueeze(0)
+            c = torch.nn.ReplicationPad1d(self.aux_context_window)(c)
+        return self.forward(x, c).squeeze(0).transpose(1, 0)
 
 
 class ParallelWaveGANDiscriminator(torch.nn.Module):

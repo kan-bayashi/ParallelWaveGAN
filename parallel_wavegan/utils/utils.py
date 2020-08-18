@@ -10,8 +10,16 @@ import logging
 import os
 import sys
 
+from distutils.version import LooseVersion
+
 import h5py
 import numpy as np
+import torch
+import yaml
+
+import parallel_wavegan.models
+
+from parallel_wavegan.layers import PQMF
 
 
 def find_files(root_dir, query="*.wav", include_root_dir=True):
@@ -240,3 +248,45 @@ class NpyScpLoader(object):
         """Return the values of the scp file."""
         for key in self.keys():
             yield self[key]
+
+
+def load_model(checkpoint, config=None):
+    """Load trained model.
+
+    Args:
+        checkpoint (str): Checkpoint path.
+        config (dict): Configuration dict.
+
+    Return:
+        torch.nn.Module: Model instance.
+
+    """
+    # load config if not provided
+    if config is None:
+        dirname = os.path.dirname(checkpoint)
+        config = os.path.join(dirname, "config.yml")
+        with open(config) as f:
+            config = yaml.load(f, Loader=yaml.Loader)
+
+    # get model and load parameters
+    model_class = getattr(
+        parallel_wavegan.models,
+        config.get("generator_type", "ParallelWaveGANGenerator")
+    )
+    model = model_class(**config["generator_params"])
+    model.load_state_dict(
+        torch.load(checkpoint, map_location="cpu")["model"]["generator"]
+    )
+
+    # add pqmf if needed
+    if config["generator_params"]["out_channels"] > 1:
+        pqmf_params = {}
+        if LooseVersion(config.get("version", "0.1.0")) <= LooseVersion("0.4.2"):
+            # For compatibility, here we set default values in version <= 0.4.2
+            pqmf_params.update(taps=62, cutoff_ratio=0.15, beta=9.0)
+        model.pqmf = PQMF(
+            subbands=config["generator_params"]["out_channels"],
+            **config.get("pqmf_params", pqmf_params),
+        )
+
+    return model

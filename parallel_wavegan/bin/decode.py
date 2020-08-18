@@ -11,8 +11,6 @@ import logging
 import os
 import time
 
-from distutils.version import LooseVersion
-
 import numpy as np
 import soundfile as sf
 import torch
@@ -20,11 +18,9 @@ import yaml
 
 from tqdm import tqdm
 
-import parallel_wavegan.models
-
 from parallel_wavegan.datasets import MelDataset
 from parallel_wavegan.datasets import MelSCPDataset
-from parallel_wavegan.layers import PQMF
+from parallel_wavegan.utils import load_model
 from parallel_wavegan.utils import read_hdf5
 
 
@@ -102,59 +98,31 @@ def main():
         )
     logging.info(f"The number of features to be decoded = {len(dataset)}.")
 
-    # setup
+    # setup model
     if torch.cuda.is_available():
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    model_class = getattr(
-        parallel_wavegan.models,
-        config.get("generator_type", "ParallelWaveGANGenerator"))
-    model = model_class(**config["generator_params"])
-    model.load_state_dict(
-        torch.load(args.checkpoint, map_location="cpu")["model"]["generator"])
+    model = load_model(args.checkpoint, config)
     logging.info(f"Loaded model parameters from {args.checkpoint}.")
     model.remove_weight_norm()
     model = model.eval().to(device)
-    use_noise_input = not isinstance(
-        model, parallel_wavegan.models.MelGANGenerator)
-    pad_fn = torch.nn.ReplicationPad1d(
-        config["generator_params"].get("aux_context_window", 0))
-    if config["generator_params"]["out_channels"] > 1:
-        pqmf_params = {}
-        if LooseVersion(config.get("version", "0.1.0")) <= LooseVersion("0.4.2"):
-            # For compatibility, here we set default values in version <= 0.4.2
-            pqmf_params.update(taps=62, cutoff_ratio=0.15, beta=9.0, use_legacy=True)
-        pqmf = PQMF(
-            subbands=config["generator_params"]["out_channels"],
-            **config.get("pqmf_params", pqmf_params),
-        ).to(device)
 
     # start generation
     total_rtf = 0.0
     with torch.no_grad(), tqdm(dataset, desc="[decode]") as pbar:
         for idx, (utt_id, c) in enumerate(pbar, 1):
-            # setup input
-            x = ()
-            if use_noise_input:
-                z = torch.randn(1, 1, len(c) * config["hop_size"]).to(device)
-                x += (z,)
-            c = pad_fn(torch.tensor(c, dtype=torch.float).unsqueeze(0).transpose(2, 1)).to(device)
-            x += (c,)
-
             # generate
+            c = torch.tensor(c, dtype=torch.float).to(device)
             start = time.time()
-            if config["generator_params"]["out_channels"] == 1:
-                y = model(*x).view(-1).cpu().numpy()
-            else:
-                y = pqmf.synthesis(model(*x)).view(-1).cpu().numpy()
+            y = model.inference(c).view(-1)
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf
 
             # save as PCM 16 bit wav file
             sf.write(os.path.join(config["outdir"], f"{utt_id}_gen.wav"),
-                     y, config["sampling_rate"], "PCM_16")
+                     y.cpu().numpy(), config["sampling_rate"], "PCM_16")
 
     # report average RTF
     logging.info(f"Finished generation of {idx} utterances (RTF = {total_rtf / idx:.03f}).")
