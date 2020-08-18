@@ -101,7 +101,7 @@ class ParallelWaveGANGenerator(torch.nn.Module):
             self.upsample_factor = np.prod(upsample_params["upsample_scales"])
         else:
             self.upsample_net = None
-            self.upsample_factor = 0
+            self.upsample_factor = 1
 
         # define residual blocks
         self.conv_layers = torch.nn.ModuleList()
