@@ -1,6 +1,6 @@
 # Parallel WaveGAN (+ MelGAN & Multi-band MelGAN) implementation with Pytorch
 
-![](https://github.com/kan-bayashi/ParallelWaveGAN/workflows/CI/badge.svg) [![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/pypi/pyversions/parallel-wavegan) ![](https://img.shields.io/pypi/l/parallel-wavegan) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
+![](https://github.com/kan-bayashi/ParallelWaveGAN/workflows/CI/badge.svg) [![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/pypi/pyversions/parallel-wavegan) ![](https://img.shields.io/pypi/l/parallel-wavegan) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/espnet2_tts_realtime_demo.ipynb)
 
 This repository provides **UNOFFICIAL** [PWG](https://arxiv.org/abs/1910.11480), [MelGAN](https://arxiv.org/abs/1910.06711), and [MB-MelGAN](https://arxiv.org/abs/2005.05106) implementations with Pytorch.  
 You can combine these state-of-the-art non-autoregressive models to build your own great vocoder!
@@ -15,12 +15,13 @@ The goal of this repository is to provide real-time neural vocoder, which is com
 Also, this repository can be combined with [NVIDIA/tacotron2](https://github.com/NVIDIA/tacotron2)-based implementation (See [this comment](https://github.com/kan-bayashi/ParallelWaveGAN/issues/169#issuecomment-649320778)).
 
 You can try the real-time end-to-end text-to-speech demonstration in Google Colab!
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
+- Realtime demonstration with ESPnet2 (New) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/espnet2_tts_realtime_demo.ipynb)
+- Realtime demonstration with ESPnet1 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
 ## What's new
 
-- 2020/05/29 **(New!)** [VCTK, JSUT, and CSMSC multi-band MelGAN pretrained model](#Results) is available!
+- 2020/08/19 **(New!)** [New realtime demo with ESPnet2](https://colab.research.google.com/github/espnet/notebook/blob/master/espnet2_tts_realtime_demo.ipynb) is available!
+- 2020/05/29 [VCTK, JSUT, and CSMSC multi-band MelGAN pretrained model](#Results) is available!
 - 2020/05/27 [New LJSpeech multi-band MelGAN pretrained model](#Results) is available!
 - 2020/05/24 [LJSpeech full-band MelGAN pretrained model](#Results) is available!
 - 2020/05/22 [LJSpeech multi-band MelGAN pretrained model](#Results) is available!
@@ -207,9 +208,23 @@ Here the minimal code is shown to perform analysis-synthesis using the pretraine
 # If not, please install via pip
 $ pip install parallel_wavegan
 
-# Please download pretrained models and put them in `pretrain_model` directory
-$ ls pretrain_model
+# You can download the pretrained model from terminal
+$ python << EOF
+from parallel_wavegan.utils import download_pretrained_model
+download_pretrained_model("<pretrained_model_tag>", 'pretrained_model')"
+EOF
+
+# You can get all of available pretrained models as follows:
+$ python << EOF
+from parallel_wavegan.utils import PRETRAINED_MODEL_LIST
+print(PRETRAINED_MODEL_LIST.keys())
+EOF
+
+# Now you can find downloaded pretrained model in `pretrained_model/<pretrain_model_tag>/`
+$ ls pretrain_model/<pretrain_model_tag>
   checkpoint-400000steps.pkl    config.yml    stats.h5
+
+# These files can also be downloaded manually from the above results
 
 # Please put an audio file in `sample` directory to perform analysis-synthesis
 $ ls sample/
@@ -217,27 +232,22 @@ $ ls sample/
 
 # Then perform feature extraction -> feature normalization -> sysnthesis
 $ parallel-wavegan-preprocess \
-    --config pretrain_model/config.yml \
+    --config pretrain_model/<pretrain_model_tag>/config.yml \
     --rootdir sample \
     --dumpdir dump/sample/raw
 100%|████████████████████████████████████████| 1/1 [00:00<00:00, 914.19it/s]
-[Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
-[Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    1.2s finished
 $ parallel-wavegan-normalize \
-    --config pretrain_model/config.yml \
+    --config pretrain_model/<pretrain_model_tag>/config.yml \
     --rootdir dump/sample/raw \
     --dumpdir dump/sample/norm \
-    --stats pretrain_model/stats.h5
+    --stats pretrain_model/<pretrain_model_tag>/stats.h5
 2019-11-13 13:44:29,574 (normalize:87) INFO: the number of files = 1.
 100%|████████████████████████████████████████| 1/1 [00:00<00:00, 513.13it/s]
-[Parallel(n_jobs=16)]: Using backend LokyBackend with 16 concurrent workers.
-[Parallel(n_jobs=16)]: Done   1 out of   1 | elapsed:    0.6s finished
 $ parallel-wavegan-decode \
-    --checkpoint pretrain_model/checkpoint-400000steps.pkl \
+    --checkpoint pretrain_model/<pretrain_model_tag>/checkpoint-400000steps.pkl \
     --dumpdir dump/sample/norm \
     --outdir sample
 2019-11-13 13:44:31,229 (decode:91) INFO: the number of features to be decoded = 1.
-2019-11-13 13:44:37,074 (decode:105) INFO: loaded model parameters from pretrain_model/checkpoint-400000steps.pkl.
 [decode]: 100%|███████████████████| 1/1 [00:00<00:00, 18.33it/s, RTF=0.0146]
 2019-11-13 13:44:37,132 (decode:129) INFO: finished generation of 1 utterances (RTF = 0.015).
 
@@ -254,15 +264,35 @@ Here, I show the procedure to generate waveforms with features generated by [ESP
 # Make sure you already finished running the recipe of ESPnet-TTS.
 # You must use the same feature settings for both Text2Mel and Mel2Wav models.
 # Let us move on "ESPnet" recipe directory
+$ cd /path/to/espnet/egs/<recipe_name>/tts1
 $ pwd
 /path/to/espnet/egs/<recipe_name>/tts1
+
+# If you use ESPnet2, move on `egs2/`
+$ cd /path/to/espnet/egs2/<recipe_name>/tts1
+$ pwd
+/path/to/espnet/egs2/<recipe_name>/tts1
 
 # Please install this repository in ESPnet conda (or virtualenv) environment
 $ . ./path.sh && pip install -U parallel_wavegan
 
-# Please download pretrained models and put them in `pretrain_model` directory
-$ ls pretrain_model
+# Download pretrained model from terminal
+$ python << EOF
+from parallel_wavegan.utils import download_pretrained_model
+download_pretrained_model("<pretrained_model_tag>", 'pretrained_model')"
+EOF
+
+# You can get all of available pretrained models as follows:
+$ python << EOF
+from parallel_wavegan.utils import PRETRAINED_MODEL_LIST
+print(PRETRAINED_MODEL_LIST.keys())
+EOF
+
+# You can find downloaded pretrained model in `pretrained_model/<pretrain_model_tag>/`
+$ ls pretrain_model/<pretrain_model_tag>
   checkpoint-400000steps.pkl    config.yml    stats.h5
+
+# These files can also be downloaded manually from the above results
 ```
 
 **Case 1**: If you use the same dataset for both Text2Mel and Mel2Wav
@@ -270,12 +300,19 @@ $ ls pretrain_model
 ```bash
 # In this case, you can directly use generated features for decoding.
 # Please specify `feats.scp` path for `--feats-scp`, which is located in
-# exp/<your_model_name>/outputs_*_decode/<set_name>/feats.scp.
+# exp/<your_model_dir>/outputs_*_decode/<set_name>/feats.scp.
 # Note that do not use outputs_*decode_denorm/<set_name>/feats.scp since
 # it is de-normalized features (the input for PWG is normalized features).
 $ parallel-wavegan-decode \
-    --checkpoint pretrain_model/checkpoint-400000steps.pkl \
-    --feats-scp exp/<your_model_name>/outputs_*_decode/<name>/feats.scp \
+    --checkpoint pretrain_model/<pretrain_model_tag>/checkpoint-400000steps.pkl \
+    --feats-scp exp/<your_model_dir>/outputs_*_decode/<set_name>/feats.scp \
+    --outdir <path_to_outdir>
+
+# In the case of ESPnet2, the generated feature can be found in
+# exp/<your_model_dir>/decode_*/<set_name>/norm/feats.scp.
+$ parallel-wavegan-decode \
+    --checkpoint pretrain_model/<pretrain_model_tag>/checkpoint-400000steps.pkl \
+    --feats-scp exp/<your_model_dir>/decode_*/<set_name>/norm/feats.scp \
     --outdir <path_to_outdir>
 
 # You can find the generated waveforms in <path_to_outdir>/.
@@ -288,12 +325,21 @@ $ ls <path_to_outdir>
 ```bash
 # In this case, you must perform normlization at first.
 # Please specify `feats.scp` path for `--feats-scp`, which is located in
-# exp/<your_model_name>/outputs_*_decode_denorm/<set_name>/feats.scp.
+# exp/<your_model_dir>/outputs_*_decode_denorm/<set_name>/feats.scp.
 $ parallel-wavegan-normalize \
     --skip-wav-copy \
-    --config pretrain_model/config.yml \
-    --stats pretrain_model/stats.h5 \
-    --feats-scp exp/<your_model_name>/outputs_*_decode_denorm/<set_name>/feats.scp \
+    --config pretrain_model/<pretrain_model_tag>/config.yml \
+    --stats pretrain_model/<pretrain_model_tag>/stats.h5 \
+    --feats-scp exp/<your_model_dir>/outputs_*_decode_denorm/<set_name>/feats.scp \
+    --dumpdir <path_to_dumpdir>
+
+# In the case of ESPnet2, the denormalized generated feature can be found in
+# exp/<your_model_dir>/decode_*/<set_name>/denorm/feats.scp.
+$ parallel-wavegan-normalize \
+    --skip-wav-copy \
+    --config pretrain_model/<pretrain_model_tag>/config.yml \
+    --stats pretrain_model/<pretrain_model_tag>/stats.h5 \
+    --feats-scp exp/<your_model_dir>/decode_*/<set_name>/denorm/feats.scp \
     --dumpdir <path_to_dumpdir>
 
 # Normalized features dumped in <path_to_dumpdir>/.
@@ -302,7 +348,7 @@ $ ls <path_to_dumpdir>
 
 # Then, decode normalzied features with the pretrained model.
 $ parallel-wavegan-decode \
-    --checkpoint pretrain_model/checkpoint-400000steps.pkl \
+    --checkpoint pretrain_model/<pretrain_model_tag>/checkpoint-400000steps.pkl \
     --dumpdir <path_to_dumpdir>  \
     --outdir <path_to_outdir>
 
@@ -312,8 +358,8 @@ $ ls <path_to_outdir>
 ```
 
 If you want to combine these models in python, you can try the real-time demonstration in Google Colab!
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
+- Realtime demonstration with ESPnet2 (New) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/espnet2_tts_realtime_demo.ipynb)
+- Realtime demonstration with ESPnet1 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/tts_realtime_demo.ipynb)
 
 ## References
 
@@ -322,7 +368,7 @@ If you want to combine these models in python, you can try the real-time demonst
 - [LiyuanLucasLiu/RAdam](https://github.com/LiyuanLucasLiu/RAdam)
 - [MelGAN](https://arxiv.org/abs/1910.06711)
 - [descriptinc/melgan-neurips](https://github.com/descriptinc/melgan-neurips)
-- [Multi-band MelGAN](arxiv.org/abs/2005.05106)
+- [Multi-band MelGAN](https://arxiv.org/abs/2005.05106)
 
 ## Acknowledgement
 
