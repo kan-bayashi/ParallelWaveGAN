@@ -1,1 +1,1 @@
-from parallel_wavegan.utils.utils import *  # NOQA
+from .utils import *  # NOQA
