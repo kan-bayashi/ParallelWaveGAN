@@ -18,11 +18,6 @@ import numpy as np
 import torch
 import yaml
 
-import parallel_wavegan.models
-
-from parallel_wavegan.layers import PQMF
-
-
 PRETRAINED_MODEL_LIST = {
     "ljspeech_parallel_wavegan.v1": "1PdZv37JhAQH6AwNh31QlqruqrvjTBq7U",
     "ljspeech_parallel_wavegan.v1.long": "1A9TsrD9fHxFviJVFjCk5W6lkzWXwhftv",
@@ -291,6 +286,9 @@ def load_model(checkpoint, config=None):
         with open(config) as f:
             config = yaml.load(f, Loader=yaml.Loader)
 
+    # lazy load for circular error
+    import parallel_wavegan.models
+
     # get model and load parameters
     model_class = getattr(
         parallel_wavegan.models,
@@ -303,6 +301,9 @@ def load_model(checkpoint, config=None):
 
     # add pqmf if needed
     if config["generator_params"]["out_channels"] > 1:
+        # lazy load for circular error
+        from parallel_wavegan.layers import PQMF
+
         pqmf_params = {}
         if LooseVersion(config.get("version", "0.1.0")) <= LooseVersion("0.4.2"):
             # For compatibility, here we set default values in version <= 0.4.2
