@@ -333,8 +333,10 @@ def download_pretrained_model(tag, download_dir=None):
         download_dir = os.path.expanduser("~/.cache/parallel_wavegan")
     output_path = f"{download_dir}/{tag}.tar.gz"
     os.makedirs(f"{download_dir}", exist_ok=True)
-    if os.path.exists(output_path):
+    if not os.path.exists(output_path):
+        # lazy load for compatibility
         import gdown
+
         gdown.download(f"https://drive.google.com/uc?id={id_}", output_path, quiet=False)
         with tarfile.open(output_path, 'r:*') as tar:
             for member in tar.getmembers():
