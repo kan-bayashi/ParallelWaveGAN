@@ -213,7 +213,7 @@ $ pip install parallel_wavegan
 # You can download the pretrained model from terminal
 $ python << EOF
 from parallel_wavegan.utils import download_pretrained_model
-download_pretrained_model("<pretrained_model_tag>", 'pretrained_model')"
+download_pretrained_model("<pretrained_model_tag>", "pretrained_model")
 EOF
 
 # You can get all of available pretrained models as follows:
@@ -281,7 +281,7 @@ $ . ./path.sh && pip install -U parallel_wavegan
 # You can download the pretrained model from terminal
 $ python << EOF
 from parallel_wavegan.utils import download_pretrained_model
-download_pretrained_model("<pretrained_model_tag>", 'pretrained_model')"
+download_pretrained_model("<pretrained_model_tag>", "pretrained_model")
 EOF
 
 # You can get all of available pretrained models as follows:
