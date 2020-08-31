@@ -24,7 +24,7 @@ requirements = {
     "install": [
         "torch>=1.0.1",
         "setuptools>=38.5.1",
-        "librosa>=0.7.0",
+        "librosa>=0.8.0",
         "soundfile>=0.10.2",
         "tensorboardX>=1.8",
         "matplotlib>=3.1.0",
@@ -33,8 +33,7 @@ requirements = {
         "kaldiio>=2.14.1",
         "h5py>=2.9.0",
         "yq>=2.10.0",
-        # Fix No module named "numba.decorators"
-        "numba<=0.48",
+        "numba>=0.50",
         "gdown",
     ],
     "setup": [
