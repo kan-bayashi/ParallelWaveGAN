@@ -33,7 +33,6 @@ requirements = {
         "kaldiio>=2.14.1",
         "h5py>=2.9.0",
         "yq>=2.10.0",
-        "numba>=0.50",
         "gdown",
     ],
     "setup": [
