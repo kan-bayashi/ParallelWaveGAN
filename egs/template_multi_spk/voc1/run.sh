@@ -179,6 +179,7 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
             --dev-dumpdir "${dumpdir}/${dev_set}/norm" \
             --outdir "${expdir}" \
             --resume "${resume}" \
+            --pretrain "${pretrain}" \
             --verbose "${verbose}"
     echo "Successfully finished training."
 fi
