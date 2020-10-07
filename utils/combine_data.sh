@@ -51,7 +51,6 @@ done
 sort "${scp_tmp}" > "${scp}"
 if "${has_segments}"; then
     sort "${segments_tmp}" > "${segments}"
-    diff -q <(awk '{print $1}' "${scp}") <(awk '{print $1}' "${segments}") > /dev/null
 fi
 rm "${dist_dir}"/*.unsorted
 
