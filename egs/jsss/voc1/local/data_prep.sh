@@ -18,12 +18,11 @@ shuffle=false
 
 db=$1
 data_dir_root=$2
-fs=$3
 
 # check arguments
-if [ $# != 3 ]; then
-    echo "Usage: $0 [Options] <db> <data_dir> <fs>"
-    echo "e.g.: $0 downloads/jsss_ver1 data/all 24000"
+if [ $# != 2 ]; then
+    echo "Usage: $0 [Options] <db> <data_dir>"
+    echo "e.g.: $0 downloads/jsss_ver1 data"
     echo ""
     echo "Options:"
     echo "    --fs: target sampling rate (default=24000)."
