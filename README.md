@@ -20,7 +20,8 @@ You can try the real-time end-to-end text-to-speech demonstration in Google Cola
 
 ## What's new
 
-- 2020/08/19 **(New!)** [Real-time demo with ESPnet2](https://colab.research.google.com/github/espnet/notebook/blob/master/espnet2_tts_realtime_demo.ipynb) is available!
+- 2020/10/07 **(New!)** [JSSS](https://sites.google.com/site/shinnosuketakamichi/research-topics/jsss_corpus) recipe is available!
+- 2020/08/19 [Real-time demo with ESPnet2](https://colab.research.google.com/github/espnet/notebook/blob/master/espnet2_tts_realtime_demo.ipynb) is available!
 - 2020/05/29 [VCTK, JSUT, and CSMSC multi-band MelGAN pretrained model](#Results) is available!
 - 2020/05/27 [New LJSpeech multi-band MelGAN pretrained model](#Results) is available!
 - 2020/05/24 [LJSpeech full-band MelGAN pretrained model](#Results) is available!
@@ -90,6 +91,7 @@ Currently, the following recipes are supported.
 
 - [LJSpeech](https://keithito.com/LJ-Speech-Dataset/): English female speaker
 - [JSUT](https://sites.google.com/site/shinnosuketakamichi/publication/jsut): Japanese female speaker
+- [JSSS](https://sites.google.com/site/shinnosuketakamichi/research-topics/jsss_corpus): Japanese female speaker
 - [CSMSC](https://www.data-baker.com/open_source.html): Mandarin female speaker
 - [CMU Arctic](http://www.festvox.org/cmu_arctic/): English speakers
 - [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi-speaker
