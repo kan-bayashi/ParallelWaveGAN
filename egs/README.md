@@ -5,6 +5,7 @@ Currently, the following recipes are supported.
 
 - [LJSpeech](https://keithito.com/LJ-Speech-Dataset/): English female speaker
 - [JSUT](https://sites.google.com/site/shinnosuketakamichi/publication/jsut): Japanese female speaker
+- [JSSS](https://sites.google.com/site/shinnosuketakamichi/research-topics/jsss_corpus): Japanese female speaker
 - [CSMSC](https://www.data-baker.com/open_source.html): Mandarin female speaker
 - [CMU Arctic](http://www.festvox.org/cmu_arctic/): English speakers
 - [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi-speaker
