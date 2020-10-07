@@ -34,22 +34,14 @@ src_dir=$1
 first_dist_dir=$2
 second_dist_dir=$3
 
+src_scp=${src_dir}/wav.scp
 if [ -e "${src_dir}/segments" ]; then
     has_segments=true
     src_segments=${src_dir}/segments
+    num_src_utts=$(wc -l < "${src_segments}")
 else
     has_segments=false
-fi
-src_scp=${src_dir}/wav.scp
-num_src_utts=$(wc -l < "${src_scp}")
-
-# NOTE: We assume that wav.scp and segments has the same number of lines
-if ${has_segments}; then
-    num_src_segments=$(wc -l < "${src_segments}")
-    if [ "${num_src_segments}" -ne "${num_src_utts}" ]; then
-        echo "ERROR: wav.scp and segments has different #lines (${num_src_utts} vs ${num_src_segments})." >&2
-        exit 1;
-    fi
+    num_src_utts=$(wc -l < "${src_scp}")
 fi
 
 # check number of utts
@@ -77,23 +69,36 @@ fi
 [ ! -e "${second_dist_dir}" ] && mkdir -p "${second_dist_dir}"
 
 # split
-if "${shuffle}"; then
-    sort -R "${src_scp}" > "${src_scp}.unsorted"
-    head -n "${num_first}" "${src_scp}.unsorted" | sort > "${first_dist_dir}/wav.scp"
-    tail -n "${num_second}" "${src_scp}.unsorted" | sort > "${second_dist_dir}/wav.scp"
-    rm "${src_scp}.unsorted"
+if ! "${has_segments}"; then
+    if "${shuffle}"; then
+        sort -R "${src_scp}" > "${src_scp}.unsorted"
+        head -n "${num_first}" "${src_scp}.unsorted" | sort > "${first_dist_dir}/wav.scp"
+        tail -n "${num_second}" "${src_scp}.unsorted" | sort > "${second_dist_dir}/wav.scp"
+        rm "${src_scp}.unsorted"
+    else
+        head -n "${num_first}" "${src_scp}" | sort > "${first_dist_dir}/wav.scp"
+        tail -n "${num_second}" "${src_scp}" | sort > "${second_dist_dir}/wav.scp"
+    fi
 else
-    head -n "${num_first}" "${src_scp}" | sort > "${first_dist_dir}/wav.scp"
-    tail -n "${num_second}" "${src_scp}" | sort > "${second_dist_dir}/wav.scp"
+    # split segments at first
+    if "${shuffle}"; then
+        sort -R "${src_segments}" > "${src_segments}.unsorted"
+        head -n "${num_first}" "${src_segments}.unsorted" | sort > "${first_dist_dir}/segments"
+        tail -n "${num_second}" "${src_segments}.unsorted" | sort > "${second_dist_dir}/segments"
+        rm "${src_segments}.unsorted"
+    else
+        head -n "${num_first}" "${src_segments}" | sort > "${first_dist_dir}/segments"
+        tail -n "${num_second}" "${src_segments}" | sort > "${second_dist_dir}/segments"
+    fi
+    # split wav.scp
+    rm -rf "${first_dist_dir}/wav.scp"
+    awk '{print $2}' < "${first_dist_dir}/segments" | sort | uniq | while read -r wav_id; do
+        grep "^${wav_id} " < "${src_scp}" >> "${first_dist_dir}/wav.scp"
+    done
+    rm -rf "${second_dist_dir}/wav.scp"
+    awk '{print $2}' < "${second_dist_dir}/segments" | sort | uniq | while read -r wav_id; do
+        grep "^${wav_id} " < "${src_scp}" >> "${second_dist_dir}/wav.scp"
+    done
 fi
-if "${has_segments}"; then
-    grep -f <(awk '{print $1}' "${first_dist_dir}/wav.scp") \
-        "${src_segments}" > "${first_dist_dir}/segments"
-    grep -f <(awk '{print $1}' "${second_dist_dir}/wav.scp") \
-        "${src_segments}" > "${second_dist_dir}/segments"
-    diff -q <(awk '{print $1}' "${first_dist_dir}/wav.scp") \
-        <(awk '{print $1}' "${first_dist_dir}/segments") > /dev/null
-    diff -q <(awk '{print $1}' "${second_dist_dir}/wav.scp") \
-        <(awk '{print $1}' "${second_dist_dir}/segments") > /dev/null
-fi
+
 echo "Successfully split data directory."
