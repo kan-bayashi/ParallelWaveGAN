@@ -41,7 +41,7 @@ You can try the real-time end-to-end text-to-speech demonstration in Google Cola
 This repository is tested on Ubuntu 16.04 with a GPU Titan V.
 
 - Python 3.6+
-- Cuda 10.0
+- Cuda 10.0+
 - CuDNN 7+
 - NCCL 2+ (for distributed multi-gpu training)
 - libsndfile (you can install via `sudo apt install libsndfile-dev` in ubuntu)
@@ -49,7 +49,7 @@ This repository is tested on Ubuntu 16.04 with a GPU Titan V.
 - sox (you can install via `sudo apt install sox` in ubuntu)
 
 Different cuda version should be working but not explicitly tested.  
-All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3.1, 1.4, and 1.5.1.
+All of the codes are tested on Pytorch 1.0.1, 1.1, 1.2, 1.3.1, 1.4, 1.5.1, and 1.7.
 
 Pytorch 1.6 works but there are some issues in cpu mode (See #198).
 
