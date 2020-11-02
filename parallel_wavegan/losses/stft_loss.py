@@ -8,6 +8,10 @@
 import torch
 import torch.nn.functional as F
 
+from distutils.version import LooseVersion
+
+is_pytorch_17plus = LooseVersion(torch.__version__) >= LooseVersion("1.7")
+
 
 def stft(x, fft_size, hop_size, win_length, window):
     """Perform STFT and convert to magnitude spectrogram.
@@ -23,7 +27,12 @@ def stft(x, fft_size, hop_size, win_length, window):
         Tensor: Magnitude spectrogram (B, #frames, fft_size // 2 + 1).
 
     """
-    x_stft = torch.stft(x, fft_size, hop_size, win_length, window)
+    if is_pytorch_17plus:
+        x_stft = torch.stft(
+            x, fft_size, hop_size, win_length, window, return_complex=False
+        )
+    else:
+        x_stft = torch.stft(x, fft_size, hop_size, win_length, window)
     real = x_stft[..., 0]
     imag = x_stft[..., 1]
 
@@ -76,15 +85,18 @@ class LogSTFTMagnitudeLoss(torch.nn.Module):
 class STFTLoss(torch.nn.Module):
     """STFT loss module."""
 
-    def __init__(self, fft_size=1024, shift_size=120, win_length=600, window="hann_window"):
+    def __init__(
+        self, fft_size=1024, shift_size=120, win_length=600, window="hann_window"
+    ):
         """Initialize STFT loss module."""
         super(STFTLoss, self).__init__()
         self.fft_size = fft_size
         self.shift_size = shift_size
         self.win_length = win_length
-        self.window = getattr(torch, window)(win_length)
         self.spectral_convergence_loss = SpectralConvergenceLoss()
         self.log_stft_magnitude_loss = LogSTFTMagnitudeLoss()
+        # NOTE(kan-bayashi): Use register_buffer to fix #223
+        self.register_buffer("window", getattr(torch, window)(win_length))
 
     def forward(self, x, y):
         """Calculate forward propagation.
@@ -109,11 +121,13 @@ class STFTLoss(torch.nn.Module):
 class MultiResolutionSTFTLoss(torch.nn.Module):
     """Multi resolution STFT loss module."""
 
-    def __init__(self,
-                 fft_sizes=[1024, 2048, 512],
-                 hop_sizes=[120, 240, 50],
-                 win_lengths=[600, 1200, 240],
-                 window="hann_window"):
+    def __init__(
+        self,
+        fft_sizes=[1024, 2048, 512],
+        hop_sizes=[120, 240, 50],
+        win_lengths=[600, 1200, 240],
+        window="hann_window",
+    ):
         """Initialize Multi resolution STFT loss module.
 
         Args:
