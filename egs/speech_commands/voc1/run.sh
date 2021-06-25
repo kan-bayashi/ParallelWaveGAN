@@ -41,7 +41,7 @@ set -euo pipefail
 
 if [ "${stage}" -le -1 ] && [ "${stop_stage}" -ge -1 ]; then
     echo "Stage -1: Data download"
-    echo "Please download the dataset ;)"
+    local/data_download.sh "${download_dir}"
 fi
 
 if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
@@ -50,6 +50,7 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
         --train_set "${train_set}" \
         --dev_set "${dev_set}" \
         --eval_set "${eval_set}" \
+        --shuffle true \
         "${download_dir}/sc_all" data
 fi
 

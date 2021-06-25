@@ -22,7 +22,7 @@ data_dir=$2
 # check arguments
 if [ $# != 2 ]; then
     echo "Usage: $0 [Options] <db_root> <data_dir>"
-    echo "e.g.: $0 downloads/LJSpeech-1.1 data"
+    echo "e.g.: $0 downloads/speech_commands data"
     echo ""
     echo "Options:"
     echo "    --num_dev: number of development uttreances (default=250)."
