@@ -10,7 +10,141 @@ import numpy as np
 import torch
 
 from parallel_wavegan.layers import PQMF
+from parallel_wavegan.layers import TADEResBlock
 from parallel_wavegan.models import MelGANDiscriminator as BaseDiscriminator
+
+
+class StyleMelGANGenerator(torch.nn.Module):
+    """Style MelGAN generator module."""
+
+    def __init__(
+        self,
+        in_channels=128,
+        aux_channels=80,
+        channels=64,
+        out_channels=1,
+        kernel_size=9,
+        dilation=2,
+        bias=True,
+        noise_upsample_scales=[11, 2, 2, 2],
+        upsample_scales=[2, 2, 2, 2, 2, 2, 2, 2, 1],
+        upsample_mode="nearest",
+        nonlinear_activation="LeakyReLU",
+        nonlinear_activation_params={"negative_slope": 0.2},
+        use_weight_norm=True,
+    ):
+        """Initilize Style MelGAN generator."""
+        super().__init__()
+
+        noise_upsample = []
+        in_chs = in_channels
+        for noise_upsample_scale in noise_upsample_scales:
+            noise_upsample += [
+                torch.nn.ConvTranspose1d(
+                    in_chs,
+                    channels,
+                    noise_upsample_scale * 2,
+                    stride=noise_upsample_scale,
+                    padding=noise_upsample_scale // 2 + noise_upsample_scale % 2,
+                    output_padding=noise_upsample_scale % 2,
+                    bias=bias,
+                )
+            ]
+            noise_upsample += [
+                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params)
+            ]
+            in_chs = channels
+        self.noise_upsample = torch.nn.Sequential(*noise_upsample)
+
+        self.blocks = torch.nn.ModuleList()
+        aux_chs = aux_channels
+        for upsample_scale in upsample_scales:
+            self.blocks += [
+                TADEResBlock(
+                    in_channels=channels,
+                    aux_channels=aux_chs,
+                    kernel_size=kernel_size,
+                    dilation=dilation,
+                    bias=bias,
+                    in_upsample_factor=upsample_scale,
+                    in_upsample_mode=upsample_mode,
+                    aux_upsample_factor=upsample_scale,
+                    aux_upsample_mode=upsample_mode,
+                ),
+            ]
+            aux_chs = channels
+
+        self.output_conv = torch.nn.Sequential(
+            torch.nn.Conv1d(
+                channels,
+                out_channels,
+                kernel_size,
+                1,
+                bias=bias,
+                padding=(kernel_size - 1) // 2,
+            ),
+            torch.nn.Tanh(),
+        )
+
+        # apply weight norm
+        if use_weight_norm:
+            self.apply_weight_norm()
+
+        # reset parameters
+        self.reset_parameters()
+
+    def forward(self, x, c):
+        """Calculate forward propagation.
+
+        Args:
+            x (Tensor): Input noise tensor (B, 128, 1).
+            c (Tensor): Auxiliary input tensor (B, channels, T).
+
+        Returns:
+            Tensor: Output tensor (B, out_channels, T ** prod(upsample_scales)).
+
+        """
+        x = self.noise_upsample(x)
+        for block in self.blocks:
+            x, c = block(x, c)
+        x = self.output_conv(x)
+        return x
+
+    def remove_weight_norm(self):
+        """Remove weight normalization module from all of the layers."""
+
+        def _remove_weight_norm(m):
+            try:
+                logging.debug(f"Weight norm is removed from {m}.")
+                torch.nn.utils.remove_weight_norm(m)
+            except ValueError:  # this module didn't have weight norm
+                return
+
+        self.apply(_remove_weight_norm)
+
+    def apply_weight_norm(self):
+        """Apply weight normalization module from all of the layers."""
+
+        def _apply_weight_norm(m):
+            if isinstance(m, torch.nn.Conv1d) or isinstance(
+                m, torch.nn.ConvTranspose1d
+            ):
+                torch.nn.utils.weight_norm(m)
+                logging.debug(f"Weight norm is applied to {m}.")
+
+        self.apply(_apply_weight_norm)
+
+    def reset_parameters(self):
+        """Reset parameters."""
+
+        def _reset_parameters(m):
+            if isinstance(m, torch.nn.Conv1d) or isinstance(
+                m, torch.nn.ConvTranspose1d
+            ):
+                m.weight.data.normal_(0.0, 0.02)
+                logging.debug(f"Reset parameters in {m}.")
+
+        self.apply(_reset_parameters)
 
 
 class StyleMelGANDiscriminator(torch.nn.Module):
