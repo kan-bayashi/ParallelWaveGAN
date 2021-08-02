@@ -93,6 +93,7 @@ def make_hifigan_multi_scale_multi_period_discriminator_args(**kwargs):
         ({}, {}, {}),
         ({}, {"scales": 1}, {}),
         ({}, {"periods": [2]}, {}),
+        ({}, {"scales": 1, "periods": [2]}, {}),
         ({}, {"follow_official_norm": True}, {}),
         ({"use_additional_convs": False}, {}, {}),
     ],
@@ -142,9 +143,8 @@ def test_hifigan_trainable(dict_g, dict_d, dict_loss):
     optimizer_g.step()
 
     # check discriminator trainable
-    y, y_hat = y, y_hat.detach()
     p = model_d(y)
-    p_hat = model_d(y_hat)
+    p_hat = model_d(y_hat.detach())
     real_loss, fake_loss = dis_adv_criterion(p_hat, p)
     loss_d = real_loss + fake_loss
     optimizer_d.zero_grad()
