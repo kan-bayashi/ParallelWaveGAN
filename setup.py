@@ -44,6 +44,7 @@ requirements = {
         "hacking>=1.1.0",
         "flake8>=3.7.8",
         "flake8-docstrings>=1.3.1",
+        "black",
     ]
 }
 entry_points = {
