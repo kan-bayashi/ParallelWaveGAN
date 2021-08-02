@@ -388,6 +388,7 @@ class MelGANMultiScaleDiscriminator(torch.nn.Module):
         Args:
             in_channels (int): Number of input channels.
             out_channels (int): Number of output channels.
+            scales (int): Number of multi-scales.
             downsample_pooling (str): Pooling module name for downsampling of the inputs.
             downsample_pooling_params (dict): Parameters for the above pooling module.
             kernel_sizes (list): List of two kernel sizes. The sum will be used for the first conv layer,

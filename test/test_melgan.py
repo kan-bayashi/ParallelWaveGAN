@@ -9,8 +9,10 @@ import logging
 import numpy as np
 import pytest
 import torch
-import torch.nn.functional as F
 
+from parallel_wavegan.losses import DiscriminatorAdversarialLoss
+from parallel_wavegan.losses import FeatureMatchLoss
+from parallel_wavegan.losses import GeneratorAdversarialLoss
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.models import MelGANGenerator
 from parallel_wavegan.models import MelGANMultiScaleDiscriminator
@@ -113,14 +115,15 @@ def test_melgan_trainable(dict_g, dict_d, dict_loss):
     model_g = MelGANGenerator(**args_g)
     model_d = ParallelWaveGANDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
+    gen_adv_criterion = GeneratorAdversarialLoss()
+    dis_adv_criterion = DiscriminatorAdversarialLoss()
     optimizer_g = RAdam(model_g.parameters())
     optimizer_d = RAdam(model_d.parameters())
 
     # check generator trainable
     y_hat = model_g(c)
     p_hat = model_d(y_hat)
-    y, y_hat, p_hat = y.squeeze(1), y_hat.squeeze(1), p_hat.squeeze(1)
-    adv_loss = F.mse_loss(p_hat, p_hat.new_ones(p_hat.size()))
+    adv_loss = gen_adv_criterion(p_hat)
     sc_loss, mag_loss = aux_criterion(y_hat, y)
     aux_loss = sc_loss + mag_loss
     loss_g = adv_loss + aux_loss
@@ -129,13 +132,10 @@ def test_melgan_trainable(dict_g, dict_d, dict_loss):
     optimizer_g.step()
 
     # check discriminator trainable
-    y, y_hat = y.unsqueeze(1), y_hat.unsqueeze(1).detach()
     p = model_d(y)
-    p_hat = model_d(y_hat)
-    p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(
-        p_hat, p_hat.new_zeros(p_hat.size())
-    )
+    p_hat = model_d(y_hat.detach())
+    real_loss, fake_loss = dis_adv_criterion(p_hat, p)
+    loss_d = real_loss + fake_loss
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
@@ -175,14 +175,15 @@ def test_melgan_trainable_with_residual_discriminator(dict_g, dict_d, dict_loss)
     model_g = MelGANGenerator(**args_g)
     model_d = ResidualParallelWaveGANDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
+    gen_adv_criterion = GeneratorAdversarialLoss()
+    dis_adv_criterion = DiscriminatorAdversarialLoss()
     optimizer_g = RAdam(model_g.parameters())
     optimizer_d = RAdam(model_d.parameters())
 
     # check generator trainable
     y_hat = model_g(c)
     p_hat = model_d(y_hat)
-    y, y_hat, p_hat = y.squeeze(1), y_hat.squeeze(1), p_hat.squeeze(1)
-    adv_loss = F.mse_loss(p_hat, p_hat.new_ones(p_hat.size()))
+    adv_loss = gen_adv_criterion(p_hat)
     sc_loss, mag_loss = aux_criterion(y_hat, y)
     aux_loss = sc_loss + mag_loss
     loss_g = adv_loss + aux_loss
@@ -191,13 +192,10 @@ def test_melgan_trainable_with_residual_discriminator(dict_g, dict_d, dict_loss)
     optimizer_g.step()
 
     # check discriminator trainable
-    y, y_hat = y.unsqueeze(1), y_hat.unsqueeze(1).detach()
     p = model_d(y)
-    p_hat = model_d(y_hat)
-    p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(
-        p_hat, p_hat.new_zeros(p_hat.size())
-    )
+    p_hat = model_d(y_hat.detach())
+    real_loss, fake_loss = dis_adv_criterion(p_hat, p)
+    loss_d = real_loss + fake_loss
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
@@ -231,44 +229,30 @@ def test_melgan_trainable_with_melgan_discriminator(dict_g, dict_d, dict_loss):
     model_g = MelGANGenerator(**args_g)
     model_d = MelGANMultiScaleDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
+    feat_match_criterion = FeatureMatchLoss()
+    gen_adv_criterion = GeneratorAdversarialLoss()
+    dis_adv_criterion = DiscriminatorAdversarialLoss()
     optimizer_g = RAdam(model_g.parameters())
     optimizer_d = RAdam(model_d.parameters())
 
     # check generator trainable
     y_hat = model_g(c)
     p_hat = model_d(y_hat)
-    y, y_hat = y.squeeze(1), y_hat.squeeze(1)
     sc_loss, mag_loss = aux_criterion(y_hat, y)
     aux_loss = sc_loss + mag_loss
-    adv_loss = 0.0
-    for i in range(len(p_hat)):
-        adv_loss += F.mse_loss(p_hat[i][-1], p_hat[i][-1].new_ones(p_hat[i][-1].size()))
-    adv_loss /= i + 1
+    adv_loss = gen_adv_criterion(p_hat)
     with torch.no_grad():
-        p = model_d(y.unsqueeze(1))
-    fm_loss = 0.0
-    for i in range(len(p_hat)):
-        for j in range(len(p_hat[i]) - 1):
-            fm_loss += F.l1_loss(p_hat[i][j], p[i][j].detach())
-    fm_loss /= (i + 1) * j
+        p = model_d(y)
+    fm_loss = feat_match_criterion(p_hat, p)
     loss_g = adv_loss + aux_loss + fm_loss
     optimizer_g.zero_grad()
     loss_g.backward()
     optimizer_g.step()
 
     # check discriminator trainable
-    y, y_hat = y.unsqueeze(1), y_hat.unsqueeze(1).detach()
     p = model_d(y)
-    p_hat = model_d(y_hat)
-    real_loss = 0.0
-    fake_loss = 0.0
-    for i in range(len(p)):
-        real_loss += F.mse_loss(p[i][-1], p[i][-1].new_ones(p[i][-1].size()))
-        fake_loss += F.mse_loss(
-            p_hat[i][-1], p_hat[i][-1].new_zeros(p_hat[i][-1].size())
-        )
-    real_loss /= i + 1
-    fake_loss /= i + 1
+    p_hat = model_d(y_hat.detach())
+    real_loss, fake_loss = dis_adv_criterion(p_hat, p)
     loss_d = real_loss + fake_loss
     optimizer_d.zero_grad()
     loss_d.backward()
