@@ -214,18 +214,3 @@ class HiFiGANResidualBlock(torch.nn.Module):
                 x = self.conv2[idx](self.activation(x))
             x = residual + x
         return x
-
-    def reset_parameters(self):
-        """Reset parameters.
-
-        This initialization follows the official implementation manner.
-        https://github.com/jik876/hifi-gan/blob/master/models.py
-
-        """
-
-        def _reset_parameters(m):
-            if isinstance(m, torch.nn.Conv1d):
-                m.weight.data.normal_(0.0, 0.01)
-                logging.debug(f"Reset parameters in {m}.")
-
-        self.apply(_reset_parameters)
