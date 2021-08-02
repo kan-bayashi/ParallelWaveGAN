@@ -9,8 +9,9 @@ import logging
 import numpy as np
 import pytest
 import torch
-import torch.nn.functional as F
 
+from parallel_wavegan.losses import DiscriminatorAdversarialLoss
+from parallel_wavegan.losses import GeneratorAdversarialLoss
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.models import ParallelWaveGANDiscriminator
 from parallel_wavegan.models import ParallelWaveGANGenerator
@@ -167,14 +168,15 @@ def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     model_g = ParallelWaveGANGenerator(**args_g)
     model_d = ParallelWaveGANDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
+    gen_adv_criterion = GeneratorAdversarialLoss()
+    dis_adv_criterion = DiscriminatorAdversarialLoss()
     optimizer_g = RAdam(model_g.parameters())
     optimizer_d = RAdam(model_d.parameters())
 
     # check generator trainable
     y_hat = model_g(z, c)
     p_hat = model_d(y_hat)
-    y, y_hat, p_hat = y.squeeze(1), y_hat.squeeze(1), p_hat.squeeze(1)
-    adv_loss = F.mse_loss(p_hat, p_hat.new_ones(p_hat.size()))
+    adv_loss = gen_adv_criterion(p_hat)
     sc_loss, mag_loss = aux_criterion(y_hat, y)
     aux_loss = sc_loss + mag_loss
     loss_g = adv_loss + aux_loss
@@ -183,13 +185,10 @@ def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     optimizer_g.step()
 
     # check discriminator trainable
-    y, y_hat = y.unsqueeze(1), y_hat.unsqueeze(1).detach()
     p = model_d(y)
-    p_hat = model_d(y_hat)
-    p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(
-        p_hat, p_hat.new_zeros(p_hat.size())
-    )
+    p_hat = model_d(y_hat.detach())
+    real_loss, fake_loss = dis_adv_criterion(p_hat, p)
+    loss_d = real_loss + fake_loss
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
@@ -272,14 +271,15 @@ def test_parallel_wavegan_with_residual_discriminator_trainable(
     model_g = ParallelWaveGANGenerator(**args_g)
     model_d = ResidualParallelWaveGANDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
+    gen_adv_criterion = GeneratorAdversarialLoss()
+    dis_adv_criterion = DiscriminatorAdversarialLoss()
     optimizer_g = RAdam(model_g.parameters())
     optimizer_d = RAdam(model_d.parameters())
 
     # check generator trainable
     y_hat = model_g(z, c)
     p_hat = model_d(y_hat)
-    y, y_hat, p_hat = y.squeeze(1), y_hat.squeeze(1), p_hat.squeeze(1)
-    adv_loss = F.mse_loss(p_hat, p_hat.new_ones(p_hat.size()))
+    adv_loss = gen_adv_criterion(p_hat)
     sc_loss, mag_loss = aux_criterion(y_hat, y)
     aux_loss = sc_loss + mag_loss
     loss_g = adv_loss + aux_loss
@@ -288,13 +288,10 @@ def test_parallel_wavegan_with_residual_discriminator_trainable(
     optimizer_g.step()
 
     # check discriminator trainable
-    y, y_hat = y.unsqueeze(1), y_hat.unsqueeze(1).detach()
     p = model_d(y)
-    p_hat = model_d(y_hat)
-    p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(
-        p_hat, p_hat.new_zeros(p_hat.size())
-    )
+    p_hat = model_d(y_hat.detach())
+    real_loss, fake_loss = dis_adv_criterion(p_hat, p)
+    loss_d = real_loss + fake_loss
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
