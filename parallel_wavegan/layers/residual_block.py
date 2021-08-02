@@ -164,10 +164,11 @@ class HiFiGANResidualBlock(torch.nn.Module):
             nonlinear_activation_params (dict): Hyperparameters for activation function.
 
         """
+        super().__init__()
         self.use_additional_convs = use_additional_convs
-        self.conv1 = torch.nn.ModuleList()
+        self.convs1 = torch.nn.ModuleList()
         if use_additional_convs:
-            self.conv2 = torch.nn.ModuleList()
+            self.convs2 = torch.nn.ModuleList()
         assert kernel_size % 2 == 1, "Kernal size must be odd number."
         for dilation in dilations:
             self.convs1 += [
@@ -208,9 +209,9 @@ class HiFiGANResidualBlock(torch.nn.Module):
 
         """
         residual = x
-        for idx in enumerate(self.convs1):
-            x = self.conv1[idx](self.activation(x))
+        for idx in range(len(self.convs1)):
+            x = self.convs1[idx](self.activation(x))
             if self.use_additional_convs:
-                x = self.conv2[idx](self.activation(x))
+                x = self.convs2[idx](self.activation(x))
             x = residual + x
         return x
