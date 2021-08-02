@@ -222,7 +222,7 @@ class Trainer(object):
                 # no need to track gradients
                 with torch.no_grad():
                     p = self.model["discriminator"](y)
-                fm_loss = self.criteron["feat_match"](p_, p)
+                fm_loss = self.criterion["feat_match"](p_, p)
                 self.total_train_loss["train/feature_matching_loss"] += fm_loss.item()
                 adv_loss += self.config["lambda_feat_match"] * fm_loss
 
