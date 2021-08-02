@@ -114,12 +114,15 @@ def write_hdf5(hdf5_name, hdf5_path, write_data, is_overwrite=True):
         # check dataset existence
         if hdf5_path in hdf5_file:
             if is_overwrite:
-                logging.warning("Dataset in hdf5 file already exists. "
-                                "recreate dataset in hdf5.")
+                logging.warning(
+                    "Dataset in hdf5 file already exists. " "recreate dataset in hdf5."
+                )
                 hdf5_file.__delitem__(hdf5_path)
             else:
-                logging.error("Dataset in hdf5 file already exists. "
-                              "if you want to overwrite, please set is_overwrite = True.")
+                logging.error(
+                    "Dataset in hdf5 file already exists. "
+                    "if you want to overwrite, please set is_overwrite = True."
+                )
                 hdf5_file.close()
                 sys.exit(1)
     else:
@@ -192,7 +195,9 @@ class HDF5ScpLoader(object):
             else:
                 p1, p2 = p.split(":")
                 feats = [read_hdf5(p1, p) for p in p2.split(",")]
-                return np.concatenate([f if len(f.shape) != 1 else f.reshape(-1, 1) for f in feats], 1)
+                return np.concatenate(
+                    [f if len(f.shape) != 1 else f.reshape(-1, 1) for f in feats], 1
+                )
         else:
             return read_hdf5(p, self.default_hdf5_path)
 
@@ -292,7 +297,7 @@ def load_model(checkpoint, config=None):
     # get model and load parameters
     model_class = getattr(
         parallel_wavegan.models,
-        config.get("generator_type", "ParallelWaveGANGenerator")
+        config.get("generator_type", "ParallelWaveGANGenerator"),
     )
     model = model_class(**config["generator_params"])
     model.load_state_dict(
@@ -337,8 +342,10 @@ def download_pretrained_model(tag, download_dir=None):
         # lazy load for compatibility
         import gdown
 
-        gdown.download(f"https://drive.google.com/uc?id={id_}", output_path, quiet=False)
-        with tarfile.open(output_path, 'r:*') as tar:
+        gdown.download(
+            f"https://drive.google.com/uc?id={id_}", output_path, quiet=False
+        )
+        with tarfile.open(output_path, "r:*") as tar:
             for member in tar.getmembers():
                 if member.isreg():
                     member.name = os.path.basename(member.name)

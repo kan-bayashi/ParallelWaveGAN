@@ -12,13 +12,22 @@ import torch
 class CausalConv1d(torch.nn.Module):
     """CausalConv1d module with customized initialization."""
 
-    def __init__(self, in_channels, out_channels, kernel_size,
-                 dilation=1, bias=True, pad="ConstantPad1d", pad_params={"value": 0.0}):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        dilation=1,
+        bias=True,
+        pad="ConstantPad1d",
+        pad_params={"value": 0.0},
+    ):
         """Initialize CausalConv1d module."""
         super(CausalConv1d, self).__init__()
         self.pad = getattr(torch.nn, pad)((kernel_size - 1) * dilation, **pad_params)
-        self.conv = torch.nn.Conv1d(in_channels, out_channels, kernel_size,
-                                    dilation=dilation, bias=bias)
+        self.conv = torch.nn.Conv1d(
+            in_channels, out_channels, kernel_size, dilation=dilation, bias=bias
+        )
 
     def forward(self, x):
         """Calculate forward propagation.
@@ -30,7 +39,7 @@ class CausalConv1d(torch.nn.Module):
             Tensor: Output tensor (B, out_channels, T).
 
         """
-        return self.conv(self.pad(x))[:, :, :x.size(2)]
+        return self.conv(self.pad(x))[:, :, : x.size(2)]
 
 
 class CausalConvTranspose1d(torch.nn.Module):
@@ -40,7 +49,8 @@ class CausalConvTranspose1d(torch.nn.Module):
         """Initialize CausalConvTranspose1d module."""
         super(CausalConvTranspose1d, self).__init__()
         self.deconv = torch.nn.ConvTranspose1d(
-            in_channels, out_channels, kernel_size, stride, bias=bias)
+            in_channels, out_channels, kernel_size, stride, bias=bias
+        )
         self.stride = stride
 
     def forward(self, x):
@@ -53,4 +63,4 @@ class CausalConvTranspose1d(torch.nn.Module):
             Tensor: Output tensor (B, out_channels, T_out).
 
         """
-        return self.deconv(x)[:, :, :-self.stride]
+        return self.deconv(x)[:, :, : -self.stride]

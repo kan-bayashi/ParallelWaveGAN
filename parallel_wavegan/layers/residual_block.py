@@ -31,25 +31,26 @@ class Conv1d1x1(Conv1d):
 
     def __init__(self, in_channels, out_channels, bias):
         """Initialize 1x1 Conv1d module."""
-        super(Conv1d1x1, self).__init__(in_channels, out_channels,
-                                        kernel_size=1, padding=0,
-                                        dilation=1, bias=bias)
+        super(Conv1d1x1, self).__init__(
+            in_channels, out_channels, kernel_size=1, padding=0, dilation=1, bias=bias
+        )
 
 
 class ResidualBlock(torch.nn.Module):
     """Residual block module in WaveNet."""
 
-    def __init__(self,
-                 kernel_size=3,
-                 residual_channels=64,
-                 gate_channels=128,
-                 skip_channels=64,
-                 aux_channels=80,
-                 dropout=0.0,
-                 dilation=1,
-                 bias=True,
-                 use_causal_conv=False
-                 ):
+    def __init__(
+        self,
+        kernel_size=3,
+        residual_channels=64,
+        gate_channels=128,
+        skip_channels=64,
+        aux_channels=80,
+        dropout=0.0,
+        dilation=1,
+        bias=True,
+        use_causal_conv=False,
+    ):
         """Initialize ResidualBlock module.
 
         Args:
@@ -74,8 +75,14 @@ class ResidualBlock(torch.nn.Module):
         self.use_causal_conv = use_causal_conv
 
         # dilation conv
-        self.conv = Conv1d(residual_channels, gate_channels, kernel_size,
-                           padding=padding, dilation=dilation, bias=bias)
+        self.conv = Conv1d(
+            residual_channels,
+            gate_channels,
+            kernel_size,
+            padding=padding,
+            dilation=dilation,
+            bias=bias,
+        )
 
         # local conditioning
         if aux_channels > 0:
@@ -105,7 +112,7 @@ class ResidualBlock(torch.nn.Module):
         x = self.conv(x)
 
         # remove future time steps if use_causal_conv conv
-        x = x[:, :, :residual.size(-1)] if self.use_causal_conv else x
+        x = x[:, :, : residual.size(-1)] if self.use_causal_conv else x
 
         # split into two part for gated activation
         splitdim = 1

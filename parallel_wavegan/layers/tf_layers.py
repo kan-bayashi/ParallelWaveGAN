@@ -32,7 +32,11 @@ class TFReflectionPad1d(tf.keras.layers.Layer):
             Tensor: Padded tensor (B, T + 2 * padding_size, 1, C).
 
         """
-        return tf.pad(x, [[0, 0], [self.padding_size, self.padding_size], [0, 0], [0, 0]], "REFLECT")
+        return tf.pad(
+            x,
+            [[0, 0], [self.padding_size, self.padding_size], [0, 0], [0, 0]],
+            "REFLECT",
+        )
 
 
 class TFConvTranspose1d(tf.keras.layers.Layer):
@@ -74,15 +78,16 @@ class TFConvTranspose1d(tf.keras.layers.Layer):
 class TFResidualStack(tf.keras.layers.Layer):
     """Tensorflow ResidualStack module."""
 
-    def __init__(self,
-                 kernel_size,
-                 channels,
-                 dilation,
-                 bias,
-                 nonlinear_activation,
-                 nonlinear_activation_params,
-                 padding,
-                 ):
+    def __init__(
+        self,
+        kernel_size,
+        channels,
+        dilation,
+        bias,
+        nonlinear_activation,
+        nonlinear_activation_params,
+        padding,
+    ):
         """Initialize TFResidualStack module.
 
         Args:
@@ -97,7 +102,9 @@ class TFResidualStack(tf.keras.layers.Layer):
         """
         super(TFResidualStack, self).__init__()
         self.block = [
-            getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params),
+            getattr(tf.keras.layers, nonlinear_activation)(
+                **nonlinear_activation_params
+            ),
             TFReflectionPad1d(dilation),
             tf.keras.layers.Conv2D(
                 filters=channels,
@@ -106,10 +113,14 @@ class TFResidualStack(tf.keras.layers.Layer):
                 use_bias=bias,
                 padding="valid",
             ),
-            getattr(tf.keras.layers, nonlinear_activation)(**nonlinear_activation_params),
-            tf.keras.layers.Conv2D(filters=channels, kernel_size=1, use_bias=bias)
+            getattr(tf.keras.layers, nonlinear_activation)(
+                **nonlinear_activation_params
+            ),
+            tf.keras.layers.Conv2D(filters=channels, kernel_size=1, use_bias=bias),
         ]
-        self.shortcut = tf.keras.layers.Conv2D(filters=channels, kernel_size=1, use_bias=bias)
+        self.shortcut = tf.keras.layers.Conv2D(
+            filters=channels, kernel_size=1, use_bias=bias
+        )
 
     @tf.function
     def call(self, x):

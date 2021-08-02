@@ -14,11 +14,13 @@ from setuptools import setup
 if LooseVersion(sys.version) < LooseVersion("3.6"):
     raise RuntimeError(
         "parallel-wavegan requires Python>=3.6, "
-        "but your Python is {}".format(sys.version))
+        "but your Python is {}".format(sys.version)
+    )
 if LooseVersion(pip.__version__) < LooseVersion("19"):
     raise RuntimeError(
         "pip>=19.0.0 is required, but your pip is {}. "
-        "Try again after \"pip install -U pip\"".format(pip.__version__))
+        'Try again after "pip install -U pip"'.format(pip.__version__)
+    )
 
 requirements = {
     "install": [
@@ -45,7 +47,7 @@ requirements = {
         "flake8>=3.7.8",
         "flake8-docstrings>=1.3.1",
         "black",
-    ]
+    ],
 }
 entry_points = {
     "console_scripts": [
@@ -60,31 +62,33 @@ entry_points = {
 install_requires = requirements["install"]
 setup_requires = requirements["setup"]
 tests_require = requirements["test"]
-extras_require = {k: v for k, v in requirements.items()
-                  if k not in ["install", "setup"]}
+extras_require = {
+    k: v for k, v in requirements.items() if k not in ["install", "setup"]
+}
 
 dirname = os.path.dirname(__file__)
-setup(name="parallel_wavegan",
-      version="0.4.8",
-      url="http://github.com/kan-bayashi/ParallelWaveGAN",
-      author="Tomoki Hayashi",
-      author_email="hayashi.tomoki@g.sp.m.is.nagoya-u.ac.jp",
-      description="Parallel WaveGAN implementation",
-      long_description=open(os.path.join(dirname, "README.md"),
-                            encoding="utf-8").read(),
-      long_description_content_type="text/markdown",
-      license="MIT License",
-      packages=find_packages(include=["parallel_wavegan*"]),
-      install_requires=install_requires,
-      setup_requires=setup_requires,
-      tests_require=tests_require,
-      extras_require=extras_require,
-      entry_points=entry_points,
-      classifiers=[
-          "Programming Language :: Python :: 3.6",
-          "Programming Language :: Python :: 3.7",
-          "Intended Audience :: Science/Research",
-          "Operating System :: POSIX :: Linux",
-          "License :: OSI Approved :: MIT License",
-          "Topic :: Software Development :: Libraries :: Python Modules"],
-      )
+setup(
+    name="parallel_wavegan",
+    version="0.4.8",
+    url="http://github.com/kan-bayashi/ParallelWaveGAN",
+    author="Tomoki Hayashi",
+    author_email="hayashi.tomoki@g.sp.m.is.nagoya-u.ac.jp",
+    description="Parallel WaveGAN implementation",
+    long_description=open(os.path.join(dirname, "README.md"), encoding="utf-8").read(),
+    long_description_content_type="text/markdown",
+    license="MIT License",
+    packages=find_packages(include=["parallel_wavegan*"]),
+    install_requires=install_requires,
+    setup_requires=setup_requires,
+    tests_require=tests_require,
+    extras_require=extras_require,
+    entry_points=entry_points,
+    classifiers=[
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Intended Audience :: Science/Research",
+        "Operating System :: POSIX :: Linux",
+        "License :: OSI Approved :: MIT License",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+)

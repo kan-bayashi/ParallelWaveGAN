@@ -21,17 +21,18 @@ from parallel_wavegan.utils import read_hdf5
 class AudioMelDataset(Dataset):
     """PyTorch compatible audio and mel dataset."""
 
-    def __init__(self,
-                 root_dir,
-                 audio_query="*.h5",
-                 mel_query="*.h5",
-                 audio_load_fn=lambda x: read_hdf5(x, "wave"),
-                 mel_load_fn=lambda x: read_hdf5(x, "feats"),
-                 audio_length_threshold=None,
-                 mel_length_threshold=None,
-                 return_utt_id=False,
-                 allow_cache=False,
-                 ):
+    def __init__(
+        self,
+        root_dir,
+        audio_query="*.h5",
+        mel_query="*.h5",
+        audio_load_fn=lambda x: read_hdf5(x, "wave"),
+        mel_load_fn=lambda x: read_hdf5(x, "feats"),
+        audio_length_threshold=None,
+        mel_length_threshold=None,
+        return_utt_id=False,
+        allow_cache=False,
+    ):
         """Initialize dataset.
 
         Args:
@@ -53,34 +54,51 @@ class AudioMelDataset(Dataset):
         # filter by threshold
         if audio_length_threshold is not None:
             audio_lengths = [audio_load_fn(f).shape[0] for f in audio_files]
-            idxs = [idx for idx in range(len(audio_files)) if audio_lengths[idx] > audio_length_threshold]
+            idxs = [
+                idx
+                for idx in range(len(audio_files))
+                if audio_lengths[idx] > audio_length_threshold
+            ]
             if len(audio_files) != len(idxs):
-                logging.warning(f"Some files are filtered by audio length threshold "
-                                f"({len(audio_files)} -> {len(idxs)}).")
+                logging.warning(
+                    f"Some files are filtered by audio length threshold "
+                    f"({len(audio_files)} -> {len(idxs)})."
+                )
             audio_files = [audio_files[idx] for idx in idxs]
             mel_files = [mel_files[idx] for idx in idxs]
         if mel_length_threshold is not None:
             mel_lengths = [mel_load_fn(f).shape[0] for f in mel_files]
-            idxs = [idx for idx in range(len(mel_files)) if mel_lengths[idx] > mel_length_threshold]
+            idxs = [
+                idx
+                for idx in range(len(mel_files))
+                if mel_lengths[idx] > mel_length_threshold
+            ]
             if len(mel_files) != len(idxs):
-                logging.warning(f"Some files are filtered by mel length threshold "
-                                f"({len(mel_files)} -> {len(idxs)}).")
+                logging.warning(
+                    f"Some files are filtered by mel length threshold "
+                    f"({len(mel_files)} -> {len(idxs)})."
+                )
             audio_files = [audio_files[idx] for idx in idxs]
             mel_files = [mel_files[idx] for idx in idxs]
 
         # assert the number of files
         assert len(audio_files) != 0, f"Not found any audio files in ${root_dir}."
-        assert len(audio_files) == len(mel_files), \
-            f"Number of audio and mel files are different ({len(audio_files)} vs {len(mel_files)})."
+        assert len(audio_files) == len(
+            mel_files
+        ), f"Number of audio and mel files are different ({len(audio_files)} vs {len(mel_files)})."
 
         self.audio_files = audio_files
         self.audio_load_fn = audio_load_fn
         self.mel_load_fn = mel_load_fn
         self.mel_files = mel_files
         if ".npy" in audio_query:
-            self.utt_ids = [os.path.basename(f).replace("-wave.npy", "") for f in audio_files]
+            self.utt_ids = [
+                os.path.basename(f).replace("-wave.npy", "") for f in audio_files
+            ]
         else:
-            self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in audio_files]
+            self.utt_ids = [
+                os.path.splitext(os.path.basename(f))[0] for f in audio_files
+            ]
         self.return_utt_id = return_utt_id
         self.allow_cache = allow_cache
         if allow_cache:
@@ -131,14 +149,15 @@ class AudioMelDataset(Dataset):
 class AudioDataset(Dataset):
     """PyTorch compatible audio dataset."""
 
-    def __init__(self,
-                 root_dir,
-                 audio_query="*-wave.npy",
-                 audio_length_threshold=None,
-                 audio_load_fn=np.load,
-                 return_utt_id=False,
-                 allow_cache=False,
-                 ):
+    def __init__(
+        self,
+        root_dir,
+        audio_query="*-wave.npy",
+        audio_length_threshold=None,
+        audio_load_fn=np.load,
+        return_utt_id=False,
+        allow_cache=False,
+    ):
         """Initialize dataset.
 
         Args:
@@ -156,10 +175,16 @@ class AudioDataset(Dataset):
         # filter by threshold
         if audio_length_threshold is not None:
             audio_lengths = [audio_load_fn(f).shape[0] for f in audio_files]
-            idxs = [idx for idx in range(len(audio_files)) if audio_lengths[idx] > audio_length_threshold]
+            idxs = [
+                idx
+                for idx in range(len(audio_files))
+                if audio_lengths[idx] > audio_length_threshold
+            ]
             if len(audio_files) != len(idxs):
-                logging.waning(f"some files are filtered by audio length threshold "
-                               f"({len(audio_files)} -> {len(idxs)}).")
+                logging.waning(
+                    f"some files are filtered by audio length threshold "
+                    f"({len(audio_files)} -> {len(idxs)})."
+                )
             audio_files = [audio_files[idx] for idx in idxs]
 
         # assert the number of files
@@ -169,9 +194,13 @@ class AudioDataset(Dataset):
         self.audio_load_fn = audio_load_fn
         self.return_utt_id = return_utt_id
         if ".npy" in audio_query:
-            self.utt_ids = [os.path.basename(f).replace("-wave.npy", "") for f in audio_files]
+            self.utt_ids = [
+                os.path.basename(f).replace("-wave.npy", "") for f in audio_files
+            ]
         else:
-            self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in audio_files]
+            self.utt_ids = [
+                os.path.splitext(os.path.basename(f))[0] for f in audio_files
+            ]
         self.allow_cache = allow_cache
         if allow_cache:
             # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
@@ -219,14 +248,15 @@ class AudioDataset(Dataset):
 class MelDataset(Dataset):
     """PyTorch compatible mel dataset."""
 
-    def __init__(self,
-                 root_dir,
-                 mel_query="*-feats.npy",
-                 mel_length_threshold=None,
-                 mel_load_fn=np.load,
-                 return_utt_id=False,
-                 allow_cache=False,
-                 ):
+    def __init__(
+        self,
+        root_dir,
+        mel_query="*-feats.npy",
+        mel_length_threshold=None,
+        mel_load_fn=np.load,
+        return_utt_id=False,
+        allow_cache=False,
+    ):
         """Initialize dataset.
 
         Args:
@@ -244,10 +274,16 @@ class MelDataset(Dataset):
         # filter by threshold
         if mel_length_threshold is not None:
             mel_lengths = [mel_load_fn(f).shape[0] for f in mel_files]
-            idxs = [idx for idx in range(len(mel_files)) if mel_lengths[idx] > mel_length_threshold]
+            idxs = [
+                idx
+                for idx in range(len(mel_files))
+                if mel_lengths[idx] > mel_length_threshold
+            ]
             if len(mel_files) != len(idxs):
-                logging.warning(f"Some files are filtered by mel length threshold "
-                                f"({len(mel_files)} -> {len(idxs)}).")
+                logging.warning(
+                    f"Some files are filtered by mel length threshold "
+                    f"({len(mel_files)} -> {len(idxs)})."
+                )
             mel_files = [mel_files[idx] for idx in idxs]
 
         # assert the number of files
@@ -257,7 +293,9 @@ class MelDataset(Dataset):
         self.mel_load_fn = mel_load_fn
         self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in mel_files]
         if ".npy" in mel_query:
-            self.utt_ids = [os.path.basename(f).replace("-feats.npy", "") for f in mel_files]
+            self.utt_ids = [
+                os.path.basename(f).replace("-feats.npy", "") for f in mel_files
+            ]
         else:
             self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in mel_files]
         self.return_utt_id = return_utt_id

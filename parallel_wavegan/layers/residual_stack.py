@@ -13,17 +13,18 @@ from parallel_wavegan.layers import CausalConv1d
 class ResidualStack(torch.nn.Module):
     """Residual stack module introduced in MelGAN."""
 
-    def __init__(self,
-                 kernel_size=3,
-                 channels=32,
-                 dilation=1,
-                 bias=True,
-                 nonlinear_activation="LeakyReLU",
-                 nonlinear_activation_params={"negative_slope": 0.2},
-                 pad="ReflectionPad1d",
-                 pad_params={},
-                 use_causal_conv=False,
-                 ):
+    def __init__(
+        self,
+        kernel_size=3,
+        channels=32,
+        dilation=1,
+        bias=True,
+        nonlinear_activation="LeakyReLU",
+        nonlinear_activation_params={"negative_slope": 0.2},
+        pad="ReflectionPad1d",
+        pad_params={},
+        use_causal_conv=False,
+    ):
         """Initialize ResidualStack module.
 
         Args:
@@ -46,15 +47,24 @@ class ResidualStack(torch.nn.Module):
             self.stack = torch.nn.Sequential(
                 getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
                 getattr(torch.nn, pad)((kernel_size - 1) // 2 * dilation, **pad_params),
-                torch.nn.Conv1d(channels, channels, kernel_size, dilation=dilation, bias=bias),
+                torch.nn.Conv1d(
+                    channels, channels, kernel_size, dilation=dilation, bias=bias
+                ),
                 getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
                 torch.nn.Conv1d(channels, channels, 1, bias=bias),
             )
         else:
             self.stack = torch.nn.Sequential(
                 getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
-                CausalConv1d(channels, channels, kernel_size, dilation=dilation,
-                             bias=bias, pad=pad, pad_params=pad_params),
+                CausalConv1d(
+                    channels,
+                    channels,
+                    kernel_size,
+                    dilation=dilation,
+                    bias=bias,
+                    pad=pad,
+                    pad_params=pad_params,
+                ),
                 getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
                 torch.nn.Conv1d(channels, channels, 1, bias=bias),
             )
