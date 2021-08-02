@@ -7,6 +7,7 @@ This repository provides **UNOFFICIAL** pytorch implementations of the following
 - [MelGAN](https://arxiv.org/abs/1910.06711)
 - [Multiband-MelGAN](https://arxiv.org/abs/2005.05106)
 - [HiFi-GAN](https://arxiv.org/abs/2010.05646)
+
 You can combine these state-of-the-art non-autoregressive models to build your own great vocoder!
 
 Please check our samples in [our demo HP](https://kan-bayashi.github.io/ParallelWaveGAN).
