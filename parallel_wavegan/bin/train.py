@@ -30,6 +30,9 @@ import parallel_wavegan.optimizers
 from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.datasets import AudioMelSCPDataset
 from parallel_wavegan.layers import PQMF
+from parallel_wavegan.losses import DiscriminatorAdversarialLoss
+from parallel_wavegan.losses import FeatureMatchLoss
+from parallel_wavegan.losses import GeneratorAdversarialLoss
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.utils import read_hdf5
 
@@ -193,7 +196,7 @@ class Trainer(object):
         gen_loss = sc_loss + mag_loss
 
         # subband multi-resolution stft loss
-        if self.config.get("use_subband_stft_loss", False):
+        if self.config["use_subband_stft_loss"]:
             gen_loss *= 0.5  # for balancing with subband stft loss
             y_mb = self.criterion["pqmf"].analysis(y)
             y_mb = y_mb.view(-1, y_mb.size(2))  # (B, C, T) -> (B x C, T)
@@ -207,37 +210,23 @@ class Trainer(object):
             ] += sub_mag_loss.item()
             gen_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
 
+        # weighting stft loss
+        gen_loss *= self.config.get("lambda_stft", 1.0)
+
         # adversarial loss
         if self.steps > self.config["discriminator_train_start_steps"]:
             p_ = self.model["discriminator"](y_)
-            if not isinstance(p_, list):
-                # for standard discriminator
-                adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
-                self.total_train_loss["train/adversarial_loss"] += adv_loss.item()
-            else:
-                # for multi-scale discriminator
-                adv_loss = 0.0
-                for i in range(len(p_)):
-                    adv_loss += self.criterion["mse"](
-                        p_[i][-1], p_[i][-1].new_ones(p_[i][-1].size())
-                    )
-                adv_loss /= i + 1
-                self.total_train_loss["train/adversarial_loss"] += adv_loss.item()
+            adv_loss = self.criterion["gen_adv"](p_)
+            self.total_train_loss["train/adversarial_loss"] += adv_loss.item()
 
-                # feature matching loss
-                if self.config["use_feat_match_loss"]:
-                    # no need to track gradients
-                    with torch.no_grad():
-                        p = self.model["discriminator"](y)
-                    fm_loss = 0.0
-                    for i in range(len(p_)):
-                        for j in range(len(p_[i]) - 1):
-                            fm_loss += self.criterion["l1"](p_[i][j], p[i][j].detach())
-                    fm_loss /= (i + 1) * (j + 1)
-                    self.total_train_loss[
-                        "train/feature_matching_loss"
-                    ] += fm_loss.item()
-                    adv_loss += self.config["lambda_feat_match"] * fm_loss
+            # feature matching loss
+            if self.config["use_feat_match_loss"]:
+                # no need to track gradients
+                with torch.no_grad():
+                    p = self.model["discriminator"](y)
+                fm_loss = self.criteron["feat_match"](p_, p)
+                self.total_train_loss["train/feature_matching_loss"] += fm_loss.item()
+                adv_loss += self.config["lambda_feat_match"] * fm_loss
 
             # add adversarial loss to generator loss
             gen_loss += self.config["lambda_adv"] * adv_loss
@@ -267,26 +256,8 @@ class Trainer(object):
             # discriminator loss
             p = self.model["discriminator"](y)
             p_ = self.model["discriminator"](y_.detach())
-            if not isinstance(p, list):
-                # for standard discriminator
-                real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
-                fake_loss = self.criterion["mse"](p_, p_.new_zeros(p_.size()))
-                dis_loss = real_loss + fake_loss
-            else:
-                # for multi-scale discriminator
-                real_loss = 0.0
-                fake_loss = 0.0
-                for i in range(len(p)):
-                    real_loss += self.criterion["mse"](
-                        p[i][-1], p[i][-1].new_ones(p[i][-1].size())
-                    )
-                    fake_loss += self.criterion["mse"](
-                        p_[i][-1], p_[i][-1].new_zeros(p_[i][-1].size())
-                    )
-                real_loss /= i + 1
-                fake_loss /= i + 1
-                dis_loss = real_loss + fake_loss
-
+            real_loss, fake_loss = self.criterion["dis_adv"](p_, p)
+            dis_loss = real_loss + fake_loss
             self.total_train_loss["train/real_loss"] += real_loss.item()
             self.total_train_loss["train/fake_loss"] += fake_loss.item()
             self.total_train_loss["train/discriminator_loss"] += dis_loss.item()
@@ -370,36 +341,22 @@ class Trainer(object):
             ] += sub_mag_loss.item()
             aux_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
 
+        # weighting stft loss
+        aux_loss *= self.config.get("lambda_stft", 1.0)
+
         # adversarial loss
         p_ = self.model["discriminator"](y_)
-        if not isinstance(p_, list):
-            # for standard discriminator
-            adv_loss = self.criterion["mse"](p_, p_.new_ones(p_.size()))
-            gen_loss = aux_loss + self.config["lambda_adv"] * adv_loss
-        else:
-            # for multi-scale discriminator
-            adv_loss = 0.0
-            for i in range(len(p_)):
-                adv_loss += self.criterion["mse"](
-                    p_[i][-1], p_[i][-1].new_ones(p_[i][-1].size())
-                )
-            adv_loss /= i + 1
-            gen_loss = aux_loss + self.config["lambda_adv"] * adv_loss
+        adv_loss = self.criterion["gen_adv"](p_)
+        gen_loss = aux_loss + self.config["lambda_adv"] * adv_loss
 
-            # feature matching loss
-            if self.config["use_feat_match_loss"]:
-                p = self.model["discriminator"](y)
-                fm_loss = 0.0
-                for i in range(len(p_)):
-                    for j in range(len(p_[i]) - 1):
-                        fm_loss += self.criterion["l1"](p_[i][j], p[i][j])
-                fm_loss /= (i + 1) * (j + 1)
-                self.total_eval_loss["eval/feature_matching_loss"] += fm_loss.item()
-                gen_loss += (
-                    self.config["lambda_adv"]
-                    * self.config["lambda_feat_match"]
-                    * fm_loss
-                )
+        # feature matching loss
+        if self.config["use_feat_match_loss"]:
+            p = self.model["discriminator"](y)
+            fm_loss = self.criterion["feat_match"](p_, p)
+            self.total_eval_loss["eval/feature_matching_loss"] += fm_loss.item()
+            gen_loss += (
+                self.config["lambda_adv"] * self.config["lambda_feat_match"] * fm_loss
+            )
 
         #######################
         #    Discriminator    #
@@ -408,25 +365,8 @@ class Trainer(object):
         p_ = self.model["discriminator"](y_)
 
         # discriminator loss
-        if not isinstance(p_, list):
-            # for standard discriminator
-            real_loss = self.criterion["mse"](p, p.new_ones(p.size()))
-            fake_loss = self.criterion["mse"](p_, p_.new_zeros(p_.size()))
-            dis_loss = real_loss + fake_loss
-        else:
-            # for multi-scale discriminator
-            real_loss = 0.0
-            fake_loss = 0.0
-            for i in range(len(p)):
-                real_loss += self.criterion["mse"](
-                    p[i][-1], p[i][-1].new_ones(p[i][-1].size())
-                )
-                fake_loss += self.criterion["mse"](
-                    p_[i][-1], p_[i][-1].new_zeros(p_[i][-1].size())
-                )
-            real_loss /= i + 1
-            fake_loss /= i + 1
-            dis_loss = real_loss + fake_loss
+        real_loss, fake_loss = self.criterion["dis_adv"](p_, p)
+        dis_loss = real_loss + fake_loss
 
         # add to total eval loss
         self.total_eval_loss["eval/adversarial_loss"] += adv_loss.item()
@@ -954,10 +894,22 @@ def main():
     }
     criterion = {
         "stft": MultiResolutionSTFTLoss(**config["stft_loss_params"]).to(device),
-        "mse": torch.nn.MSELoss().to(device),
+        "gen_adv": GeneratorAdversarialLoss(
+            # keep compatibility
+            **config.get("generator_adv_loss_params", {})
+        ).to(device),
+        "dis_adv": DiscriminatorAdversarialLoss(
+            # keep compatibility
+            **config.get("discriminator_adv_loss_params", {})
+        ).to(device),
     }
     if config.get("use_feat_match_loss", False):  # keep compatibility
-        criterion["l1"] = torch.nn.L1Loss().to(device)
+        criterion["feat_match"] = FeatureMatchLoss(
+            # keep compatibility
+            **config.get("feat_match_loss_params", {})
+        ).to(device)
+    else:
+        config["use_feat_match_loss"] = False
     if config["generator_params"]["out_channels"] > 1:
         criterion["pqmf"] = PQMF(
             subbands=config["generator_params"]["out_channels"],
@@ -969,6 +921,8 @@ def main():
         criterion["sub_stft"] = MultiResolutionSTFTLoss(
             **config["subband_stft_loss_params"]
         ).to(device)
+    else:
+        config["use_subband_stft_loss"] = False
     generator_optimizer_class = getattr(
         parallel_wavegan.optimizers,
         # keep compatibility
