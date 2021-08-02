@@ -50,6 +50,7 @@ jobs:
         run: |
           black --diff parallel_wavegan
           flake8 parallel_wavegan
+          flake8 --extend-ignore=D test
       - name: Pytest
         run: |
           pytest test
