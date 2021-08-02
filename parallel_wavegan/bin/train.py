@@ -831,7 +831,7 @@ def main():
         aux_context_window=config["generator_params"].get("aux_context_window", 0),
         # keep compatibility
         use_noise_input=config.get("generator_type", "ParallelWaveGANGenerator")
-        != "MelGANGenerator",
+        in ["ParallelWaveGANGenerator"],
     )
     sampler = {"train": None, "dev": None}
     if args.distributed:
