@@ -52,13 +52,15 @@ class HiFiGANGenerator(torch.nn.Module):
 
         """
         super().__init__()
+
+        # check hyperparameters are valid
         assert kernel_size % 2 == 1, "Kernal size must be odd number."
         assert len(upsample_scales) == len(upsample_kernal_sizes)
         assert len(resblock_dilations) == len(resblock_kernel_sizes)
 
+        # define modules
         self.num_upsamples = len(upsample_kernal_sizes)
         self.num_blocks = len(resblock_kernel_sizes)
-
         self.input_conv = torch.nn.Conv1d(
             in_channels,
             channels,
@@ -100,6 +102,13 @@ class HiFiGANGenerator(torch.nn.Module):
         self.activation = getattr(torch.nn, nonlinear_activation)(
             **nonlinear_activation_params
         )
+
+        # apply weight norm
+        if use_weight_norm:
+            self.apply_weight_norm()
+
+        # reset parameters
+        self.reset_parameters()
 
     def forward(self, c):
         """Calculate forward propagation.
