@@ -8,6 +8,7 @@ This code is based on https://github.com/jik876/hifi-gan.
 
 import logging
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -185,7 +186,7 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
         out_channels=1,
         period=3,
         kernel_sizes=[5, 3],
-        init_channels=32,
+        channels=32,
         downsample_scales=[4, 4, 4, 4],
         max_downsample_channels=1024,
         bias=True,
@@ -201,7 +202,7 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
             out_channels (int): Number of output channels.
             period (int): Period.
             kernel_sizes (list): Kernel sizes of initial and final conv layer.
-            init_channels (int): Number of initial channels.
+            channels (int): Number of initial channels.
             downsample_scales (list): List of downsampling scales.
             max_downsample_channels (int): Number of maximum downsampling channels.
             use_additional_convs (bool): Whether to use additional conv layers in residual blocks.
@@ -218,14 +219,16 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
 
         self.period = period
         self.convs = torch.nn.ModuleList()
-        for idx, ds in enumerate(downsample_scales):
+        in_chs = in_channels
+        out_chs = channels
+        for idx, downsample_scale in enumerate(downsample_scales):
             self.convs += [
                 torch.nn.Sequential(
                     torch.nn.Conv2d(
-                        in_channels,
-                        min(init_channels * (idx + 1), max_downsample_channels),
+                        in_chs,
+                        out_chs,
                         (kernel_sizes[0], 1),
-                        (ds, 1),
+                        (downsample_scale, 1),
                         padding=((kernel_sizes[0] - 1) // 2, 0),
                     ),
                     getattr(torch.nn, nonlinear_activation)(
@@ -233,8 +236,10 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
                     ),
                 )
             ]
+            in_chs = out_chs
+            out_chs = min(out_chs * downsample_scale, max_downsample_channels)
         self.output_conv = torch.nn.Conv2d(
-            min(init_channels * (idx + 1), max_downsample_channels),
+            out_chs,
             out_channels,
             (kernel_sizes[1] - 1, 1),
             1,
@@ -278,6 +283,160 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
         x = self.output_conv(x)
         x = torch.flatten(x, 1, -1)
         outs += [x]
+
+        return outs
+
+    def apply_weight_norm(self):
+        """Apply weight normalization module from all of the layers."""
+
+        def _apply_weight_norm(m):
+            if isinstance(m, torch.nn.Conv2d):
+                torch.nn.utils.weight_norm(m)
+                logging.debug(f"Weight norm is applied to {m}.")
+
+        self.apply(_apply_weight_norm)
+
+    def apply_spectral_norm(self):
+        """Apply spectral normalization module from all of the layers."""
+
+        def _apply_spectral_norm(m):
+            if isinstance(m, torch.nn.Conv2d):
+                torch.nn.utils.spectral_norm(m)
+                logging.debug(f"Spectral norm is applied to {m}.")
+
+        self.apply(_apply_spectral_norm)
+
+
+class HiFiGANDiscriminator(torch.nn.Module):
+    """HiFi-GAN discriminator module."""
+
+    def __init__(
+        self,
+        in_channels=1,
+        out_channels=1,
+        kernel_sizes=[5, 3],
+        channels=16,
+        max_downsample_channels=1024,
+        max_groups=16,
+        bias=True,
+        downsample_scales=[4, 4, 4, 4],
+        nonlinear_activation="LeakyReLU",
+        nonlinear_activation_params={"negative_slope": 0.1},
+        use_weight_norm=True,
+        use_spectral_norm=False,
+    ):
+        """Initilize MelGAN discriminator module.
+
+        Args:
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of output channels.
+            kernel_sizes (list): List of two kernel sizes. The prod will be used for the first conv layer,
+                and the first and the second kernel sizes will be used for the last two layers.
+                For example if kernel_sizes = [5, 3], the first layer kernel size will be 5 * 3 = 15,
+                the last two layers' kernel size will be 5 and 3, respectively.
+            channels (int): Initial number of channels for conv layer.
+            max_downsample_channels (int): Maximum number of channels for downsampling layers.
+            bias (bool): Whether to add bias parameter in convolution layers.
+            downsample_scales (list): List of downsampling scales.
+            nonlinear_activation (str): Activation function module name.
+            nonlinear_activation_params (dict): Hyperparameters for activation function.
+            pad (str): Padding function module name before dilated convolution layer.
+            pad_params (dict): Hyperparameters for padding function.
+
+        """
+        super().__init__()
+        self.layers = torch.nn.ModuleList()
+
+        # check kernel size is valid
+        assert len(kernel_sizes) == 2
+        assert kernel_sizes[0] % 2 == 1
+        assert kernel_sizes[1] % 2 == 1
+
+        # add first layer
+        self.layers += [
+            torch.nn.Sequential(
+                torch.nn.Conv1d(
+                    in_channels,
+                    channels,
+                    np.prod(kernel_sizes),
+                    bias=bias,
+                    padding=(np.prod(kernel_sizes) - 1) // 2,
+                ),
+                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
+            )
+        ]
+
+        # add downsample layers
+        in_chs = channels
+        for downsample_scale in downsample_scales:
+            out_chs = min(in_chs * downsample_scale, max_downsample_channels)
+            self.layers += [
+                torch.nn.Sequential(
+                    torch.nn.Conv1d(
+                        in_chs,
+                        out_chs,
+                        kernel_size=downsample_scale * 10 + 1,
+                        stride=downsample_scale,
+                        padding=downsample_scale * 5,
+                        groups=min(in_chs // 4, max_groups),
+                        bias=bias,
+                    ),
+                    getattr(torch.nn, nonlinear_activation)(
+                        **nonlinear_activation_params
+                    ),
+                )
+            ]
+            in_chs = out_chs
+
+        # add final layers
+        out_chs = min(in_chs * 2, max_downsample_channels)
+        self.layers += [
+            torch.nn.Sequential(
+                torch.nn.Conv1d(
+                    in_chs,
+                    out_chs,
+                    kernel_sizes[0],
+                    padding=(kernel_sizes[0] - 1) // 2,
+                    bias=bias,
+                ),
+                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
+            )
+        ]
+        self.layers += [
+            torch.nn.Conv1d(
+                out_chs,
+                out_channels,
+                kernel_sizes[1],
+                padding=(kernel_sizes[1] - 1) // 2,
+                bias=bias,
+            ),
+        ]
+
+        if use_weight_norm and use_spectral_norm:
+            raise ValueError("Either use use_weight_norm or use_spectral_norm.")
+
+        # apply weight norm
+        if use_weight_norm:
+            self.apply_weight_norm()
+
+        # apply spectral norm
+        if use_spectral_norm:
+            self.apply_spectral_norm()
+
+    def forward(self, x):
+        """Calculate forward propagation.
+
+        Args:
+            x (Tensor): Input noise signal (B, 1, T).
+
+        Returns:
+            List: List of output tensors of each layer.
+
+        """
+        outs = []
+        for f in self.layers:
+            x = f(x)
+            outs += [x]
 
         return outs
 
