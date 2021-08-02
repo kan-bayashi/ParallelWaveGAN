@@ -592,3 +592,91 @@ class HiFiGANMultiScaleDiscriminator(torch.nn.Module):
             x = self.pooling(x)
 
         return outs
+
+
+class HiFiGANMultiScaleMultiPeriodDiscriminator(torch.nn.Module):
+    """HiFi-GAN multi-scale + multi-period discriminator module."""
+
+    def __init__(
+        self,
+        # Multi-scale discriminator related
+        scales=3,
+        scale_downsample_pooling="AvgPool1d",
+        scale_downsample_pooling_params={
+            "kernel_size": 4,
+            "stride": 2,
+            "padding": 2,
+        },
+        scale_discriminator_params={
+            "in_channels": 1,
+            "out_channels": 1,
+            "kernel_sizes": [5, 3],
+            "channels": 16,
+            "max_downsample_channels": 1024,
+            "max_groups": 16,
+            "bias": True,
+            "downsample_scales": [4, 4, 4, 4],
+            "nonlinear_activation": "LeakyReLU",
+            "nonlinear_activation_params": {"negative_slope": 0.1},
+        },
+        follow_official_norm=False,
+        # Multi-period discriminator related
+        periods=[2, 3, 5, 7, 11],
+        period_discriminator_params={
+            "in_channels": 1,
+            "out_channels": 1,
+            "kernel_sizes": [5, 3],
+            "channels": 32,
+            "downsample_scales": [4, 4, 4, 4],
+            "max_downsample_channels": 1024,
+            "bias": True,
+            "nonlinear_activation": "LeakyReLU",
+            "nonlinear_activation_params": {"negative_slope": 0.1},
+            "use_weight_norm": True,
+            "use_spectral_norm": False,
+        },
+    ):
+        """Initilize HiFiGAN multi-scale + multi-period discriminator module.
+
+        Args:
+            scales (int): Number of multi-scales.
+            scale_downsample_pooling (str): Pooling module name for downsampling of the inputs.
+            scale_downsample_pooling_params (dict): Parameters for the above pooling module.
+            scale_discriminator_params (dict): Parameters for hifi-gan scale discriminator module.
+            follow_official_norm (bool): Whether to follow the norm setting of the official
+                implementaion. The first discriminator uses spectral norm and the other
+                discriminators use weight norm.
+            periods (list): List of periods.
+            period_discriminator_params (dict): Parameters for hifi-gan period discriminator module.
+                The period parameter will be overwritten.
+
+        """
+        super().__init__()
+        self.multi_scale_discriminator = HiFiGANMultiScaleDiscriminator(
+            scales=scales,
+            downsample_pooling=scale_downsample_pooling,
+            downsample_pooling_params=scale_downsample_pooling_params,
+            discriminator_params=scale_discriminator_params,
+            follow_official_norm=follow_official_norm,
+        )
+        self.multi_period_discriminator = HiFiGANMultiPeriodDiscriminator(
+            periods=periods,
+            discriminator_params=period_discriminator_params,
+        )
+
+    def forward(self, x):
+        """Calculate forward propagation.
+
+        Args:
+            x (Tensor): Input noise signal (B, 1, T).
+
+        Returns:
+            List: List of list of each scale discriminator outputs,
+                which consists of each layer output tensors.
+            List: List of list of each period discriminator outputs,
+                which consists of each layer output tensors.
+
+        """
+        multi_scale_outs = self.multi_scale_discriminator(x)
+        multi_period_outs = self.multi_period_discriminator(x)
+        return multi_scale_outs, multi_period_outs
