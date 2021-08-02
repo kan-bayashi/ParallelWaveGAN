@@ -10,8 +10,10 @@ import logging
 import numpy as np
 import pytest
 import torch
-import torch.nn.functional as F
 
+from parallel_wavegan.losses import DiscriminatorAdversarialLoss
+from parallel_wavegan.losses import FeatureMatchLoss
+from parallel_wavegan.losses import GeneratorAdversarialLoss
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.models import HiFiGANGenerator
 from parallel_wavegan.models import HiFiGANMultiScaleMultiPeriodDiscriminator
@@ -111,54 +113,39 @@ def test_hifigan_trainable(dict_g, dict_d, dict_loss):
     model_g = HiFiGANGenerator(**args_g)
     model_d = HiFiGANMultiScaleMultiPeriodDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
+    feat_match_criterion = FeatureMatchLoss(
+        average_by_layers=False,
+        average_by_discriminators=False,
+        include_final_outputs=True,
+    )
+    gen_adv_criterion = GeneratorAdversarialLoss(
+        average_by_discriminators=False,
+    )
+    dis_adv_criterion = DiscriminatorAdversarialLoss(
+        average_by_discriminators=False,
+    )
     optimizer_g = torch.optim.AdamW(model_g.parameters())
     optimizer_d = torch.optim.AdamW(model_d.parameters())
 
     # check generator trainable
     y_hat = model_g(c)
-    p_hat_ms, p_hat_mp = model_d(y_hat)
-    y, y_hat = y.squeeze(1), y_hat.squeeze(1)
+    p_hat = model_d(y_hat)
     sc_loss, mag_loss = aux_criterion(y_hat, y)
     aux_loss = sc_loss + mag_loss
-    adv_loss = 0.0
-    for i_ms in range(len(p_hat_ms)):
-        adv_loss += F.mse_loss(
-            p_hat_ms[i_ms][-1], p_hat_ms[i_ms][-1].new_ones(p_hat_ms[i_ms][-1].size())
-        )
-    for i_mp in range(len(p_hat_mp)):
-        adv_loss += F.mse_loss(
-            p_hat_mp[i_mp][-1], p_hat_mp[i_mp][-1].new_ones(p_hat_mp[i_mp][-1].size())
-        )
+    adv_loss = gen_adv_criterion(p_hat)
     with torch.no_grad():
-        p_ms, p_mp = model_d(y.unsqueeze(1))
-    fm_loss = 0.0
-    for i in range(len(p_hat_ms)):
-        for j in range(len(p_hat_ms[i]) - 1):
-            fm_loss += F.l1_loss(p_hat_ms[i][j], p_ms[i][j].detach())
-    for i in range(len(p_hat_mp)):
-        for j in range(len(p_hat_mp[i]) - 1):
-            fm_loss += F.l1_loss(p_hat_mp[i][j], p_mp[i][j].detach())
+        p = model_d(y)
+    fm_loss = feat_match_criterion(p_hat, p)
     loss_g = adv_loss + aux_loss + fm_loss
     optimizer_g.zero_grad()
     loss_g.backward()
     optimizer_g.step()
 
     # check discriminator trainable
-    y, y_hat = y.unsqueeze(1), y_hat.unsqueeze(1).detach()
-    p_ms, p_mp = model_d(y)
-    p_hat_ms, p_hat_mp = model_d(y_hat)
-    real_loss = 0.0
-    fake_loss = 0.0
-    for i in range(len(p_ms)):
-        real_loss += F.mse_loss(p_ms[i][-1], p_ms[i][-1].new_ones(p_ms[i][-1].size()))
-        fake_loss += F.mse_loss(
-            p_hat_ms[i][-1], p_hat_ms[i][-1].new_zeros(p_hat_ms[i][-1].size())
-        )
-    for i in range(len(p_mp)):
-        real_loss += F.mse_loss(p_mp[i][-1], p_mp[i][-1].new_ones(p_mp[i][-1].size()))
-        fake_loss += F.mse_loss(
-            p_hat_mp[i][-1], p_hat_mp[i][-1].new_zeros(p_hat_mp[i][-1].size())
-        )
+    y, y_hat = y, y_hat.detach()
+    p = model_d(y)
+    p_hat = model_d(y_hat)
+    real_loss, fake_loss = dis_adv_criterion(p_hat, p)
     loss_d = real_loss + fake_loss
     optimizer_d.zero_grad()
     loss_d.backward()
