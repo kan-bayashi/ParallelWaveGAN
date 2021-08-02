@@ -9,7 +9,6 @@ import logging
 import numpy as np
 import pytest
 import torch
-import torch.nn.functional as F
 
 from parallel_wavegan.losses import DiscriminatorAdversarialLoss
 from parallel_wavegan.losses import FeatureMatchLoss
