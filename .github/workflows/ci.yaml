@@ -14,7 +14,7 @@ jobs:
   linter_and_test:
     runs-on: ubuntu-20.04
     strategy:
-      max-parallel: 10
+      max-parallel: 5
       matrix:
         python-version: [3.6]
         # 1.6 is failed on cpu: https://github.com/kan-bayashi/ParallelWaveGAN/issues/198
@@ -58,7 +58,7 @@ jobs:
   integration:
     runs-on: ubuntu-20.04
     strategy:
-      max-parallel: 5
+      max-parallel: 10
       matrix:
         python-version: [3.7]
         pytorch-version: [1.9]
@@ -69,6 +69,7 @@ jobs:
           - "multi_band_melgan.v1.debug.yaml"
           - "parallel_wavegan.v1.debug.npy.yaml"
           - "parallel_wavegan.v1.debug.diff_fs.yaml"
+          - "hifigan.v1.debug.yaml"
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v2
