@@ -242,7 +242,7 @@ def test_melgan_trainable_with_melgan_discriminator(dict_g, dict_d, dict_loss):
     aux_loss = sc_loss + mag_loss
     adv_loss = gen_adv_criterion(p_hat)
     with torch.no_grad():
-        p = model_d(y.unsqueeze(1))
+        p = model_d(y)
     fm_loss = feat_match_criterion(p_hat, p)
     loss_g = adv_loss + aux_loss + fm_loss
     optimizer_g.zero_grad()
