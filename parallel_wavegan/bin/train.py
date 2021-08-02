@@ -190,7 +190,7 @@ class Trainer(object):
             y_ = self.criterion["pqmf"].synthesis(y_mb_)
 
         # multi-resolution sfft loss
-        sc_loss, mag_loss = self.criterion["stft"](y_.squeeze(1), y.squeeze(1))
+        sc_loss, mag_loss = self.criterion["stft"](y_, y)
         self.total_train_loss["train/spectral_convergence_loss"] += sc_loss.item()
         self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
         gen_loss = sc_loss + mag_loss
@@ -199,8 +199,6 @@ class Trainer(object):
         if self.config["use_subband_stft_loss"]:
             gen_loss *= 0.5  # for balancing with subband stft loss
             y_mb = self.criterion["pqmf"].analysis(y)
-            y_mb = y_mb.view(-1, y_mb.size(2))  # (B, C, T) -> (B x C, T)
-            y_mb_ = y_mb_.view(-1, y_mb_.size(2))  # (B, C, T) -> (B x C, T)
             sub_sc_loss, sub_mag_loss = self.criterion["sub_stft"](y_mb_, y_mb)
             self.total_train_loss[
                 "train/sub_spectral_convergence_loss"
@@ -323,15 +321,13 @@ class Trainer(object):
             y_ = self.criterion["pqmf"].synthesis(y_mb_)
 
         # multi-resolution stft loss
-        sc_loss, mag_loss = self.criterion["stft"](y_.squeeze(1), y.squeeze(1))
+        sc_loss, mag_loss = self.criterion["stft"](y_, y)
         aux_loss = sc_loss + mag_loss
 
         # subband multi-resolution stft loss
         if self.config.get("use_subband_stft_loss", False):
             aux_loss *= 0.5  # for balancing with subband stft loss
             y_mb = self.criterion["pqmf"].analysis(y)
-            y_mb = y_mb.view(-1, y_mb.size(2))  # (B, C, T) -> (B x C, T)
-            y_mb_ = y_mb_.view(-1, y_mb_.size(2))  # (B, C, T) -> (B x C, T)
             sub_sc_loss, sub_mag_loss = self.criterion["sub_stft"](y_mb_, y_mb)
             self.total_eval_loss[
                 "eval/sub_spectral_convergence_loss"

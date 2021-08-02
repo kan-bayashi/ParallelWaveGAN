@@ -147,14 +147,17 @@ class MultiResolutionSTFTLoss(torch.nn.Module):
         """Calculate forward propagation.
 
         Args:
-            x (Tensor): Predicted signal (B, T).
-            y (Tensor): Groundtruth signal (B, T).
+            x (Tensor): Predicted signal (B, T) or (B, #subband, T).
+            y (Tensor): Groundtruth signal (B, T) or (B, #subband, T).
 
         Returns:
             Tensor: Multi resolution spectral convergence loss value.
             Tensor: Multi resolution log STFT magnitude loss value.
 
         """
+        if len(x.shape) == 3:
+            x = x.view(-1, x.size(2))  # (B, C, T) -> (B x C, T)
+            y = y.view(-1, y.size(2))  # (B, C, T) -> (B x C, T)
         sc_loss = 0.0
         mag_loss = 0.0
         for f in self.stft_losses:
