@@ -224,7 +224,9 @@ class StyleMelGANDiscriminator(torch.nn.Module):
 
     def _forward(self, x):
         outs = []
-        for idx, (ws, pqmf, disc) in enumerate(zip(self.window_sizes, self.pqmfs, self.discriminators)):
+        for idx, (ws, pqmf, disc) in enumerate(
+            zip(self.window_sizes, self.pqmfs, self.discriminators)
+        ):
             # NOTE(kan-bayashi): Is it ok to apply different window for real and fake samples?
             start_idx = np.random.randint(x.size(-1) - ws)
             x_ = x[:, :, start_idx : start_idx + ws]

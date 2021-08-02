@@ -4,7 +4,6 @@
 """StyleMelGAN's TADEResBlock Modules."""
 
 import torch
-import torch.nn.functional as F
 
 
 class TADELayer(torch.nn.Module):
