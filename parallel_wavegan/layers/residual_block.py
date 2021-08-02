@@ -8,7 +8,6 @@ References:
 
 """
 
-import logging
 import math
 
 import torch
