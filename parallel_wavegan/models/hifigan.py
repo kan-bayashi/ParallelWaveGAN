@@ -12,6 +12,7 @@ import logging
 import numpy as np
 import torch
 import torch.nn.functional as F
+
 from parallel_wavegan.layers import HiFiGANResidualBlock as ResidualBlock
 
 
