@@ -12,7 +12,6 @@ import logging
 import numpy as np
 import torch
 import torch.nn.functional as F
-
 from parallel_wavegan.layers import HiFiGANResidualBlock as ResidualBlock
 
 
@@ -671,12 +670,11 @@ class HiFiGANMultiScaleMultiPeriodDiscriminator(torch.nn.Module):
             x (Tensor): Input noise signal (B, 1, T).
 
         Returns:
-            List: List of list of each scale discriminator outputs,
+            List: List of list of each discriminator outputs,
                 which consists of each layer output tensors.
-            List: List of list of each period discriminator outputs,
-                which consists of each layer output tensors.
+                Multi scale and multi period ones are concatenated.
 
         """
         multi_scale_outs = self.multi_scale_discriminator(x)
         multi_period_outs = self.multi_period_discriminator(x)
-        return multi_scale_outs, multi_period_outs
+        return multi_scale_outs + multi_period_outs
