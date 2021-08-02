@@ -36,7 +36,7 @@ class Conv1d1x1(Conv1d):
         )
 
 
-class ResidualBlock(torch.nn.Module):
+class WaveNetResidualBlock(torch.nn.Module):
     """Residual block module in WaveNet."""
 
     def __init__(
@@ -51,7 +51,7 @@ class ResidualBlock(torch.nn.Module):
         bias=True,
         use_causal_conv=False,
     ):
-        """Initialize ResidualBlock module.
+        """Initialize WaveNetResidualBlock module.
 
         Args:
             kernel_size (int): Kernel size of dilation convolution layer.
@@ -64,7 +64,7 @@ class ResidualBlock(torch.nn.Module):
             use_causal_conv (bool): Whether to use use_causal_conv or non-use_causal_conv convolution.
 
         """
-        super(ResidualBlock, self).__init__()
+        super().__init__()
         self.dropout = dropout
         # no future time stamps available
         if use_causal_conv:
