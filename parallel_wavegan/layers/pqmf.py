@@ -36,9 +36,10 @@ def design_prototype_filter(taps=62, cutoff_ratio=0.142, beta=9.0):
 
     # make initial filter
     omega_c = np.pi * cutoff_ratio
-    with np.errstate(invalid='ignore'):
-        h_i = np.sin(omega_c * (np.arange(taps + 1) - 0.5 * taps)) \
-            / (np.pi * (np.arange(taps + 1) - 0.5 * taps))
+    with np.errstate(invalid="ignore"):
+        h_i = np.sin(omega_c * (np.arange(taps + 1) - 0.5 * taps)) / (
+            np.pi * (np.arange(taps + 1) - 0.5 * taps)
+        )
     h_i[taps // 2] = np.cos(0) * cutoff_ratio  # fix nan due to indeterminate form
 
     # apply kaiser window
@@ -78,14 +79,26 @@ class PQMF(torch.nn.Module):
         h_analysis = np.zeros((subbands, len(h_proto)))
         h_synthesis = np.zeros((subbands, len(h_proto)))
         for k in range(subbands):
-            h_analysis[k] = 2 * h_proto * np.cos(
-                (2 * k + 1) * (np.pi / (2 * subbands)) *
-                (np.arange(taps + 1) - (taps / 2)) +
-                (-1) ** k * np.pi / 4)
-            h_synthesis[k] = 2 * h_proto * np.cos(
-                (2 * k + 1) * (np.pi / (2 * subbands)) *
-                (np.arange(taps + 1) - (taps / 2)) -
-                (-1) ** k * np.pi / 4)
+            h_analysis[k] = (
+                2
+                * h_proto
+                * np.cos(
+                    (2 * k + 1)
+                    * (np.pi / (2 * subbands))
+                    * (np.arange(taps + 1) - (taps / 2))
+                    + (-1) ** k * np.pi / 4
+                )
+            )
+            h_synthesis[k] = (
+                2
+                * h_proto
+                * np.cos(
+                    (2 * k + 1)
+                    * (np.pi / (2 * subbands))
+                    * (np.arange(taps + 1) - (taps / 2))
+                    - (-1) ** k * np.pi / 4
+                )
+            )
 
         # convert to tensor
         analysis_filter = torch.from_numpy(h_analysis).float().unsqueeze(1)
@@ -131,5 +144,7 @@ class PQMF(torch.nn.Module):
         # NOTE(kan-bayashi): Power will be dreased so here multipy by # subbands.
         #   Not sure this is the correct way, it is better to check again.
         # TODO(kan-bayashi): Understand the reconstruction procedure
-        x = F.conv_transpose1d(x, self.updown_filter * self.subbands, stride=self.subbands)
+        x = F.conv_transpose1d(
+            x, self.updown_filter * self.subbands, stride=self.subbands
+        )
         return F.conv1d(self.pad_fn(x), self.synthesis_filter)

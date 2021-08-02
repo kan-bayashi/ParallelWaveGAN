@@ -18,7 +18,9 @@ from parallel_wavegan.models import ResidualParallelWaveGANDiscriminator
 from parallel_wavegan.optimizers import RAdam
 
 logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+    level=logging.DEBUG,
+    format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s",
+)
 
 
 def make_generator_args(**kwargs):
@@ -84,14 +86,15 @@ def make_mutli_reso_stft_loss_args(**kwargs):
         fft_sizes=[64, 128, 256],
         hop_sizes=[32, 64, 128],
         win_lengths=[48, 96, 192],
-        window='hann_window',
+        window="hann_window",
     )
     defaults.update(kwargs)
     return defaults
 
 
 @pytest.mark.parametrize(
-    "dict_g, dict_d, dict_loss", [
+    "dict_g, dict_d, dict_loss",
+    [
         ({}, {}, {}),
         ({"layers": 1, "stacks": 1}, {}, {}),
         ({}, {"layers": 1}, {}),
@@ -102,18 +105,50 @@ def make_mutli_reso_stft_loss_args(**kwargs):
         ({"use_weight_norm": False}, {"use_weight_norm": False}, {}),
         ({"aux_context_window": 2}, {}, {}),
         ({"upsample_net": "UpsampleNetwork"}, {}, {}),
-        ({"upsample_params": {"upsample_scales": [4], "freq_axis_kernel_size": 3}}, {}, {}),
-        ({"upsample_params": {"upsample_scales": [4], "nonlinear_activation": "ReLU"}}, {}, {}),
-        ({"upsample_conditional_features": False, "upsample_params": {"upsample_scales": [1]}}, {}, {}),
+        (
+            {"upsample_params": {"upsample_scales": [4], "freq_axis_kernel_size": 3}},
+            {},
+            {},
+        ),
+        (
+            {
+                "upsample_params": {
+                    "upsample_scales": [4],
+                    "nonlinear_activation": "ReLU",
+                }
+            },
+            {},
+            {},
+        ),
+        (
+            {
+                "upsample_conditional_features": False,
+                "upsample_params": {"upsample_scales": [1]},
+            },
+            {},
+            {},
+        ),
         ({}, {"nonlinear_activation": "ReLU", "nonlinear_activation_params": {}}, {}),
         ({"use_causal_conv": True}, {}, {}),
         ({"use_causal_conv": True, "upsample_net": "UpsampleNetwork"}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 1}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 2}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 3}, {}, {}),
-        ({"aux_channels": 16, "upsample_net": "MelGANGenerator", "upsample_params": {
-            "upsample_scales": [4, 4], "in_channels": 16, "out_channels": 16}}, {}, {}),
-    ])
+        (
+            {
+                "aux_channels": 16,
+                "upsample_net": "MelGANGenerator",
+                "upsample_params": {
+                    "upsample_scales": [4, 4],
+                    "in_channels": 16,
+                    "out_channels": 16,
+                },
+            },
+            {},
+            {},
+        ),
+    ],
+)
 def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     # setup
     batch_size = 4
@@ -123,9 +158,12 @@ def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     args_loss = make_mutli_reso_stft_loss_args(**dict_loss)
     z = torch.randn(batch_size, 1, batch_length)
     y = torch.randn(batch_size, 1, batch_length)
-    c = torch.randn(batch_size, args_g["aux_channels"],
-                    batch_length // np.prod(
-                        args_g["upsample_params"]["upsample_scales"]) + 2 * args_g["aux_context_window"])
+    c = torch.randn(
+        batch_size,
+        args_g["aux_channels"],
+        batch_length // np.prod(args_g["upsample_params"]["upsample_scales"])
+        + 2 * args_g["aux_context_window"],
+    )
     model_g = ParallelWaveGANGenerator(**args_g)
     model_d = ParallelWaveGANDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
@@ -149,14 +187,17 @@ def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
     p = model_d(y)
     p_hat = model_d(y_hat)
     p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(p_hat, p_hat.new_zeros(p_hat.size()))
+    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(
+        p_hat, p_hat.new_zeros(p_hat.size())
+    )
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
 
 
 @pytest.mark.parametrize(
-    "dict_g, dict_d, dict_loss", [
+    "dict_g, dict_d, dict_loss",
+    [
         ({}, {}, {}),
         ({"layers": 1, "stacks": 1}, {}, {}),
         ({}, {"layers": 1}, {}),
@@ -167,19 +208,53 @@ def test_parallel_wavegan_trainable(dict_g, dict_d, dict_loss):
         ({"use_weight_norm": False}, {"use_weight_norm": False}, {}),
         ({"aux_context_window": 2}, {}, {}),
         ({"upsample_net": "UpsampleNetwork"}, {}, {}),
-        ({"upsample_params": {"upsample_scales": [4], "freq_axis_kernel_size": 3}}, {}, {}),
-        ({"upsample_params": {"upsample_scales": [4], "nonlinear_activation": "ReLU"}}, {}, {}),
-        ({"upsample_conditional_features": False, "upsample_params": {"upsample_scales": [1]}}, {}, {}),
+        (
+            {"upsample_params": {"upsample_scales": [4], "freq_axis_kernel_size": 3}},
+            {},
+            {},
+        ),
+        (
+            {
+                "upsample_params": {
+                    "upsample_scales": [4],
+                    "nonlinear_activation": "ReLU",
+                }
+            },
+            {},
+            {},
+        ),
+        (
+            {
+                "upsample_conditional_features": False,
+                "upsample_params": {"upsample_scales": [1]},
+            },
+            {},
+            {},
+        ),
         ({}, {"nonlinear_activation": "ReLU", "nonlinear_activation_params": {}}, {}),
         ({"use_causal_conv": True}, {}, {}),
         ({"use_causal_conv": True, "upsample_net": "UpsampleNetwork"}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 1}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 2}, {}, {}),
         ({"use_causal_conv": True, "aux_context_window": 3}, {}, {}),
-        ({"aux_channels": 16, "upsample_net": "MelGANGenerator", "upsample_params": {
-            "upsample_scales": [4, 4], "in_channels": 16, "out_channels": 16}}, {}, {}),
-    ])
-def test_parallel_wavegan_with_residual_discriminator_trainable(dict_g, dict_d, dict_loss):
+        (
+            {
+                "aux_channels": 16,
+                "upsample_net": "MelGANGenerator",
+                "upsample_params": {
+                    "upsample_scales": [4, 4],
+                    "in_channels": 16,
+                    "out_channels": 16,
+                },
+            },
+            {},
+            {},
+        ),
+    ],
+)
+def test_parallel_wavegan_with_residual_discriminator_trainable(
+    dict_g, dict_d, dict_loss
+):
     # setup
     batch_size = 4
     batch_length = 4096
@@ -188,9 +263,12 @@ def test_parallel_wavegan_with_residual_discriminator_trainable(dict_g, dict_d, 
     args_loss = make_mutli_reso_stft_loss_args(**dict_loss)
     z = torch.randn(batch_size, 1, batch_length)
     y = torch.randn(batch_size, 1, batch_length)
-    c = torch.randn(batch_size, args_g["aux_channels"],
-                    batch_length // np.prod(
-                        args_g["upsample_params"]["upsample_scales"]) + 2 * args_g["aux_context_window"])
+    c = torch.randn(
+        batch_size,
+        args_g["aux_channels"],
+        batch_length // np.prod(args_g["upsample_params"]["upsample_scales"])
+        + 2 * args_g["aux_context_window"],
+    )
     model_g = ParallelWaveGANGenerator(**args_g)
     model_d = ResidualParallelWaveGANDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
@@ -214,36 +292,45 @@ def test_parallel_wavegan_with_residual_discriminator_trainable(dict_g, dict_d, 
     p = model_d(y)
     p_hat = model_d(y_hat)
     p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(p_hat, p_hat.new_zeros(p_hat.size()))
+    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(
+        p_hat, p_hat.new_zeros(p_hat.size())
+    )
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
 
 
 @pytest.mark.parametrize(
-    "upsample_net, aux_context_window", [
+    "upsample_net, aux_context_window",
+    [
         ("ConvInUpsampleNetwork", 0),
         ("ConvInUpsampleNetwork", 1),
         ("ConvInUpsampleNetwork", 2),
         ("ConvInUpsampleNetwork", 3),
         ("UpsampleNetwork", 0),
-    ])
+    ],
+)
 def test_causal_parallel_wavegan(upsample_net, aux_context_window):
     batch_size = 1
     batch_length = 4096
-    args_g = make_generator_args(use_causal_conv=True,
-                                 upsample_net=upsample_net,
-                                 aux_context_window=aux_context_window,
-                                 dropout=0.0)
+    args_g = make_generator_args(
+        use_causal_conv=True,
+        upsample_net=upsample_net,
+        aux_context_window=aux_context_window,
+        dropout=0.0,
+    )
     model_g = ParallelWaveGANGenerator(**args_g)
     z = torch.randn(batch_size, 1, batch_length)
-    c = torch.randn(batch_size, args_g["aux_channels"],
-                    batch_length // np.prod(args_g["upsample_params"]["upsample_scales"]))
+    c = torch.randn(
+        batch_size,
+        args_g["aux_channels"],
+        batch_length // np.prod(args_g["upsample_params"]["upsample_scales"]),
+    )
 
     z_ = z.clone()
     c_ = c.clone()
-    z_[..., z.size(-1) // 2:] = torch.randn(z[..., z.size(-1) // 2:].shape)
-    c_[..., c.size(-1) // 2:] = torch.randn(c[..., c.size(-1) // 2:].shape)
+    z_[..., z.size(-1) // 2 :] = torch.randn(z[..., z.size(-1) // 2 :].shape)
+    c_[..., c.size(-1) // 2 :] = torch.randn(c[..., c.size(-1) // 2 :].shape)
     c = torch.nn.ConstantPad1d(args_g["aux_context_window"], 0.0)(c)
     c_ = torch.nn.ConstantPad1d(args_g["aux_context_window"], 0.0)(c_)
     try:
@@ -265,6 +352,6 @@ def test_causal_parallel_wavegan(upsample_net, aux_context_window):
     y = model_g(z, c)
     y_ = model_g(z_, c_)
     np.testing.assert_array_equal(
-        y[..., :y.size(-1) // 2].detach().cpu().numpy(),
-        y_[..., :y_.size(-1) // 2].detach().cpu().numpy(),
+        y[..., : y.size(-1) // 2].detach().cpu().numpy(),
+        y_[..., : y_.size(-1) // 2].detach().cpu().numpy(),
     )

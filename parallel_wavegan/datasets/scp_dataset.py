@@ -48,16 +48,17 @@ def _get_feats_scp_loader(feats_scp):
 class AudioMelSCPDataset(Dataset):
     """PyTorch compatible audio and mel dataset based on kaldi-stype scp files."""
 
-    def __init__(self,
-                 wav_scp,
-                 feats_scp,
-                 segments=None,
-                 audio_length_threshold=None,
-                 mel_length_threshold=None,
-                 return_utt_id=False,
-                 return_sampling_rate=False,
-                 allow_cache=False,
-                 ):
+    def __init__(
+        self,
+        wav_scp,
+        feats_scp,
+        segments=None,
+        audio_length_threshold=None,
+        mel_length_threshold=None,
+        return_utt_id=False,
+        return_sampling_rate=False,
+        allow_cache=False,
+    ):
         """Initialize dataset.
 
         Args:
@@ -80,24 +81,37 @@ class AudioMelSCPDataset(Dataset):
         # filter by threshold
         if audio_length_threshold is not None:
             audio_lengths = [audio.shape[0] for _, audio in audio_loader.values()]
-            idxs = [idx for idx in range(len(audio_keys)) if audio_lengths[idx] > audio_length_threshold]
+            idxs = [
+                idx
+                for idx in range(len(audio_keys))
+                if audio_lengths[idx] > audio_length_threshold
+            ]
             if len(audio_keys) != len(idxs):
-                logging.warning(f"Some files are filtered by audio length threshold "
-                                f"({len(audio_keys)} -> {len(idxs)}).")
+                logging.warning(
+                    f"Some files are filtered by audio length threshold "
+                    f"({len(audio_keys)} -> {len(idxs)})."
+                )
             audio_keys = [audio_keys[idx] for idx in idxs]
             mel_keys = [mel_keys[idx] for idx in idxs]
         if mel_length_threshold is not None:
             mel_lengths = [mel.shape[0] for mel in mel_loader.values()]
-            idxs = [idx for idx in range(len(mel_keys)) if mel_lengths[idx] > mel_length_threshold]
+            idxs = [
+                idx
+                for idx in range(len(mel_keys))
+                if mel_lengths[idx] > mel_length_threshold
+            ]
             if len(mel_keys) != len(idxs):
-                logging.warning(f"Some files are filtered by mel length threshold "
-                                f"({len(mel_keys)} -> {len(idxs)}).")
+                logging.warning(
+                    f"Some files are filtered by mel length threshold "
+                    f"({len(mel_keys)} -> {len(idxs)})."
+                )
             audio_keys = [audio_keys[idx] for idx in idxs]
             mel_keys = [mel_keys[idx] for idx in idxs]
 
         # assert the number of files
-        assert len(audio_keys) == len(mel_keys), \
-            f"Number of audio and mel files are different ({len(audio_keys)} vs {len(mel_keys)})."
+        assert len(audio_keys) == len(
+            mel_keys
+        ), f"Number of audio and mel files are different ({len(audio_keys)} vs {len(mel_keys)})."
 
         self.audio_loader = audio_loader
         self.mel_loader = mel_loader
@@ -133,7 +147,7 @@ class AudioMelSCPDataset(Dataset):
 
         # normalize audio signal to be [-1, 1]
         audio = audio.astype(np.float32)
-        audio /= (1 << (16 - 1))  # assume that wav is PCM 16 bit
+        audio /= 1 << (16 - 1)  # assume that wav is PCM 16 bit
 
         if self.return_sampling_rate:
             audio = (audio, fs)
@@ -161,14 +175,15 @@ class AudioMelSCPDataset(Dataset):
 class AudioSCPDataset(Dataset):
     """PyTorch compatible audio dataset based on kaldi-stype scp files."""
 
-    def __init__(self,
-                 wav_scp,
-                 segments=None,
-                 audio_length_threshold=None,
-                 return_utt_id=False,
-                 return_sampling_rate=False,
-                 allow_cache=False,
-                 ):
+    def __init__(
+        self,
+        wav_scp,
+        segments=None,
+        audio_length_threshold=None,
+        return_utt_id=False,
+        return_sampling_rate=False,
+        allow_cache=False,
+    ):
         """Initialize dataset.
 
         Args:
@@ -187,10 +202,16 @@ class AudioSCPDataset(Dataset):
         # filter by threshold
         if audio_length_threshold is not None:
             audio_lengths = [audio.shape[0] for _, audio in audio_loader.values()]
-            idxs = [idx for idx in range(len(audio_keys)) if audio_lengths[idx] > audio_length_threshold]
+            idxs = [
+                idx
+                for idx in range(len(audio_keys))
+                if audio_lengths[idx] > audio_length_threshold
+            ]
             if len(audio_keys) != len(idxs):
-                logging.warning(f"Some files are filtered by audio length threshold "
-                                f"({len(audio_keys)} -> {len(idxs)}).")
+                logging.warning(
+                    f"Some files are filtered by audio length threshold "
+                    f"({len(audio_keys)} -> {len(idxs)})."
+                )
             audio_keys = [audio_keys[idx] for idx in idxs]
 
         self.audio_loader = audio_loader
@@ -224,7 +245,7 @@ class AudioSCPDataset(Dataset):
 
         # normalize audio signal to be [-1, 1]
         audio = audio.astype(np.float32)
-        audio /= (1 << (16 - 1))  # assume that wav is PCM 16 bit
+        audio /= 1 << (16 - 1)  # assume that wav is PCM 16 bit
 
         if self.return_sampling_rate:
             audio = (audio, fs)
@@ -252,12 +273,13 @@ class AudioSCPDataset(Dataset):
 class MelSCPDataset(Dataset):
     """PyTorch compatible mel dataset based on kaldi-stype scp files."""
 
-    def __init__(self,
-                 feats_scp,
-                 mel_length_threshold=None,
-                 return_utt_id=False,
-                 allow_cache=False,
-                 ):
+    def __init__(
+        self,
+        feats_scp,
+        mel_length_threshold=None,
+        return_utt_id=False,
+        allow_cache=False,
+    ):
         """Initialize dataset.
 
         Args:
@@ -274,10 +296,16 @@ class MelSCPDataset(Dataset):
         # filter by threshold
         if mel_length_threshold is not None:
             mel_lengths = [mel.shape[0] for mel in mel_loader.values()]
-            idxs = [idx for idx in range(len(mel_keys)) if mel_lengths[idx] > mel_length_threshold]
+            idxs = [
+                idx
+                for idx in range(len(mel_keys))
+                if mel_lengths[idx] > mel_length_threshold
+            ]
             if len(mel_keys) != len(idxs):
-                logging.warning(f"Some files are filtered by mel length threshold "
-                                f"({len(mel_keys)} -> {len(idxs)}).")
+                logging.warning(
+                    f"Some files are filtered by mel length threshold "
+                    f"({len(mel_keys)} -> {len(idxs)})."
+                )
             mel_keys = [mel_keys[idx] for idx in idxs]
 
         self.mel_loader = mel_loader

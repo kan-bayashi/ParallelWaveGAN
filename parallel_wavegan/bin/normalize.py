@@ -27,41 +27,81 @@ from parallel_wavegan.utils import write_hdf5
 def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
-        description="Normalize dumped raw features (See detail in parallel_wavegan/bin/normalize.py).")
-    parser.add_argument("--rootdir", default=None, type=str,
-                        help="directory including feature files to be normalized. "
-                             "you need to specify either *-scp or rootdir.")
-    parser.add_argument("--wav-scp", default=None, type=str,
-                        help="kaldi-style wav.scp file. "
-                             "you need to specify either *-scp or rootdir.")
-    parser.add_argument("--feats-scp", default=None, type=str,
-                        help="kaldi-style feats.scp file. "
-                             "you need to specify either *-scp or rootdir.")
-    parser.add_argument("--segments", default=None, type=str,
-                        help="kaldi-style segments file.")
-    parser.add_argument("--dumpdir", type=str, required=True,
-                        help="directory to dump normalized feature files.")
-    parser.add_argument("--stats", type=str, required=True,
-                        help="statistics file.")
-    parser.add_argument("--skip-wav-copy", default=False, action="store_true",
-                        help="whether to skip the copy of wav files.")
-    parser.add_argument("--config", type=str, required=True,
-                        help="yaml format configuration file.")
-    parser.add_argument("--verbose", type=int, default=1,
-                        help="logging level. higher is more logging. (default=1)")
+        description="Normalize dumped raw features (See detail in parallel_wavegan/bin/normalize.py)."
+    )
+    parser.add_argument(
+        "--rootdir",
+        default=None,
+        type=str,
+        help="directory including feature files to be normalized. "
+        "you need to specify either *-scp or rootdir.",
+    )
+    parser.add_argument(
+        "--wav-scp",
+        default=None,
+        type=str,
+        help="kaldi-style wav.scp file. "
+        "you need to specify either *-scp or rootdir.",
+    )
+    parser.add_argument(
+        "--feats-scp",
+        default=None,
+        type=str,
+        help="kaldi-style feats.scp file. "
+        "you need to specify either *-scp or rootdir.",
+    )
+    parser.add_argument(
+        "--segments",
+        default=None,
+        type=str,
+        help="kaldi-style segments file.",
+    )
+    parser.add_argument(
+        "--dumpdir",
+        type=str,
+        required=True,
+        help="directory to dump normalized feature files.",
+    )
+    parser.add_argument(
+        "--stats",
+        type=str,
+        required=True,
+        help="statistics file.",
+    )
+    parser.add_argument(
+        "--skip-wav-copy",
+        default=False,
+        action="store_true",
+        help="whether to skip the copy of wav files.",
+    )
+    parser.add_argument(
+        "--config", type=str, required=True, help="yaml format configuration file."
+    )
+    parser.add_argument(
+        "--verbose",
+        type=int,
+        default=1,
+        help="logging level. higher is more logging. (default=1)",
+    )
     args = parser.parse_args()
 
     # set logger
     if args.verbose > 1:
         logging.basicConfig(
-            level=logging.DEBUG, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+            level=logging.DEBUG,
+            format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s",
+        )
     elif args.verbose > 0:
         logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+            level=logging.INFO,
+            format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s",
+        )
     else:
         logging.basicConfig(
-            level=logging.WARN, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
-        logging.warning('Skip DEBUG/INFO messages')
+            level=logging.WARN,
+            format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s",
+        )
+        logging.warning("Skip DEBUG/INFO messages")
 
     # load config
     with open(args.config) as f:
@@ -69,8 +109,9 @@ def main():
     config.update(vars(args))
 
     # check arguments
-    if (args.feats_scp is not None and args.rootdir is not None) or \
-            (args.feats_scp is None and args.rootdir is None):
+    if (args.feats_scp is not None and args.rootdir is not None) or (
+        args.feats_scp is None and args.rootdir is None
+    ):
         raise ValueError("Please specify either --rootdir or --feats-scp.")
 
     # check directory existence
@@ -145,17 +186,29 @@ def main():
 
         # save
         if config["format"] == "hdf5":
-            write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"),
-                       "feats", mel.astype(np.float32))
+            write_hdf5(
+                os.path.join(args.dumpdir, f"{utt_id}.h5"),
+                "feats",
+                mel.astype(np.float32),
+            )
             if not args.skip_wav_copy:
-                write_hdf5(os.path.join(args.dumpdir, f"{utt_id}.h5"),
-                           "wave", audio.astype(np.float32))
+                write_hdf5(
+                    os.path.join(args.dumpdir, f"{utt_id}.h5"),
+                    "wave",
+                    audio.astype(np.float32),
+                )
         elif config["format"] == "npy":
-            np.save(os.path.join(args.dumpdir, f"{utt_id}-feats.npy"),
-                    mel.astype(np.float32), allow_pickle=False)
+            np.save(
+                os.path.join(args.dumpdir, f"{utt_id}-feats.npy"),
+                mel.astype(np.float32),
+                allow_pickle=False,
+            )
             if not args.skip_wav_copy:
-                np.save(os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
-                        audio.astype(np.float32), allow_pickle=False)
+                np.save(
+                    os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
+                    audio.astype(np.float32),
+                    allow_pickle=False,
+                )
         else:
             raise ValueError("support only hdf5 or npy format.")
 

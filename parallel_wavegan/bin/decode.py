@@ -28,34 +28,66 @@ def main():
     """Run decoding process."""
     parser = argparse.ArgumentParser(
         description="Decode dumped features with trained Parallel WaveGAN Generator "
-                    "(See detail in parallel_wavegan/bin/decode.py).")
-    parser.add_argument("--feats-scp", "--scp", default=None, type=str,
-                        help="kaldi-style feats.scp file. "
-                             "you need to specify either feats-scp or dumpdir.")
-    parser.add_argument("--dumpdir", default=None, type=str,
-                        help="directory including feature files. "
-                             "you need to specify either feats-scp or dumpdir.")
-    parser.add_argument("--outdir", type=str, required=True,
-                        help="directory to save generated speech.")
-    parser.add_argument("--checkpoint", type=str, required=True,
-                        help="checkpoint file to be loaded.")
-    parser.add_argument("--config", default=None, type=str,
-                        help="yaml format configuration file. if not explicitly provided, "
-                             "it will be searched in the checkpoint directory. (default=None)")
-    parser.add_argument("--verbose", type=int, default=1,
-                        help="logging level. higher is more logging. (default=1)")
+        "(See detail in parallel_wavegan/bin/decode.py)."
+    )
+    parser.add_argument(
+        "--feats-scp",
+        "--scp",
+        default=None,
+        type=str,
+        help="kaldi-style feats.scp file. "
+        "you need to specify either feats-scp or dumpdir.",
+    )
+    parser.add_argument(
+        "--dumpdir",
+        default=None,
+        type=str,
+        help="directory including feature files. "
+        "you need to specify either feats-scp or dumpdir.",
+    )
+    parser.add_argument(
+        "--outdir",
+        type=str,
+        required=True,
+        help="directory to save generated speech.",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        required=True,
+        help="checkpoint file to be loaded.",
+    )
+    parser.add_argument(
+        "--config",
+        default=None,
+        type=str,
+        help="yaml format configuration file. if not explicitly provided, "
+        "it will be searched in the checkpoint directory. (default=None)",
+    )
+    parser.add_argument(
+        "--verbose",
+        type=int,
+        default=1,
+        help="logging level. higher is more logging. (default=1)",
+    )
     args = parser.parse_args()
 
     # set logger
     if args.verbose > 1:
         logging.basicConfig(
-            level=logging.DEBUG, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+            level=logging.DEBUG,
+            format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s",
+        )
     elif args.verbose > 0:
         logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+            level=logging.INFO,
+            format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s",
+        )
     else:
         logging.basicConfig(
-            level=logging.WARN, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+            level=logging.WARN,
+            format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s",
+        )
         logging.warning("Skip DEBUG/INFO messages")
 
     # check directory existence
@@ -71,8 +103,9 @@ def main():
     config.update(vars(args))
 
     # check arguments
-    if (args.feats_scp is not None and args.dumpdir is not None) or \
-            (args.feats_scp is None and args.dumpdir is None):
+    if (args.feats_scp is not None and args.dumpdir is not None) or (
+        args.feats_scp is None and args.dumpdir is None
+    ):
         raise ValueError("Please specify either --dumpdir or --feats-scp.")
 
     # get dataset
@@ -121,11 +154,17 @@ def main():
             total_rtf += rtf
 
             # save as PCM 16 bit wav file
-            sf.write(os.path.join(config["outdir"], f"{utt_id}_gen.wav"),
-                     y.cpu().numpy(), config["sampling_rate"], "PCM_16")
+            sf.write(
+                os.path.join(config["outdir"], f"{utt_id}_gen.wav"),
+                y.cpu().numpy(),
+                config["sampling_rate"],
+                "PCM_16",
+            )
 
     # report average RTF
-    logging.info(f"Finished generation of {idx} utterances (RTF = {total_rtf / idx:.03f}).")
+    logging.info(
+        f"Finished generation of {idx} utterances (RTF = {total_rtf / idx:.03f})."
+    )
 
 
 if __name__ == "__main__":

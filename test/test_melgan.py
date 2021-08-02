@@ -23,7 +23,9 @@ from test_parallel_wavegan import make_mutli_reso_stft_loss_args
 from test_parallel_wavegan import make_residual_discriminator_args
 
 logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s")
+    level=logging.DEBUG,
+    format="%(asctime)s (%(module)s:%(lineno)d) %(levelname)s: %(message)s",
+)
 
 
 def make_melgan_generator_args(**kwargs):
@@ -77,7 +79,8 @@ def make_melgan_discriminator_args(**kwargs):
 
 
 @pytest.mark.parametrize(
-    "dict_g, dict_d, dict_loss", [
+    "dict_g, dict_d, dict_loss",
+    [
         ({}, {}, {}),
         ({"kernel_size": 3}, {}, {}),
         ({"channels": 1024}, {}, {}),
@@ -92,7 +95,8 @@ def make_melgan_discriminator_args(**kwargs):
         ({"use_final_nonlinear_activation": False}, {}, {}),
         ({"use_weight_norm": False}, {}, {}),
         ({"use_causal_conv": True}, {}, {}),
-    ])
+    ],
+)
 def test_melgan_trainable(dict_g, dict_d, dict_loss):
     # setup
     batch_size = 4
@@ -101,9 +105,11 @@ def test_melgan_trainable(dict_g, dict_d, dict_loss):
     args_d = make_discriminator_args(**dict_d)
     args_loss = make_mutli_reso_stft_loss_args(**dict_loss)
     y = torch.randn(batch_size, 1, batch_length)
-    c = torch.randn(batch_size, args_g["in_channels"],
-                    batch_length // np.prod(
-                        args_g["upsample_scales"]))
+    c = torch.randn(
+        batch_size,
+        args_g["in_channels"],
+        batch_length // np.prod(args_g["upsample_scales"]),
+    )
     model_g = MelGANGenerator(**args_g)
     model_d = ParallelWaveGANDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
@@ -127,14 +133,17 @@ def test_melgan_trainable(dict_g, dict_d, dict_loss):
     p = model_d(y)
     p_hat = model_d(y_hat)
     p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(p_hat, p_hat.new_zeros(p_hat.size()))
+    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(
+        p_hat, p_hat.new_zeros(p_hat.size())
+    )
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
 
 
 @pytest.mark.parametrize(
-    "dict_g, dict_d, dict_loss", [
+    "dict_g, dict_d, dict_loss",
+    [
         ({}, {}, {}),
         ({"kernel_size": 3}, {}, {}),
         ({"channels": 1024}, {}, {}),
@@ -148,7 +157,8 @@ def test_melgan_trainable(dict_g, dict_d, dict_loss):
         ({"bias": False}, {}, {}),
         ({"use_final_nonlinear_activation": False}, {}, {}),
         ({"use_weight_norm": False}, {}, {}),
-    ])
+    ],
+)
 def test_melgan_trainable_with_residual_discriminator(dict_g, dict_d, dict_loss):
     # setup
     batch_size = 4
@@ -157,9 +167,11 @@ def test_melgan_trainable_with_residual_discriminator(dict_g, dict_d, dict_loss)
     args_d = make_residual_discriminator_args(**dict_d)
     args_loss = make_mutli_reso_stft_loss_args(**dict_loss)
     y = torch.randn(batch_size, 1, batch_length)
-    c = torch.randn(batch_size, args_g["in_channels"],
-                    batch_length // np.prod(
-                        args_g["upsample_scales"]))
+    c = torch.randn(
+        batch_size,
+        args_g["in_channels"],
+        batch_length // np.prod(args_g["upsample_scales"]),
+    )
     model_g = MelGANGenerator(**args_g)
     model_d = ResidualParallelWaveGANDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
@@ -183,14 +195,17 @@ def test_melgan_trainable_with_residual_discriminator(dict_g, dict_d, dict_loss)
     p = model_d(y)
     p_hat = model_d(y_hat)
     p, p_hat = p.squeeze(1), p_hat.squeeze(1)
-    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(p_hat, p_hat.new_zeros(p_hat.size()))
+    loss_d = F.mse_loss(p, p.new_ones(p.size())) + F.mse_loss(
+        p_hat, p_hat.new_zeros(p_hat.size())
+    )
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
 
 
 @pytest.mark.parametrize(
-    "dict_g, dict_d, dict_loss", [
+    "dict_g, dict_d, dict_loss",
+    [
         ({}, {}, {}),
         ({}, {"scales": 4}, {}),
         ({}, {"kernel_sizes": [7, 5]}, {}),
@@ -198,7 +213,8 @@ def test_melgan_trainable_with_residual_discriminator(dict_g, dict_d, dict_loss)
         ({}, {"downsample_scales": [4, 4]}, {}),
         ({}, {"pad": "ConstantPad1d", "pad_params": {"value": 0.0}}, {}),
         ({}, {"nonlinear_activation": "ReLU", "nonlinear_activation_params": {}}, {}),
-    ])
+    ],
+)
 def test_melgan_trainable_with_melgan_discriminator(dict_g, dict_d, dict_loss):
     # setup
     batch_size = 4
@@ -207,9 +223,11 @@ def test_melgan_trainable_with_melgan_discriminator(dict_g, dict_d, dict_loss):
     args_d = make_melgan_discriminator_args(**dict_d)
     args_loss = make_mutli_reso_stft_loss_args(**dict_loss)
     y = torch.randn(batch_size, 1, batch_length)
-    c = torch.randn(batch_size, args_g["in_channels"],
-                    batch_length // np.prod(
-                        args_g["upsample_scales"]))
+    c = torch.randn(
+        batch_size,
+        args_g["in_channels"],
+        batch_length // np.prod(args_g["upsample_scales"]),
+    )
     model_g = MelGANGenerator(**args_g)
     model_d = MelGANMultiScaleDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
@@ -224,9 +242,8 @@ def test_melgan_trainable_with_melgan_discriminator(dict_g, dict_d, dict_loss):
     aux_loss = sc_loss + mag_loss
     adv_loss = 0.0
     for i in range(len(p_hat)):
-        adv_loss += F.mse_loss(
-            p_hat[i][-1], p_hat[i][-1].new_ones(p_hat[i][-1].size()))
-    adv_loss /= (i + 1)
+        adv_loss += F.mse_loss(p_hat[i][-1], p_hat[i][-1].new_ones(p_hat[i][-1].size()))
+    adv_loss /= i + 1
     with torch.no_grad():
         p = model_d(y.unsqueeze(1))
     fm_loss = 0.0
@@ -246,12 +263,12 @@ def test_melgan_trainable_with_melgan_discriminator(dict_g, dict_d, dict_loss):
     real_loss = 0.0
     fake_loss = 0.0
     for i in range(len(p)):
-        real_loss += F.mse_loss(
-            p[i][-1], p[i][-1].new_ones(p[i][-1].size()))
+        real_loss += F.mse_loss(p[i][-1], p[i][-1].new_ones(p[i][-1].size()))
         fake_loss += F.mse_loss(
-            p_hat[i][-1], p_hat[i][-1].new_zeros(p_hat[i][-1].size()))
-    real_loss /= (i + 1)
-    fake_loss /= (i + 1)
+            p_hat[i][-1], p_hat[i][-1].new_zeros(p_hat[i][-1].size())
+        )
+    real_loss /= i + 1
+    fake_loss /= i + 1
     loss_d = real_loss + fake_loss
     optimizer_d.zero_grad()
     loss_d.backward()
@@ -259,21 +276,24 @@ def test_melgan_trainable_with_melgan_discriminator(dict_g, dict_d, dict_loss):
 
 
 @pytest.mark.parametrize(
-    "dict_g", [
+    "dict_g",
+    [
         ({"use_causal_conv": True}),
         ({"use_causal_conv": True, "upsample_scales": [4, 4, 2, 2]}),
         ({"use_causal_conv": True, "upsample_scales": [4, 5, 4, 3]}),
-    ])
+    ],
+)
 def test_causal_melgan(dict_g):
     batch_size = 4
     batch_length = 4096
     args_g = make_melgan_generator_args(**dict_g)
     upsampling_factor = np.prod(args_g["upsample_scales"])
-    c = torch.randn(batch_size, args_g["in_channels"],
-                    batch_length // upsampling_factor)
+    c = torch.randn(
+        batch_size, args_g["in_channels"], batch_length // upsampling_factor
+    )
     model_g = MelGANGenerator(**args_g)
     c_ = c.clone()
-    c_[..., c.size(-1) // 2:] = torch.randn(c[..., c.size(-1) // 2:].shape)
+    c_[..., c.size(-1) // 2 :] = torch.randn(c[..., c.size(-1) // 2 :].shape)
     try:
         # check not equal
         np.testing.assert_array_equal(c.numpy(), c_.numpy())
@@ -287,6 +307,6 @@ def test_causal_melgan(dict_g):
     y_ = model_g(c_)
     assert y.size(2) == c.size(2) * upsampling_factor
     np.testing.assert_array_equal(
-        y[..., :c.size(-1) // 2 * upsampling_factor].detach().cpu().numpy(),
-        y_[..., :c_.size(-1) // 2 * upsampling_factor].detach().cpu().numpy(),
+        y[..., : c.size(-1) // 2 * upsampling_factor].detach().cpu().numpy(),
+        y_[..., : c_.size(-1) // 2 * upsampling_factor].detach().cpu().numpy(),
     )
