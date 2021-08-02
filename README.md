@@ -2,7 +2,11 @@
 
 ![](https://github.com/kan-bayashi/ParallelWaveGAN/workflows/CI/badge.svg) [![](https://img.shields.io/pypi/v/parallel-wavegan)](https://pypi.org/project/parallel-wavegan/) ![](https://img.shields.io/pypi/pyversions/parallel-wavegan) ![](https://img.shields.io/pypi/l/parallel-wavegan) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espnet/notebook/blob/master/espnet2_tts_realtime_demo.ipynb)
 
-This repository provides **UNOFFICIAL** [PWG](https://arxiv.org/abs/1910.11480), [MelGAN](https://arxiv.org/abs/1910.06711), and [MB-MelGAN](https://arxiv.org/abs/2005.05106) implementations with Pytorch.  
+This repository provides **UNOFFICIAL** pytorch implementations of the following models:
+- [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
+- [MelGAN](https://arxiv.org/abs/1910.06711)
+- [Multiband-MelGAN](https://arxiv.org/abs/2005.05106)
+- [HiFi-GAN](https://arxiv.org/abs/2010.05646)
 You can combine these state-of-the-art non-autoregressive models to build your own great vocoder!
 
 Please check our samples in [our demo HP](https://kan-bayashi.github.io/ParallelWaveGAN).
@@ -20,7 +24,8 @@ You can try the real-time end-to-end text-to-speech demonstration in Google Cola
 
 ## What's new
 
-- 2020/10/07 **(New!)** [JSSS](https://sites.google.com/site/shinnosuketakamichi/research-topics/jsss_corpus) recipe is available!
+- 2021/08/02 Support [HiFi-GAN](https://arxiv.org/abs/2010.05646) generator and discriminator!
+- 2020/10/07 [JSSS](https://sites.google.com/site/shinnosuketakamichi/research-topics/jsss_corpus) recipe is available!
 - 2020/08/19 [Real-time demo with ESPnet2](https://colab.research.google.com/github/espnet/notebook/blob/master/espnet2_tts_realtime_demo.ipynb) is available!
 - 2020/05/29 [VCTK, JSUT, and CSMSC multi-band MelGAN pretrained model](#Results) is available!
 - 2020/05/27 [New LJSpeech multi-band MelGAN pretrained model](#Results) is available!
@@ -373,6 +378,8 @@ If you want to combine these models in python, you can try the real-time demonst
 - [MelGAN](https://arxiv.org/abs/1910.06711)
 - [descriptinc/melgan-neurips](https://github.com/descriptinc/melgan-neurips)
 - [Multi-band MelGAN](https://arxiv.org/abs/2005.05106)
+- [HiFi-GAN](https://arxiv.org/abs/2010.05646)
+- [jik876/hifi-gan](https://github.com/jik876/hifi-gan)
 
 ## Acknowledgement
 
