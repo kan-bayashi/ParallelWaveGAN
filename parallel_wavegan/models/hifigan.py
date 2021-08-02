@@ -6,6 +6,7 @@ This code is based on https://github.com/jik876/hifi-gan.
 
 """
 
+import copy
 import logging
 
 import numpy as np
@@ -130,7 +131,8 @@ class HiFiGANGenerator(torch.nn.Module):
             for j in range(len(self.blocks)):
                 cs += self.blocks[i * self.num_blocks + j][c]
             c = cs / self.num_blocks
-        # NOTE(kan-bayashi): why using different slope parameter here?
+        # NOTE(kan-bayashi): follow official implementation but why
+        #   using different slope parameter here? (0.1 vs. 0.01)
         c = F.leaky_relu(c)
         c = self.output_conv(c)
         c = torch.tanh(c)
@@ -178,7 +180,7 @@ class HiFiGANGenerator(torch.nn.Module):
 
 
 class HiFiGANPeriodDiscriminator(torch.nn.Module):
-    """HiFiGAN generator module."""
+    """HiFiGAN period discriminator module."""
 
     def __init__(
         self,
@@ -210,6 +212,8 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
             nonlinear_activation (str): Activation function module name.
             nonlinear_activation_params (dict): Hyperparameters for activation function.
             use_weight_norm (bool): Whether to use weight norm.
+                If set to true, it will be applied to all of the conv layers.
+            use_spectral_norm (bool): Whether to use spectral norm.
                 If set to true, it will be applied to all of the conv layers.
 
         """
@@ -307,8 +311,60 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
         self.apply(_apply_spectral_norm)
 
 
-class HiFiGANDiscriminator(torch.nn.Module):
-    """HiFi-GAN discriminator module."""
+class HiFiGANMultiPeriodDiscriminator(torch.nn.Module):
+    """HiFiGAN multi-period discriminator module."""
+
+    def __init__(
+        self,
+        periods=[2, 3, 5, 7, 11],
+        discriminator_params={
+            "in_channels": 1,
+            "out_channels": 1,
+            "kernel_sizes": [5, 3],
+            "channels": 32,
+            "downsample_scales": [4, 4, 4, 4],
+            "max_downsample_channels": 1024,
+            "bias": True,
+            "nonlinear_activation": "LeakyReLU",
+            "nonlinear_activation_params": {"negative_slope": 0.1},
+            "use_weight_norm": True,
+            "use_spectral_norm": False,
+        },
+    ):
+        """Initialize HiFiGANMultiPeriodDiscriminator module.
+
+        Args:
+            periods (list): List of periods.
+            discriminator_params (dict): Parameters for hifi-gan period discriminator module.
+                The period parameter will be overwritten.
+
+        """
+        super().__init__()
+        self.discriminators = torch.nn.ModuleList()
+        for period in periods:
+            params = copy.deepcopy(discriminator_params)
+            params["period"] = period
+            self.discriminators += [HiFiGANPeriodDiscriminator(**params)]
+
+    def forward(self, x):
+        """Calculate forward propagation.
+
+        Args:
+            x (Tensor): Input noise signal (B, 1, T).
+
+        Returns:
+            List: List of list of each discriminator outputs, which consists of each layer output tensors.
+
+        """
+        outs = []
+        for f in self.discriminators:
+            outs += [f(x)]
+
+        return outs
+
+
+class HiFiGANScaleDiscriminator(torch.nn.Module):
+    """HiFi-GAN scale discriminator module."""
 
     def __init__(
         self,
@@ -325,7 +381,7 @@ class HiFiGANDiscriminator(torch.nn.Module):
         use_weight_norm=True,
         use_spectral_norm=False,
     ):
-        """Initilize MelGAN discriminator module.
+        """Initilize HiFiGAN scale discriminator module.
 
         Args:
             in_channels (int): Number of input channels.
@@ -340,8 +396,10 @@ class HiFiGANDiscriminator(torch.nn.Module):
             downsample_scales (list): List of downsampling scales.
             nonlinear_activation (str): Activation function module name.
             nonlinear_activation_params (dict): Hyperparameters for activation function.
-            pad (str): Padding function module name before dilated convolution layer.
-            pad_params (dict): Hyperparameters for padding function.
+            use_weight_norm (bool): Whether to use weight norm.
+                If set to true, it will be applied to all of the conv layers.
+            use_spectral_norm (bool): Whether to use spectral norm.
+                If set to true, it will be applied to all of the conv layers.
 
         """
         super().__init__()
@@ -459,3 +517,78 @@ class HiFiGANDiscriminator(torch.nn.Module):
                 logging.debug(f"Spectral norm is applied to {m}.")
 
         self.apply(_apply_spectral_norm)
+
+
+class HiFiGANMultiScaleDiscriminator(torch.nn.Module):
+    """HiFi-GAN multi-scale discriminator module."""
+
+    def __init__(
+        self,
+        scales=3,
+        downsample_pooling="AvgPool1d",
+        # follow the official implementation setting
+        downsample_pooling_params={
+            "kernel_size": 4,
+            "stride": 2,
+            "padding": 2,
+        },
+        discriminator_params={
+            "in_channels": 1,
+            "out_channels": 1,
+            "kernel_sizes": [5, 3],
+            "channels": 16,
+            "max_downsample_channels": 1024,
+            "max_groups": 16,
+            "bias": True,
+            "downsample_scales": [4, 4, 4, 4],
+            "nonlinear_activation": "LeakyReLU",
+            "nonlinear_activation_params": {"negative_slope": 0.1},
+        },
+        follow_official_norm=False,
+    ):
+        """Initilize HiFiGAN multi-scale discriminator module.
+
+        Args:
+            scales (int): Number of multi-scales.
+            downsample_pooling (str): Pooling module name for downsampling of the inputs.
+            downsample_pooling_params (dict): Parameters for the above pooling module.
+            discriminator_params (dict): Parameters for hifi-gan scale discriminator module.
+            follow_official_norm (bool): Whether to follow the norm setting of the official
+                implementaion. The first discriminator uses spectral norm and the other
+                discriminators use weight norm.
+
+        """
+        super().__init__()
+        self.discriminators = torch.nn.ModuleList()
+
+        # add discriminators
+        for i in range(scales):
+            if follow_official_norm:
+                params = copy.deepcopy(discriminator_params)
+                if i == 0:
+                    params["use_weight_norm"] = False
+                    params["use_spectral_norm"] = True
+                else:
+                    params["use_weight_norm"] = True
+                    params["use_spectral_norm"] = False
+            self.discriminators += [HiFiGANScaleDiscriminator(**params)]
+        self.pooling = getattr(torch.nn, downsample_pooling)(
+            **downsample_pooling_params
+        )
+
+    def forward(self, x):
+        """Calculate forward propagation.
+
+        Args:
+            x (Tensor): Input noise signal (B, 1, T).
+
+        Returns:
+            List: List of list of each discriminator outputs, which consists of each layer output tensors.
+
+        """
+        outs = []
+        for f in self.discriminators:
+            outs += [f(x)]
+            x = self.pooling(x)
+
+        return outs
