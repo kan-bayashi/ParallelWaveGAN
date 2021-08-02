@@ -96,7 +96,7 @@ class HiFiGANGenerator(torch.nn.Module):
                     )
                 ]
         self.output_conv = torch.nn.Conv1d(
-            channels,
+            channels // (2 ** (i + 1)),
             out_channels,
             kernel_size,
             1,
@@ -128,8 +128,8 @@ class HiFiGANGenerator(torch.nn.Module):
             c = self.activation(c)
             c = self.upsamples[i](c)
             cs = 0  # initialize
-            for j in range(len(self.blocks)):
-                cs += self.blocks[i * self.num_blocks + j][c]
+            for j in range(self.num_blocks):
+                cs += self.blocks[i * self.num_blocks + j](c)
             c = cs / self.num_blocks
         # NOTE(kan-bayashi): follow official implementation but why
         #   using different slope parameter here? (0.1 vs. 0.01)
@@ -563,8 +563,8 @@ class HiFiGANMultiScaleDiscriminator(torch.nn.Module):
 
         # add discriminators
         for i in range(scales):
+            params = copy.deepcopy(discriminator_params)
             if follow_official_norm:
-                params = copy.deepcopy(discriminator_params)
                 if i == 0:
                     params["use_weight_norm"] = False
                     params["use_spectral_norm"] = True
@@ -619,7 +619,7 @@ class HiFiGANMultiScaleMultiPeriodDiscriminator(torch.nn.Module):
             "nonlinear_activation": "LeakyReLU",
             "nonlinear_activation_params": {"negative_slope": 0.1},
         },
-        follow_official_norm=False,
+        follow_official_norm=True,
         # Multi-period discriminator related
         periods=[2, 3, 5, 7, 11],
         period_discriminator_params={
