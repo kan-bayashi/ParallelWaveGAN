@@ -246,6 +246,12 @@ class StyleMelGANDiscriminator(torch.nn.Module):
 
         """
         super().__init__()
+
+        # window size check
+        assert len(window_sizes) == len(pqmf_params)
+        sizes = [ws // p[0] for ws, p in zip(window_sizes, pqmf_params)]
+        assert len(window_sizes) == sum([sizes[0] == size for size in sizes])
+
         self.repeats = repeats
         self.window_sizes = window_sizes
         self.pqmfs = torch.nn.ModuleList()
