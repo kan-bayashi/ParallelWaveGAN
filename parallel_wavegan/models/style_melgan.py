@@ -43,6 +43,7 @@ class StyleMelGANGenerator(torch.nn.Module):
         noise_upsample = []
         in_chs = in_channels
         for noise_upsample_scale in noise_upsample_scales:
+            # NOTE(kan-bayashi): How should we design noise upsampling part?
             noise_upsample += [
                 torch.nn.ConvTranspose1d(
                     in_chs,
