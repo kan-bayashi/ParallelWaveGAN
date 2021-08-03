@@ -3,6 +3,8 @@
 
 """StyleMelGAN's TADEResBlock Modules."""
 
+from functools import partial
+
 import torch
 
 
@@ -123,7 +125,12 @@ class TADEResBlock(torch.nn.Module):
         self.upsample = torch.nn.Upsample(
             scale_factor=upsample_factor, mode=upsample_mode
         )
-        self.gated_function = getattr(torch, gated_function)
+        if gated_function == "softmax":
+            self.gated_function = partial(torch.softmax, dim=1)
+        elif gated_function == "sigmoid":
+            self.gated_function = torch.sigmoid
+        else:
+            raise ValueError(f"{gated_function} is not supported.")
 
     def forward(self, x, c):
         """Calculate forward propagation.
@@ -142,12 +149,12 @@ class TADEResBlock(torch.nn.Module):
         x, c = self.tade1(x, c)
         x = self.gated_conv1(x)
         xa, xb = x.split(x.size(1) // 2, dim=1)
-        x = self.gated_function(xa, dim=1) * torch.tanh(xb)
+        x = self.gated_function(xa) * torch.tanh(xb)
 
         x, c = self.tade2(x, c)
         x = self.gated_conv2(x)
         xa, xb = x.split(x.size(1) // 2, dim=1)
-        x = self.gated_function(xa, dim=1) * torch.tanh(xb)
+        x = self.gated_function(xa) * torch.tanh(xb)
 
         # NOTE(kan-bayashi): Return upsampled aux here?
         return self.upsample(residual) + x, c
