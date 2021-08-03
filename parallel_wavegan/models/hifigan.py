@@ -461,7 +461,8 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
                 )
             ]
             in_chs = out_chs
-            out_chs = min(in_chs * downsample_scale, max_downsample_channels)
+            # NOTE(kan-bayashi): Remove hard coding?
+            out_chs = min(in_chs * 2, max_downsample_channels)
             # NOTE(kan-bayashi): Remove hard coding?
             groups = min(groups * 4, max_groups)
 
