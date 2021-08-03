@@ -6,7 +6,8 @@ This repository provides **UNOFFICIAL** pytorch implementations of the following
 - [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
 - [MelGAN](https://arxiv.org/abs/1910.06711)
 - [Multiband-MelGAN](https://arxiv.org/abs/2005.05106)
-- [HiFi-GAN](https://arxiv.org/abs/2010.05646)
+- [HiFi-GAN](https://arxiv.org/abs/2010.05646) (Under testing)
+- [StyleMelGAN](https://arxiv.org/abs/2011.01557) (Under testing)
 
 You can combine these state-of-the-art non-autoregressive models to build your own great vocoder!
 
@@ -25,6 +26,7 @@ You can try the real-time end-to-end text-to-speech demonstration in Google Cola
 
 ## What's new
 
+- 2021/08/03 Support [StyleMelGAN](https://arxiv.org/abs/2011.01557) generator and discriminator!
 - 2021/08/02 Support [HiFi-GAN](https://arxiv.org/abs/2010.05646) generator and discriminator!
 - 2020/10/07 [JSSS](https://sites.google.com/site/shinnosuketakamichi/research-topics/jsss_corpus) recipe is available!
 - 2020/08/19 [Real-time demo with ESPnet2](https://colab.research.google.com/github/espnet/notebook/blob/master/espnet2_tts_realtime_demo.ipynb) is available!
@@ -381,6 +383,7 @@ If you want to combine these models in python, you can try the real-time demonst
 - [Multi-band MelGAN](https://arxiv.org/abs/2005.05106)
 - [HiFi-GAN](https://arxiv.org/abs/2010.05646)
 - [jik876/hifi-gan](https://github.com/jik876/hifi-gan)
+- [StyleMelGAN](https://arxiv.org/abs/2011.01557)
 
 ## Acknowledgement
 
