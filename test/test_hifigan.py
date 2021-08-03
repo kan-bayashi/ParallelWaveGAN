@@ -58,12 +58,12 @@ def make_hifigan_multi_scale_multi_period_discriminator_args(**kwargs):
         scale_discriminator_params={
             "in_channels": 1,
             "out_channels": 1,
-            "kernel_sizes": [5, 3],
-            "channels": 16,
-            "max_downsample_channels": 1024,
+            "kernel_sizes": [15, 41, 5, 3],
+            "channels": 128,
+            "max_downsample_channels": 128,
             "max_groups": 16,
             "bias": True,
-            "downsample_scales": [4, 4, 4, 4],
+            "downsample_scales": [2, 2, 4, 4, 1],
             "nonlinear_activation": "LeakyReLU",
             "nonlinear_activation_params": {"negative_slope": 0.1},
         },
@@ -74,8 +74,8 @@ def make_hifigan_multi_scale_multi_period_discriminator_args(**kwargs):
             "out_channels": 1,
             "kernel_sizes": [5, 3],
             "channels": 32,
-            "downsample_scales": [4, 4, 4, 4],
-            "max_downsample_channels": 1024,
+            "downsample_scales": [3, 3, 3, 3, 1],
+            "max_downsample_channels": 128,
             "bias": True,
             "nonlinear_activation": "LeakyReLU",
             "nonlinear_activation_params": {"negative_slope": 0.1},
@@ -150,3 +150,6 @@ def test_hifigan_trainable(dict_g, dict_d, dict_loss):
     optimizer_d.zero_grad()
     loss_d.backward()
     optimizer_d.step()
+
+    print(model_d)
+    print(model_g)
