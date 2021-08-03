@@ -215,8 +215,9 @@ class Trainer(object):
 
         # mel spectrogram loss
         if self.config["use_mel_loss"]:
-            gen_loss += self.criterion["mel"](y_, y)
-            self.total_train_loss["train/mel_loss"] += sub_mag_loss.item()
+            mel_loss = self.criterion["mel"](y_, y)
+            gen_loss += mel_loss
+            self.total_train_loss["train/mel_loss"] += mel_loss.item()
 
         # weighting aux loss
         gen_loss *= self.config.get("lambda_aux", 1.0)
@@ -330,11 +331,15 @@ class Trainer(object):
             y_mb_ = y_
             y_ = self.criterion["pqmf"].synthesis(y_mb_)
 
+        # initialize
+        aux_loss = 0.0
+
         # multi-resolution stft loss
-        # NOTE(kan-bayashi): always monitor STFT loss for evaluation
-        sc_loss, mag_loss = self.criterion["stft"](y_, y)
-        self.total_eval_loss["eval/spectral_convergence_loss"] += sc_loss.item()
-        self.total_eval_loss["eval/log_stft_magnitude_loss"] += mag_loss.item()
+        if self.config["use_stft_loss"]:
+            sc_loss, mag_loss = self.criterion["stft"](y_, y)
+            aux_loss += sc_loss + mag_loss
+            self.total_eval_loss["eval/spectral_convergence_loss"] += sc_loss.item()
+            self.total_eval_loss["eval/log_stft_magnitude_loss"] += mag_loss.item()
 
         # subband multi-resolution stft loss
         if self.config.get("use_subband_stft_loss", False):
@@ -348,6 +353,12 @@ class Trainer(object):
                 "eval/sub_log_stft_magnitude_loss"
             ] += sub_mag_loss.item()
             aux_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
+
+        # mel spectrogram loss
+        if self.config["use_mel_loss"]:
+            mel_loss = self.criterion["mel"](y_, y)
+            aux_loss += mel_loss
+            self.total_train_loss["eval/mel_loss"] += mel_loss.item()
 
         # weighting stft loss
         aux_loss *= self.config.get("lambda_aux", 1.0)
