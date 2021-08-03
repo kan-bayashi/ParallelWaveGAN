@@ -33,6 +33,7 @@ from parallel_wavegan.layers import PQMF
 from parallel_wavegan.losses import DiscriminatorAdversarialLoss
 from parallel_wavegan.losses import FeatureMatchLoss
 from parallel_wavegan.losses import GeneratorAdversarialLoss
+from parallel_wavegan.losses import MelSpectrogramLoss
 from parallel_wavegan.losses import MultiResolutionSTFTLoss
 from parallel_wavegan.utils import read_hdf5
 
@@ -189,27 +190,37 @@ class Trainer(object):
             y_mb_ = y_
             y_ = self.criterion["pqmf"].synthesis(y_mb_)
 
+        # initialize
+        gen_loss = 0.0
+
         # multi-resolution sfft loss
-        sc_loss, mag_loss = self.criterion["stft"](y_, y)
-        self.total_train_loss["train/spectral_convergence_loss"] += sc_loss.item()
-        self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
-        gen_loss = sc_loss + mag_loss
+        if self.config["use_stft_loss"]:
+            sc_loss, mag_loss = self.criterion["stft"](y_, y)
+            gen_loss += sc_loss + mag_loss
+            self.total_train_loss["train/spectral_convergence_loss"] += sc_loss.item()
+            self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
 
         # subband multi-resolution stft loss
         if self.config["use_subband_stft_loss"]:
             gen_loss *= 0.5  # for balancing with subband stft loss
             y_mb = self.criterion["pqmf"].analysis(y)
             sub_sc_loss, sub_mag_loss = self.criterion["sub_stft"](y_mb_, y_mb)
+            gen_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
             self.total_train_loss[
                 "train/sub_spectral_convergence_loss"
             ] += sub_sc_loss.item()
             self.total_train_loss[
                 "train/sub_log_stft_magnitude_loss"
             ] += sub_mag_loss.item()
-            gen_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
 
-        # weighting stft loss
-        gen_loss *= self.config.get("lambda_stft", 1.0)
+        # mel spectrogram loss
+        if self.config["use_mel_loss"]:
+            mel_loss = self.criterion["mel"](y_, y)
+            gen_loss += mel_loss
+            self.total_train_loss["train/mel_loss"] += mel_loss.item()
+
+        # weighting aux loss
+        gen_loss *= self.config.get("lambda_aux", 1.0)
 
         # adversarial loss
         if self.steps > self.config["discriminator_train_start_steps"]:
@@ -320,9 +331,15 @@ class Trainer(object):
             y_mb_ = y_
             y_ = self.criterion["pqmf"].synthesis(y_mb_)
 
+        # initialize
+        aux_loss = 0.0
+
         # multi-resolution stft loss
-        sc_loss, mag_loss = self.criterion["stft"](y_, y)
-        aux_loss = sc_loss + mag_loss
+        if self.config["use_stft_loss"]:
+            sc_loss, mag_loss = self.criterion["stft"](y_, y)
+            aux_loss += sc_loss + mag_loss
+            self.total_eval_loss["eval/spectral_convergence_loss"] += sc_loss.item()
+            self.total_eval_loss["eval/log_stft_magnitude_loss"] += mag_loss.item()
 
         # subband multi-resolution stft loss
         if self.config.get("use_subband_stft_loss", False):
@@ -337,8 +354,14 @@ class Trainer(object):
             ] += sub_mag_loss.item()
             aux_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
 
+        # mel spectrogram loss
+        if self.config["use_mel_loss"]:
+            mel_loss = self.criterion["mel"](y_, y)
+            aux_loss += mel_loss
+            self.total_train_loss["eval/mel_loss"] += mel_loss.item()
+
         # weighting stft loss
-        aux_loss *= self.config.get("lambda_stft", 1.0)
+        aux_loss *= self.config.get("lambda_aux", 1.0)
 
         # adversarial loss
         p_ = self.model["discriminator"](y_)
@@ -366,8 +389,6 @@ class Trainer(object):
 
         # add to total eval loss
         self.total_eval_loss["eval/adversarial_loss"] += adv_loss.item()
-        self.total_eval_loss["eval/spectral_convergence_loss"] += sc_loss.item()
-        self.total_eval_loss["eval/log_stft_magnitude_loss"] += mag_loss.item()
         self.total_eval_loss["eval/generator_loss"] += gen_loss.item()
         self.total_eval_loss["eval/real_loss"] += real_loss.item()
         self.total_eval_loss["eval/fake_loss"] += fake_loss.item()
@@ -871,7 +892,7 @@ def main():
         ),
     }
 
-    # define models and optimizers
+    # define models
     generator_class = getattr(
         parallel_wavegan.models,
         # keep compatibility
@@ -883,13 +904,16 @@ def main():
         config.get("discriminator_type", "ParallelWaveGANDiscriminator"),
     )
     model = {
-        "generator": generator_class(**config["generator_params"]).to(device),
-        "discriminator": discriminator_class(**config["discriminator_params"]).to(
-            device
-        ),
+        "generator": generator_class(
+            **config["generator_params"],
+        ).to(device),
+        "discriminator": discriminator_class(
+            **config["discriminator_params"],
+        ).to(device),
     }
+
+    # define criterions
     criterion = {
-        "stft": MultiResolutionSTFTLoss(**config["stft_loss_params"]).to(device),
         "gen_adv": GeneratorAdversarialLoss(
             # keep compatibility
             **config.get("generator_adv_loss_params", {})
@@ -899,26 +923,48 @@ def main():
             **config.get("discriminator_adv_loss_params", {})
         ).to(device),
     }
+    if config.get("use_stft_loss", True):  # keep compatibility
+        config["use_stft_loss"] = True
+        criterion["stft"] = MultiResolutionSTFTLoss(
+            **config["stft_loss_params"],
+        ).to(device)
+    if config.get("use_subband_stft_loss", False):  # keep compatibility
+        assert config["generator_params"]["out_channels"] > 1
+        criterion["sub_stft"] = MultiResolutionSTFTLoss(
+            **config["subband_stft_loss_params"],
+        ).to(device)
+    else:
+        config["use_subband_stft_loss"] = False
     if config.get("use_feat_match_loss", False):  # keep compatibility
         criterion["feat_match"] = FeatureMatchLoss(
             # keep compatibility
-            **config.get("feat_match_loss_params", {})
+            **config.get("feat_match_loss_params", {}),
         ).to(device)
     else:
         config["use_feat_match_loss"] = False
+    if config.get("use_mel_loss", False):  # keep compatibility
+        criterion["mel"] = MelSpectrogramLoss(
+            fs=config["sampling_rate"],
+            fft_size=config["fft_size"],
+            hop_size=config["hop_size"],
+            win_length=config["win_length"],
+            window=config["window"],
+            num_mels=config["num_mels"],
+            fmin=config["fmin"],
+            fmax=config["fmax"],
+        ).to(device)
+    else:
+        config["use_mel_loss"] = False
+
+    # define special module for subband processing
     if config["generator_params"]["out_channels"] > 1:
         criterion["pqmf"] = PQMF(
             subbands=config["generator_params"]["out_channels"],
             # keep compatibility
             **config.get("pqmf_params", {}),
         ).to(device)
-    if config.get("use_subband_stft_loss", False):  # keep compatibility
-        assert config["generator_params"]["out_channels"] > 1
-        criterion["sub_stft"] = MultiResolutionSTFTLoss(
-            **config["subband_stft_loss_params"]
-        ).to(device)
-    else:
-        config["use_subband_stft_loss"] = False
+
+    # define optimizers and schedulers
     generator_optimizer_class = getattr(
         parallel_wavegan.optimizers,
         # keep compatibility

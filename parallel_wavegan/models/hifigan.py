@@ -9,7 +9,6 @@ This code is based on https://github.com/jik876/hifi-gan.
 import copy
 import logging
 
-import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -204,7 +203,7 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
         period=3,
         kernel_sizes=[5, 3],
         channels=32,
-        downsample_scales=[4, 4, 4, 4],
+        downsample_scales=[3, 3, 3, 3, 1],
         max_downsample_channels=1024,
         bias=True,
         nonlinear_activation="LeakyReLU",
@@ -218,7 +217,7 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
             in_channels (int): Number of input channels.
             out_channels (int): Number of output channels.
             period (int): Period.
-            kernel_sizes (list): Kernel sizes of initial and final conv layer.
+            kernel_sizes (list): Kernel sizes of initial conv layers and the final conv layer.
             channels (int): Number of initial channels.
             downsample_scales (list): List of downsampling scales.
             max_downsample_channels (int): Number of maximum downsampling channels.
@@ -256,7 +255,8 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
                 )
             ]
             in_chs = out_chs
-            out_chs = min(out_chs * downsample_scale, max_downsample_channels)
+            # NOTE(kan-bayashi): Use downsample_scale + 1?
+            out_chs = min(out_chs * 4, max_downsample_channels)
         self.output_conv = torch.nn.Conv2d(
             out_chs,
             out_channels,
@@ -337,7 +337,7 @@ class HiFiGANMultiPeriodDiscriminator(torch.nn.Module):
             "out_channels": 1,
             "kernel_sizes": [5, 3],
             "channels": 32,
-            "downsample_scales": [4, 4, 4, 4],
+            "downsample_scales": [3, 3, 3, 3, 1],
             "max_downsample_channels": 1024,
             "bias": True,
             "nonlinear_activation": "LeakyReLU",
@@ -385,12 +385,12 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
         self,
         in_channels=1,
         out_channels=1,
-        kernel_sizes=[5, 3],
-        channels=16,
+        kernel_sizes=[15, 41, 5, 3],
+        channels=128,
         max_downsample_channels=1024,
         max_groups=16,
         bias=True,
-        downsample_scales=[4, 4, 4, 4],
+        downsample_scales=[2, 2, 4, 4, 1],
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.1},
         use_weight_norm=True,
@@ -401,10 +401,8 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
         Args:
             in_channels (int): Number of input channels.
             out_channels (int): Number of output channels.
-            kernel_sizes (list): List of two kernel sizes. The prod will be used for the first conv layer,
-                and the first and the second kernel sizes will be used for the last two layers.
-                For example if kernel_sizes = [5, 3], the first layer kernel size will be 5 * 3 = 15,
-                the last two layers' kernel size will be 5 and 3, respectively.
+            kernel_sizes (list): List of four kernel sizes. The first will be used for the first conv layer,
+                and the second is for downsampling part, and the remaining two are for output layers.
             channels (int): Initial number of channels for conv layer.
             max_downsample_channels (int): Maximum number of channels for downsampling layers.
             bias (bool): Whether to add bias parameter in convolution layers.
@@ -421,9 +419,9 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
         self.layers = torch.nn.ModuleList()
 
         # check kernel size is valid
-        assert len(kernel_sizes) == 2
-        assert kernel_sizes[0] % 2 == 1
-        assert kernel_sizes[1] % 2 == 1
+        assert len(kernel_sizes) == 4
+        for ks in kernel_sizes:
+            assert ks % 2 == 1
 
         # add first layer
         self.layers += [
@@ -431,9 +429,10 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
                 torch.nn.Conv1d(
                     in_channels,
                     channels,
-                    np.prod(kernel_sizes),
+                    # NOTE(kan-bayashi): Use always the same kernel size
+                    kernel_sizes[0],
                     bias=bias,
-                    padding=(np.prod(kernel_sizes) - 1) // 2,
+                    padding=(kernel_sizes[0] - 1) // 2,
                 ),
                 getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
             )
@@ -441,17 +440,19 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
 
         # add downsample layers
         in_chs = channels
+        out_chs = channels
+        # NOTE(kan-bayashi): Remove hard coding?
+        groups = 4
         for downsample_scale in downsample_scales:
-            out_chs = min(in_chs * downsample_scale, max_downsample_channels)
             self.layers += [
                 torch.nn.Sequential(
                     torch.nn.Conv1d(
                         in_chs,
                         out_chs,
-                        kernel_size=downsample_scale * 10 + 1,
+                        kernel_size=kernel_sizes[1],
                         stride=downsample_scale,
-                        padding=downsample_scale * 5,
-                        groups=min(in_chs // 4, max_groups),
+                        padding=(kernel_sizes[1] - 1) // 2,
+                        groups=groups,
                         bias=bias,
                     ),
                     getattr(torch.nn, nonlinear_activation)(
@@ -460,6 +461,10 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
                 )
             ]
             in_chs = out_chs
+            # NOTE(kan-bayashi): Remove hard coding?
+            out_chs = min(in_chs * 2, max_downsample_channels)
+            # NOTE(kan-bayashi): Remove hard coding?
+            groups = min(groups * 4, max_groups)
 
         # add final layers
         out_chs = min(in_chs * 2, max_downsample_channels)
@@ -468,8 +473,9 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
                 torch.nn.Conv1d(
                     in_chs,
                     out_chs,
-                    kernel_sizes[0],
-                    padding=(kernel_sizes[0] - 1) // 2,
+                    kernel_size=kernel_sizes[2],
+                    stride=1,
+                    padding=(kernel_sizes[2] - 1) // 2,
                     bias=bias,
                 ),
                 getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
@@ -479,8 +485,9 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
             torch.nn.Conv1d(
                 out_chs,
                 out_channels,
-                kernel_sizes[1],
-                padding=(kernel_sizes[1] - 1) // 2,
+                kernel_size=kernel_sizes[3],
+                stride=1,
+                padding=(kernel_sizes[3] - 1) // 2,
                 bias=bias,
             ),
         ]
@@ -550,12 +557,12 @@ class HiFiGANMultiScaleDiscriminator(torch.nn.Module):
         discriminator_params={
             "in_channels": 1,
             "out_channels": 1,
-            "kernel_sizes": [5, 3],
-            "channels": 16,
+            "kernel_sizes": [15, 41, 5, 3],
+            "channels": 128,
             "max_downsample_channels": 1024,
             "max_groups": 16,
             "bias": True,
-            "downsample_scales": [4, 4, 4, 4],
+            "downsample_scales": [2, 2, 4, 4, 1],
             "nonlinear_activation": "LeakyReLU",
             "nonlinear_activation_params": {"negative_slope": 0.1},
         },
@@ -625,12 +632,12 @@ class HiFiGANMultiScaleMultiPeriodDiscriminator(torch.nn.Module):
         scale_discriminator_params={
             "in_channels": 1,
             "out_channels": 1,
-            "kernel_sizes": [5, 3],
-            "channels": 16,
+            "kernel_sizes": [15, 41, 5, 3],
+            "channels": 128,
             "max_downsample_channels": 1024,
             "max_groups": 16,
             "bias": True,
-            "downsample_scales": [4, 4, 4, 4],
+            "downsample_scales": [2, 2, 4, 4, 1],
             "nonlinear_activation": "LeakyReLU",
             "nonlinear_activation_params": {"negative_slope": 0.1},
         },
@@ -642,7 +649,7 @@ class HiFiGANMultiScaleMultiPeriodDiscriminator(torch.nn.Module):
             "out_channels": 1,
             "kernel_sizes": [5, 3],
             "channels": 32,
-            "downsample_scales": [4, 4, 4, 4],
+            "downsample_scales": [3, 3, 3, 3, 1],
             "max_downsample_channels": 1024,
             "bias": True,
             "nonlinear_activation": "LeakyReLU",
