@@ -28,14 +28,33 @@ class StyleMelGANGenerator(torch.nn.Module):
         dilation=2,
         bias=True,
         noise_upsample_scales=[11, 2, 2, 2],
+        noise_upsample_activation="LeakyReLU",
+        noise_upsample_activation_params={"negative_slope": 0.2},
         upsample_scales=[2, 2, 2, 2, 2, 2, 2, 2, 1],
         upsample_mode="nearest",
         gated_function="softmax",
-        nonlinear_activation="LeakyReLU",
-        nonlinear_activation_params={"negative_slope": 0.2},
         use_weight_norm=True,
     ):
-        """Initilize Style MelGAN generator."""
+        """Initilize Style MelGAN generator.
+
+        Args:
+            in_channels (int): Number of input noise channels.
+            aux_channels (int): Number of auxiliary input channels.
+            channels (int): Number of channels for conv layer.
+            out_channels (int): Number of output channels.
+            kernel_size (int): Kernel size of conv layers.
+            dilation (int): Dilation factor for conv layers.
+            bias (bool): Whether to add bias parameter in convolution layers.
+            noise_upsample_scales (list): List of noise upsampling scales.
+            noise_upsample_activation (str): Activation function module name for noise upsampling.
+            noise_upsample_activation_params (dict): Hyperparameters for the above activation function.
+            upsample_scales (list): List of upsampling scales.
+            upsample_mode (str): Upsampling mode in TADE layer.
+            gated_function (str): Gated function in TADEResBlock ("softmax" or "sigmoid").
+            use_weight_norm (bool): Whether to use weight norm.
+                If set to true, it will be applied to all of the conv layers.
+
+        """
         super().__init__()
 
         self.in_channels = in_channels
@@ -56,7 +75,9 @@ class StyleMelGANGenerator(torch.nn.Module):
                 )
             ]
             noise_upsample += [
-                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params)
+                getattr(torch.nn, noise_upsample_activation)(
+                    **noise_upsample_activation_params
+                )
             ]
             in_chs = channels
         self.noise_upsample = torch.nn.Sequential(*noise_upsample)

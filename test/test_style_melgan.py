@@ -36,10 +36,11 @@ def make_style_melgan_generator_args(**kwargs):
         dilation=2,
         bias=True,
         noise_upsample_scales=[11, 2, 2, 2],
+        noise_upsample_activation="LeakyReLU",
+        noise_upsample_activation_params={"negative_slope": 0.2},
         upsample_scales=[2, 2, 2, 2, 2, 2, 2, 2, 1],
         upsample_mode="nearest",
-        nonlinear_activation="LeakyReLU",
-        nonlinear_activation_params={"negative_slope": 0.2},
+        gated_function="softmax",
         use_weight_norm=True,
     )
     defaults.update(kwargs)
@@ -128,6 +129,7 @@ def test_style_melgan_generator(dict_g):
     [
         ({}, {}, {}),
         ({"noise_upsample_scales": [4, 4, 4]}, {}, {}),
+        ({"gated_function": "sigmoid"}, {}, {}),
     ],
 )
 def test_style_melgan_trainable(dict_g, dict_d, dict_loss):
