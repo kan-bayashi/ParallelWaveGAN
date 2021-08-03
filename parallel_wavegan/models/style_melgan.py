@@ -66,10 +66,8 @@ class StyleMelGANGenerator(torch.nn.Module):
                     kernel_size=kernel_size,
                     dilation=dilation,
                     bias=bias,
-                    in_upsample_factor=upsample_scale,
-                    in_upsample_mode=upsample_mode,
-                    aux_upsample_factor=upsample_scale,
-                    aux_upsample_mode=upsample_mode,
+                    upsample_factor=upsample_scale,
+                    upsample_mode=upsample_mode,
                 ),
             ]
             aux_chs = channels

@@ -15,10 +15,8 @@ class TADELayer(torch.nn.Module):
         aux_channels=80,
         kernel_size=9,
         bias=True,
-        in_upsample_factor=2,
-        in_upsample_mode="nearest",
-        aux_upsample_factor=2,
-        aux_upsample_mode="nearest",
+        upsample_factor=2,
+        upsample_mode="nearest",
     ):
         """Initilize TADE layer."""
         super().__init__()
@@ -45,11 +43,8 @@ class TADELayer(torch.nn.Module):
             ),
             # NOTE(kan-bayashi): Use non-linear activation?
         )
-        self.in_upsample = torch.nn.Upsample(
-            scale_factor=in_upsample_factor, mode=in_upsample_mode
-        )
-        self.aux_upsample = torch.nn.Upsample(
-            scale_factor=aux_upsample_factor, mode=aux_upsample_mode
+        self.upsample = torch.nn.Upsample(
+            scale_factor=upsample_factor, mode=upsample_mode
         )
 
     def forward(self, x, c):
@@ -65,12 +60,14 @@ class TADELayer(torch.nn.Module):
 
         """
         x = self.norm(x)
-        c = self.aux_upsample(c)
+        c = self.upsample(c)
         c = self.aux_conv(c)
         cg = self.gated_conv(c)
         cg1, cg2 = cg.split(cg.size(1) // 2, dim=1)
         # NOTE(kan-bayashi): Use upsample for noise input here?
-        return cg1 * self.in_upsample(x) + cg2, c
+        y = cg1 * self.upsample(x) + cg2
+        # NOTE(kan-bayashi): Return upsampled aux here?
+        return y, c
 
 
 class TADEResBlock(torch.nn.Module):
@@ -83,10 +80,9 @@ class TADEResBlock(torch.nn.Module):
         kernel_size=9,
         dilation=2,
         bias=True,
-        in_upsample_factor=2,
-        in_upsample_mode="nearest",
-        aux_upsample_factor=2,
-        aux_upsample_mode="nearest",
+        upsample_factor=2,
+        upsample_mode="nearest",
+        gated_function="softmax",
     ):
         """Initialize TADEResBlock module."""
         super().__init__()
@@ -96,11 +92,8 @@ class TADEResBlock(torch.nn.Module):
             kernel_size=kernel_size,
             bias=bias,
             # NOTE(kan-bayashi): Use upsample in the first TADE layer?
-            in_upsample_factor=1,
-            in_upsample_mode=in_upsample_mode,
-            # NOTE(kan-bayashi): Use upsample in the first TADE layer?
-            aux_upsample_factor=1,
-            aux_upsample_mode=aux_upsample_mode,
+            upsample_factor=1,
+            upsample_mode=upsample_mode,
         )
         self.gated_conv1 = torch.nn.Conv1d(
             in_channels,
@@ -115,10 +108,8 @@ class TADEResBlock(torch.nn.Module):
             aux_channels=in_channels,
             kernel_size=kernel_size,
             bias=bias,
-            in_upsample_factor=in_upsample_factor,
-            in_upsample_mode=in_upsample_mode,
-            aux_upsample_factor=aux_upsample_factor,
-            aux_upsample_mode=aux_upsample_mode,
+            upsample_factor=upsample_factor,
+            upsample_mode=upsample_mode,
         )
         self.gated_conv2 = torch.nn.Conv1d(
             in_channels,
@@ -130,8 +121,9 @@ class TADEResBlock(torch.nn.Module):
             padding=(kernel_size - 1) // 2 * dilation,
         )
         self.upsample = torch.nn.Upsample(
-            scale_factor=in_upsample_factor, mode=in_upsample_mode
+            scale_factor=upsample_factor, mode=upsample_mode
         )
+        self.gated_function = getattr(torch, gated_function)
 
     def forward(self, x, c):
         """Calculate forward propagation.
@@ -142,15 +134,20 @@ class TADEResBlock(torch.nn.Module):
 
         Returns:
             Tensor: Output tensor (B, in_channels, T * in_upsample_factor).
+            Tensor: Upsampled auxirialy tensor (B, in_channels, T * in_upsample_factor).
 
         """
         residual = x
+
         x, c = self.tade1(x, c)
         x = self.gated_conv1(x)
         xa, xb = x.split(x.size(1) // 2, dim=1)
-        x = torch.softmax(xa, dim=1) * torch.tanh(xb)
+        x = self.gated_function(xa, dim=1) * torch.tanh(xb)
+
         x, c = self.tade2(x, c)
         x = self.gated_conv2(x)
         xa, xb = x.split(x.size(1) // 2, dim=1)
-        x = torch.softmax(xa, dim=1) * torch.tanh(xb)
+        x = self.gated_function(xa, dim=1) * torch.tanh(xb)
+
+        # NOTE(kan-bayashi): Return upsampled aux here?
         return self.upsample(residual) + x, c
