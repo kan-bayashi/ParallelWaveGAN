@@ -57,7 +57,7 @@ discriminator_params:
     scale_discriminator_params:
         in_channels: 1                    # Number of input channels.
         out_channels: 1                   # Number of output channels.
-        kernel_sizes: [5, 3]              # List of kernal sizes.
+        kernel_sizes: [15, 41, 5, 3]      # List of kernal sizes.
         channels: 16                      # Initial number of channels.
         max_downsample_channels: 32       # Maximum number of channels in downsampling conv layers.
         max_groups: 16                    # Maximum number of groups in downsampling conv layers.
@@ -85,11 +85,8 @@ discriminator_params:
 ###########################################################
 #                   STFT LOSS SETTING                     #
 ###########################################################
-stft_loss_params:
-    fft_sizes: [1024, 2048, 512]  # List of FFT size for STFT-based loss.
-    hop_sizes: [120, 240, 50]     # List of hop size for STFT-based loss
-    win_lengths: [600, 1200, 240] # List of window length for STFT-based loss.
-    window: "hann_window"         # Window function for STFT-based loss
+use_stft_loss: false
+use_mel_loss: true
 generator_adv_loss_params:
     average_by_discriminators: false # Whether to average loss by #discriminators.
 discriminator_adv_loss_params:
@@ -103,7 +100,7 @@ feat_match_loss_params:
 ###########################################################
 #               ADVERSARIAL LOSS SETTING                  #
 ###########################################################
-lambda_stft: 45.0      # Loss balancing coefficient for STFT loss.
+lambda_aux: 45.0       # Loss balancing coefficient for STFT loss.
 lambda_adv: 1.0        # Loss balancing coefficient for adversarial loss.
 lambda_feat_match: 2.0 # Loss balancing coefficient for feat match loss..
 
