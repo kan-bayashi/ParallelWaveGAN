@@ -98,18 +98,23 @@ class StyleMelGANGenerator(torch.nn.Module):
         # reset parameters
         self.reset_parameters()
 
-    def forward(self, x, c):
+    def forward(self, c, z=None):
         """Calculate forward propagation.
 
         Args:
-            x (Tensor): Input noise tensor (B, 128, 1).
             c (Tensor): Auxiliary input tensor (B, channels, T).
+            z (Tensor): Input noise tensor (B, in_channels, 1).
 
         Returns:
             Tensor: Output tensor (B, out_channels, T ** prod(upsample_scales)).
 
         """
-        x = self.noise_upsample(x)
+        if z is None:
+            z = torch.randn(c.size(0), self.in_channels, 1).to(
+                device=c.device,
+                dtype=c.dtype,
+            )
+        x = self.noise_upsample(z)
         for block in self.blocks:
             x, c = block(x, c)
         x = self.output_conv(x)
@@ -164,7 +169,11 @@ class StyleMelGANGenerator(torch.nn.Module):
         if not isinstance(c, torch.Tensor):
             c = torch.tensor(c, dtype=torch.float).to(next(self.parameters()).device)
         c = c.transpose(1, 0).unsqueeze(0)
-        noise_size = (1, self.in_channels, math.ceil(c.size(2) / self.noise_upsample_factor))
+        noise_size = (
+            1,
+            self.in_channels,
+            math.ceil(c.size(2) / self.noise_upsample_factor),
+        )
         noise = torch.randn(*noise_size, dtype=torch.float).to(
             next(self.parameters()).device
         )
