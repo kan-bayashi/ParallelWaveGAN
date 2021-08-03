@@ -80,7 +80,7 @@ class MelSpectrogram(torch.nn.Module):
         """
         if x.dim() == 3:
             # (B, C, T) -> (B*C, T)
-            x = x(1, 2).reshape(-1, x.size(2))
+            x = x.reshape(-1, x.size(2))
 
         if self.window is not None:
             window_func = getattr(torch, f"{self.window}_window")
