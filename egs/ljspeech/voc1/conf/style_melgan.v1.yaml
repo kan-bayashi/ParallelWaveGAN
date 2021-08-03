@@ -11,9 +11,9 @@ win_length: null         # Window length.
                          # If set to null, it will be the same as fft_size.
 window: "hann"           # Window function.
 num_mels: 80             # Number of mel basis.
-fmin: 0                  # Minimum freq in mel basis calculation.
-fmax: 4000               # Maximum frequency in mel basis calculation.
-global_gain_scale: 0.8   # Will be multiplied to all of waveform.
+fmin: 80                 # Minimum freq in mel basis calculation.
+fmax: 7600               # Maximum frequency in mel basis calculation.
+global_gain_scale: 1.0   # Will be multiplied to all of waveform.
 trim_silence: false      # Whether to trim the start and end of silence.
 trim_threshold_in_db: 60 # Need to tune carefully if the recording is not good.
 trim_frame_size: 1024    # Frame size in trimming.
@@ -133,8 +133,8 @@ discriminator_grad_norm: -1 # Discriminator's gradient norm.
 discriminator_train_start_steps: 100000 # Number of steps to start to train discriminator.
 train_max_steps: 1500000                # Number of training steps.
 save_interval_steps: 50000              # Interval steps to save checkpoint.
-eval_interval_steps: 10000              # Interval steps to evaluate the network.
-log_interval_steps: 5000                # Interval steps to record the training log.
+eval_interval_steps: 1000              # Interval steps to evaluate the network.
+log_interval_steps: 100                # Interval steps to record the training log.
 
 ###########################################################
 #                     OTHER SETTING                       #
