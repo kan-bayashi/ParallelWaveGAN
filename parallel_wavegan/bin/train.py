@@ -952,7 +952,7 @@ def main():
             num_mels=config["num_mels"],
             fmin=config["fmin"],
             fmax=config["fmax"],
-        )
+        ).to(device)
     else:
         config["use_mel_loss"] = False
 
