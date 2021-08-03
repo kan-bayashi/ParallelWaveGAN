@@ -358,7 +358,7 @@ class Trainer(object):
         if self.config["use_mel_loss"]:
             mel_loss = self.criterion["mel"](y_, y)
             aux_loss += mel_loss
-            self.total_train_loss["eval/mel_loss"] += mel_loss.item()
+            self.total_eval_loss["eval/mel_loss"] += mel_loss.item()
 
         # weighting stft loss
         aux_loss *= self.config.get("lambda_aux", 1.0)
