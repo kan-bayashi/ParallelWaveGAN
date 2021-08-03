@@ -1,7 +1,6 @@
 # This is the configuration file for LJSpeech dataset.
 # This configuration is based on HiFiGAN V1, derived
 # from official repository (https://github.com/jik876/hifi-gan).
-# But instead of mel loss, we use mutli-res STFT loss.
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
