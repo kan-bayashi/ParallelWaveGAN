@@ -5,6 +5,7 @@
 
 import copy
 import logging
+import math
 
 import numpy as np
 import torch
@@ -29,12 +30,15 @@ class StyleMelGANGenerator(torch.nn.Module):
         noise_upsample_scales=[11, 2, 2, 2],
         upsample_scales=[2, 2, 2, 2, 2, 2, 2, 2, 1],
         upsample_mode="nearest",
+        gated_function="softmax",
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.2},
         use_weight_norm=True,
     ):
         """Initilize Style MelGAN generator."""
         super().__init__()
+
+        self.in_channels = in_channels
 
         noise_upsample = []
         in_chs = in_channels
@@ -55,6 +59,7 @@ class StyleMelGANGenerator(torch.nn.Module):
             ]
             in_chs = channels
         self.noise_upsample = torch.nn.Sequential(*noise_upsample)
+        self.noise_upsample_factor = np.prod(noise_upsample_scales)
 
         self.blocks = torch.nn.ModuleList()
         aux_chs = aux_channels
@@ -68,9 +73,11 @@ class StyleMelGANGenerator(torch.nn.Module):
                     bias=bias,
                     upsample_factor=upsample_scale,
                     upsample_mode=upsample_mode,
+                    gated_function=gated_function,
                 ),
             ]
             aux_chs = channels
+        self.upsample_factor = np.prod(upsample_scales)
 
         self.output_conv = torch.nn.Sequential(
             torch.nn.Conv1d(
@@ -143,6 +150,31 @@ class StyleMelGANGenerator(torch.nn.Module):
                 logging.debug(f"Reset parameters in {m}.")
 
         self.apply(_reset_parameters)
+
+    def inference(self, c):
+        """Perform inference.
+
+        Args:
+            c (Union[Tensor, ndarray]): Input tensor (T, in_channels).
+
+        Returns:
+            Tensor: Output tensor (T ** prod(upsample_scales), out_channels).
+
+        """
+        if not isinstance(c, torch.Tensor):
+            c = torch.tensor(c, dtype=torch.float).to(next(self.parameters()).device)
+        c = c.transpose(1, 0).unsqueeze(0)
+        noise_size = (1, self.in_channels, math.ceil(c.size(2) / self.noise_upsample_factor))
+        noise = torch.randn(*noise_size, dtype=torch.float).to(
+            next(self.parameters()).device
+        )
+        noise_up = self.noise_upsample(noise)
+        x = noise_up[:, :, : c.size(2)]
+        for block in self.blocks:
+            x, c = block(x, c)
+        x = self.output_conv(x)
+
+        return x.squeeze(0).transpose(1, 0)
 
 
 class StyleMelGANDiscriminator(torch.nn.Module):
