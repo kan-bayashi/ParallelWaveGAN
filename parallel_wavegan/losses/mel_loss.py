@@ -84,9 +84,7 @@ class MelSpectrogram(torch.nn.Module):
 
         if self.window is not None:
             window_func = getattr(torch, f"{self.window}_window")
-            window = window_func(
-                self.win_length, dtype=x.dtype, device=x.device
-            )
+            window = window_func(self.win_length, dtype=x.dtype, device=x.device)
         else:
             window = None
 
