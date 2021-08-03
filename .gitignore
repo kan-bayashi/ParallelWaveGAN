@@ -20,6 +20,9 @@ coverage.xml*
 .vscode*
 .nfs*
 .ipynb_checkpoints
+.d000*
+*.out
+*.err
 
 # recipe related
 egs/*/*/data
