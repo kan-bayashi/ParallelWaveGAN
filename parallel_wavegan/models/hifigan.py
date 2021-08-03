@@ -9,7 +9,6 @@ This code is based on https://github.com/jik876/hifi-gan.
 import copy
 import logging
 
-import numpy as np
 import torch
 import torch.nn.functional as F
 
