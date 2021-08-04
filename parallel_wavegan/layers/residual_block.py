@@ -207,8 +207,8 @@ class HiFiGANResidualBlock(torch.nn.Module):
             Tensor: Output tensor (B, channels, T).
 
         """
-        residual = x
         for idx in range(len(self.convs1)):
+            residual = x
             x = self.convs1[idx](self.activation(x))
             if self.use_additional_convs:
                 x = self.convs2[idx](self.activation(x))
