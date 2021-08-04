@@ -142,7 +142,7 @@ Make sure already you finished the espnet2-tts recipe experiments (at least star
 ```bash
 cd egs
 
-# For single speaker case
+# Please use single spk template for both single and multi spk case
 cp -r template_single_spk <recipe_name>
 
 # Move on your recipe
