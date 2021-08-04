@@ -134,3 +134,32 @@ Here, I will show how to make the recipe for your own dataset.
     ```
 
 If you want to try the other advanced model, please check the config files in `egs/ljspeech/voc1/conf`.
+
+## Run training using ESPnet2-TTS recipe within 5 minutes
+
+Make sure already you finished the espnet2-tts recipe experiments (at least starting the training).
+
+```bash
+cd egs
+
+# For single speaker case
+cp -r template_single_spk <recipe_name>
+
+# Move on your recipe
+cd egs/<recipe_name>/voc1
+
+# Make symlink of data directory (Better to use absolute path)
+mkdir dump data
+ln -s /path/to/espnet/egs2/<recipe_name>/tts1/dump/raw dump/
+ln -s /path/to/espnet/egs2/<recipe_name>/tts1/dump/raw/tr_no_dev data/train_nodev
+ln -s /path/to/espnet/egs2/<recipe_name>/tts1/dump/raw/dev data/dev
+ln -s /path/to/espnet/egs2/<recipe_name>/tts1/dump/raw/eval1 data/eval
+
+# Edit config to match TTS model setting
+vim conf/parallel_wavegan.v1.yaml
+
+# Run from stage 1
+./run.sh --stage 1 --conf conf/parallel_wavegan.v1.yaml
+```
+
+That's it!
