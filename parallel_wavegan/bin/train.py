@@ -1045,7 +1045,7 @@ def main():
     # run training loop
     try:
         trainer.run()
-    except KeyboardInterrupt:
+    finally:
         trainer.save_checkpoint(
             os.path.join(config["outdir"], f"checkpoint-{trainer.steps}steps.pkl")
         )
