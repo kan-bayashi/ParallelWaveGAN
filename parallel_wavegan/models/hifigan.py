@@ -74,12 +74,17 @@ class HiFiGANGenerator(torch.nn.Module):
         self.blocks = torch.nn.ModuleList()
         for i in range(len(upsample_kernal_sizes)):
             self.upsamples += [
-                torch.nn.ConvTranspose1d(
-                    channels // (2 ** i),
-                    channels // (2 ** (i + 1)),
-                    upsample_kernal_sizes[i],
-                    upsample_scales[i],
-                    padding=(upsample_kernal_sizes[i] - upsample_scales[i]) // 2,
+                torch.nn.Sequential(
+                    getattr(torch.nn, nonlinear_activation)(
+                        **nonlinear_activation_params
+                    ),
+                    torch.nn.ConvTranspose1d(
+                        channels // (2 ** i),
+                        channels // (2 ** (i + 1)),
+                        upsample_kernal_sizes[i],
+                        upsample_scales[i],
+                        padding=(upsample_kernal_sizes[i] - upsample_scales[i]) // 2,
+                    ),
                 )
             ]
             for j in range(len(resblock_kernel_sizes)):
@@ -94,15 +99,18 @@ class HiFiGANGenerator(torch.nn.Module):
                         nonlinear_activation_params=nonlinear_activation_params,
                     )
                 ]
-        self.output_conv = torch.nn.Conv1d(
-            channels // (2 ** (i + 1)),
-            out_channels,
-            kernel_size,
-            1,
-            padding=(kernel_size - 1) // 2,
-        )
-        self.activation = getattr(torch.nn, nonlinear_activation)(
-            **nonlinear_activation_params
+        self.output_conv = torch.nn.Sequential(
+            # NOTE(kan-bayashi): follow official implementation but why
+            #   using different slope parameter here? (0.1 vs. 0.01)
+            torch.nn.LeakyReLU(),
+            torch.nn.Conv1d(
+                channels // (2 ** (i + 1)),
+                out_channels,
+                kernel_size,
+                1,
+                padding=(kernel_size - 1) // 2,
+            ),
+            torch.nn.Tanh(),
         )
 
         # apply weight norm
@@ -123,18 +131,13 @@ class HiFiGANGenerator(torch.nn.Module):
 
         """
         c = self.input_conv(c)
-        for i in range(len(self.upsamples)):
-            c = self.activation(c)
+        for i in range(self.num_upsamples):
             c = self.upsamples[i](c)
-            cs = 0  # initialize
+            cs = 0.0  # initialize
             for j in range(self.num_blocks):
                 cs += self.blocks[i * self.num_blocks + j](c)
             c = cs / self.num_blocks
-        # NOTE(kan-bayashi): follow official implementation but why
-        #   using different slope parameter here? (0.1 vs. 0.01)
-        c = F.leaky_relu(c)
         c = self.output_conv(c)
-        c = torch.tanh(c)
 
         return c
 
@@ -232,6 +235,7 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
 
         """
         super().__init__()
+        assert len(kernel_sizes) == 2
         assert kernel_sizes[0] % 2 == 1, "Kernal size must be odd number."
         assert kernel_sizes[1] % 2 == 1, "Kernal size must be odd number."
 
@@ -239,7 +243,7 @@ class HiFiGANPeriodDiscriminator(torch.nn.Module):
         self.convs = torch.nn.ModuleList()
         in_chs = in_channels
         out_chs = channels
-        for idx, downsample_scale in enumerate(downsample_scales):
+        for downsample_scale in downsample_scales:
             self.convs += [
                 torch.nn.Sequential(
                     torch.nn.Conv2d(
