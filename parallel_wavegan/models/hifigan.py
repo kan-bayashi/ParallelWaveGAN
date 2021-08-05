@@ -678,14 +678,14 @@ class HiFiGANMultiScaleMultiPeriodDiscriminator(torch.nn.Module):
 
         """
         super().__init__()
-        self.multi_scale_discriminator = HiFiGANMultiScaleDiscriminator(
+        self.msd = HiFiGANMultiScaleDiscriminator(
             scales=scales,
             downsample_pooling=scale_downsample_pooling,
             downsample_pooling_params=scale_downsample_pooling_params,
             discriminator_params=scale_discriminator_params,
             follow_official_norm=follow_official_norm,
         )
-        self.multi_period_discriminator = HiFiGANMultiPeriodDiscriminator(
+        self.mpd = HiFiGANMultiPeriodDiscriminator(
             periods=periods,
             discriminator_params=period_discriminator_params,
         )
@@ -702,6 +702,6 @@ class HiFiGANMultiScaleMultiPeriodDiscriminator(torch.nn.Module):
                 Multi scale and multi period ones are concatenated.
 
         """
-        multi_scale_outs = self.multi_scale_discriminator(x)
-        multi_period_outs = self.multi_period_discriminator(x)
-        return multi_scale_outs + multi_period_outs
+        msd_outs = self.msd(x)
+        mpd_outs = self.mpd(x)
+        return msd_outs + mpd_outs
