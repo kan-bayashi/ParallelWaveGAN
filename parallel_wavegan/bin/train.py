@@ -198,8 +198,12 @@ class Trainer(object):
             if self.config["use_stft_loss"]:
                 sc_loss, mag_loss = self.criterion["stft"](y_, y)
                 gen_loss += sc_loss + mag_loss
-                self.total_train_loss["train/spectral_convergence_loss"] += sc_loss.item()
-                self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
+                self.total_train_loss[
+                    "train/spectral_convergence_loss"
+                ] += sc_loss.item()
+                self.total_train_loss[
+                    "train/log_stft_magnitude_loss"
+                ] += mag_loss.item()
 
             # subband multi-resolution stft loss
             if self.config["use_subband_stft_loss"]:
@@ -235,7 +239,9 @@ class Trainer(object):
                     with torch.no_grad():
                         p = self.model["discriminator"](y)
                     fm_loss = self.criterion["feat_match"](p_, p)
-                    self.total_train_loss["train/feature_matching_loss"] += fm_loss.item()
+                    self.total_train_loss[
+                        "train/feature_matching_loss"
+                    ] += fm_loss.item()
                     adv_loss += self.config["lambda_feat_match"] * fm_loss
 
                 # add adversarial loss to generator loss
@@ -248,7 +254,8 @@ class Trainer(object):
             gen_loss.backward()
             if self.config["generator_grad_norm"] > 0:
                 torch.nn.utils.clip_grad_norm_(
-                    self.model["generator"].parameters(), self.config["generator_grad_norm"]
+                    self.model["generator"].parameters(),
+                    self.config["generator_grad_norm"],
                 )
             self.optimizer["generator"].step()
             self.scheduler["generator"].step()
@@ -944,16 +951,21 @@ def main():
     else:
         config["use_feat_match_loss"] = False
     if config.get("use_mel_loss", False):  # keep compatibility
-        criterion["mel"] = MelSpectrogramLoss(
-            fs=config["sampling_rate"],
-            fft_size=config["fft_size"],
-            hop_size=config["hop_size"],
-            win_length=config["win_length"],
-            window=config["window"],
-            num_mels=config["num_mels"],
-            fmin=config["fmin"],
-            fmax=config["fmax"],
-        ).to(device)
+        if config.get("mel_loss_params", None) is None:
+            criterion["mel"] = MelSpectrogramLoss(
+                fs=config["sampling_rate"],
+                fft_size=config["fft_size"],
+                hop_size=config["hop_size"],
+                win_length=config["win_length"],
+                window=config["window"],
+                num_mels=config["num_mels"],
+                fmin=config["fmin"],
+                fmax=config["fmax"],
+            ).to(device)
+        else:
+            criterion["mel"] = MelSpectrogramLoss(
+                **config["mel_loss_params"],
+            ).to(device)
     else:
         config["use_mel_loss"] = False
 
