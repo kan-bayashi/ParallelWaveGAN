@@ -183,74 +183,75 @@ class Trainer(object):
         #######################
         #      Generator      #
         #######################
-        y_ = self.model["generator"](*x)
+        if self.steps > self.config.get("generator_train_start_steps", 0):
+            y_ = self.model["generator"](*x)
 
-        # reconstruct the signal from multi-band signal
-        if self.config["generator_params"]["out_channels"] > 1:
-            y_mb_ = y_
-            y_ = self.criterion["pqmf"].synthesis(y_mb_)
+            # reconstruct the signal from multi-band signal
+            if self.config["generator_params"]["out_channels"] > 1:
+                y_mb_ = y_
+                y_ = self.criterion["pqmf"].synthesis(y_mb_)
 
-        # initialize
-        gen_loss = 0.0
+            # initialize
+            gen_loss = 0.0
 
-        # multi-resolution sfft loss
-        if self.config["use_stft_loss"]:
-            sc_loss, mag_loss = self.criterion["stft"](y_, y)
-            gen_loss += sc_loss + mag_loss
-            self.total_train_loss["train/spectral_convergence_loss"] += sc_loss.item()
-            self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
+            # multi-resolution sfft loss
+            if self.config["use_stft_loss"]:
+                sc_loss, mag_loss = self.criterion["stft"](y_, y)
+                gen_loss += sc_loss + mag_loss
+                self.total_train_loss["train/spectral_convergence_loss"] += sc_loss.item()
+                self.total_train_loss["train/log_stft_magnitude_loss"] += mag_loss.item()
 
-        # subband multi-resolution stft loss
-        if self.config["use_subband_stft_loss"]:
-            gen_loss *= 0.5  # for balancing with subband stft loss
-            y_mb = self.criterion["pqmf"].analysis(y)
-            sub_sc_loss, sub_mag_loss = self.criterion["sub_stft"](y_mb_, y_mb)
-            gen_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
-            self.total_train_loss[
-                "train/sub_spectral_convergence_loss"
-            ] += sub_sc_loss.item()
-            self.total_train_loss[
-                "train/sub_log_stft_magnitude_loss"
-            ] += sub_mag_loss.item()
+            # subband multi-resolution stft loss
+            if self.config["use_subband_stft_loss"]:
+                gen_loss *= 0.5  # for balancing with subband stft loss
+                y_mb = self.criterion["pqmf"].analysis(y)
+                sub_sc_loss, sub_mag_loss = self.criterion["sub_stft"](y_mb_, y_mb)
+                gen_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
+                self.total_train_loss[
+                    "train/sub_spectral_convergence_loss"
+                ] += sub_sc_loss.item()
+                self.total_train_loss[
+                    "train/sub_log_stft_magnitude_loss"
+                ] += sub_mag_loss.item()
 
-        # mel spectrogram loss
-        if self.config["use_mel_loss"]:
-            mel_loss = self.criterion["mel"](y_, y)
-            gen_loss += mel_loss
-            self.total_train_loss["train/mel_loss"] += mel_loss.item()
+            # mel spectrogram loss
+            if self.config["use_mel_loss"]:
+                mel_loss = self.criterion["mel"](y_, y)
+                gen_loss += mel_loss
+                self.total_train_loss["train/mel_loss"] += mel_loss.item()
 
-        # weighting aux loss
-        gen_loss *= self.config.get("lambda_aux", 1.0)
+            # weighting aux loss
+            gen_loss *= self.config.get("lambda_aux", 1.0)
 
-        # adversarial loss
-        if self.steps > self.config["discriminator_train_start_steps"]:
-            p_ = self.model["discriminator"](y_)
-            adv_loss = self.criterion["gen_adv"](p_)
-            self.total_train_loss["train/adversarial_loss"] += adv_loss.item()
+            # adversarial loss
+            if self.steps > self.config["discriminator_train_start_steps"]:
+                p_ = self.model["discriminator"](y_)
+                adv_loss = self.criterion["gen_adv"](p_)
+                self.total_train_loss["train/adversarial_loss"] += adv_loss.item()
 
-            # feature matching loss
-            if self.config["use_feat_match_loss"]:
-                # no need to track gradients
-                with torch.no_grad():
-                    p = self.model["discriminator"](y)
-                fm_loss = self.criterion["feat_match"](p_, p)
-                self.total_train_loss["train/feature_matching_loss"] += fm_loss.item()
-                adv_loss += self.config["lambda_feat_match"] * fm_loss
+                # feature matching loss
+                if self.config["use_feat_match_loss"]:
+                    # no need to track gradients
+                    with torch.no_grad():
+                        p = self.model["discriminator"](y)
+                    fm_loss = self.criterion["feat_match"](p_, p)
+                    self.total_train_loss["train/feature_matching_loss"] += fm_loss.item()
+                    adv_loss += self.config["lambda_feat_match"] * fm_loss
 
-            # add adversarial loss to generator loss
-            gen_loss += self.config["lambda_adv"] * adv_loss
+                # add adversarial loss to generator loss
+                gen_loss += self.config["lambda_adv"] * adv_loss
 
-        self.total_train_loss["train/generator_loss"] += gen_loss.item()
+            self.total_train_loss["train/generator_loss"] += gen_loss.item()
 
-        # update generator
-        self.optimizer["generator"].zero_grad()
-        gen_loss.backward()
-        if self.config["generator_grad_norm"] > 0:
-            torch.nn.utils.clip_grad_norm_(
-                self.model["generator"].parameters(), self.config["generator_grad_norm"]
-            )
-        self.optimizer["generator"].step()
-        self.scheduler["generator"].step()
+            # update generator
+            self.optimizer["generator"].zero_grad()
+            gen_loss.backward()
+            if self.config["generator_grad_norm"] > 0:
+                torch.nn.utils.clip_grad_norm_(
+                    self.model["generator"].parameters(), self.config["generator_grad_norm"]
+                )
+            self.optimizer["generator"].step()
+            self.scheduler["generator"].step()
 
         #######################
         #    Discriminator    #
