@@ -30,6 +30,7 @@ class MelSpectrogram(torch.nn.Module):
         normalized=False,
         onesided=True,
         eps=1e-10,
+        log_base=10.0,
     ):
         """Initialize MelSpectrogram module."""
         super().__init__()
@@ -68,6 +69,16 @@ class MelSpectrogram(torch.nn.Module):
         if is_pytorch_17plus:
             self.stft_params["return_complex"] = False
 
+        self.log_base = log_base
+        if self.log_base is None:
+            self.log = torch.log
+        elif self.log_base == 2.0:
+            self.log = torch.log2
+        elif self.log_base == 10.0:
+            self.log = torch.log10
+        else:
+            raise ValueError(f"log_base: {log_base} is not supported.")
+
     def forward(self, x):
         """Calculate Mel-spectrogram.
 
@@ -97,7 +108,7 @@ class MelSpectrogram(torch.nn.Module):
         x_mel = torch.matmul(x_amp, self.melmat)
         x_mel = torch.clamp(x_mel, min=self.eps)
 
-        return x_mel.log10().transpose(1, 2)
+        return self.log(x_mel).transpose(1, 2)
 
 
 class MelSpectrogramLoss(torch.nn.Module):
@@ -117,6 +128,7 @@ class MelSpectrogramLoss(torch.nn.Module):
         normalized=False,
         onesided=True,
         eps=1e-10,
+        log_base=10.0,
     ):
         """Initialize Mel-spectrogram loss."""
         super().__init__()
@@ -133,6 +145,7 @@ class MelSpectrogramLoss(torch.nn.Module):
             normalized=normalized,
             onesided=onesided,
             eps=eps,
+            log_base=log_base,
         )
 
     def forward(self, y_hat, y):
