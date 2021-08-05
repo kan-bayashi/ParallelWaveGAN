@@ -139,7 +139,8 @@ discriminator_grad_norm: -1 # Discriminator's gradient norm.
 ###########################################################
 #                    INTERVAL SETTING                     #
 ###########################################################
-discriminator_train_start_steps: 5 # Number of steps to start to train discriminator.
+generator_train_start_steps: 5     # Number of steps to start to train discriminator.
+discriminator_train_start_steps: 0 # Number of steps to start to train discriminator.
 train_max_steps: 10                # Number of training steps.
 save_interval_steps: 5             # Interval steps to save checkpoint.
 eval_interval_steps: 5             # Interval steps to evaluate the network.

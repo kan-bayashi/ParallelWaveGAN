@@ -21,7 +21,7 @@ class GeneratorAdversarialLoss(torch.nn.Module):
         self.average_by_discriminators = average_by_discriminators
 
     def forward(self, outputs):
-        """Calcualate feature matching loss.
+        """Calcualate generator adversarial loss.
 
         Args:
             outputs (Tensor or list): Discriminator outputs or list of
@@ -31,10 +31,11 @@ class GeneratorAdversarialLoss(torch.nn.Module):
             Tensor: Generator adversarial loss value.
 
         """
-        if isinstance(outputs, list):
+        if isinstance(outputs, (tuple, list)):
             adv_loss = 0.0
             for i, outputs_ in enumerate(outputs):
-                if isinstance(outputs_, list):
+                if isinstance(outputs_, (tuple, list)):
+                    # NOTE(kan-bayashi): case including feature maps
                     outputs_ = outputs_[-1]
                 adv_loss += F.mse_loss(outputs_, outputs_.new_ones(outputs_.size()))
             if self.average_by_discriminators:
@@ -57,7 +58,7 @@ class DiscriminatorAdversarialLoss(torch.nn.Module):
         self.average_by_discriminators = average_by_discriminators
 
     def forward(self, outputs_hat, outputs):
-        """Calcualate feature matching loss.
+        """Calcualate discriminator adversarial loss.
 
         Args:
             outputs_hat (Tensor or list): Discriminator outputs or list of
@@ -70,11 +71,12 @@ class DiscriminatorAdversarialLoss(torch.nn.Module):
             Tensor: Discriminator fake loss value.
 
         """
-        if isinstance(outputs, list):
+        if isinstance(outputs, (tuple, list)):
             real_loss = 0.0
             fake_loss = 0.0
             for i, (outputs_hat_, outputs_) in enumerate(zip(outputs_hat, outputs)):
-                if isinstance(outputs_hat_, list):
+                if isinstance(outputs_hat_, (tuple, list)):
+                    # NOTE(kan-bayashi): case including feature maps
                     outputs_hat_ = outputs_hat_[-1]
                     outputs_ = outputs_[-1]
                 real_loss += F.mse_loss(

@@ -171,31 +171,38 @@ class HiFiGANResidualBlock(torch.nn.Module):
         assert kernel_size % 2 == 1, "Kernal size must be odd number."
         for dilation in dilations:
             self.convs1 += [
-                torch.nn.Conv1d(
-                    channels,
-                    channels,
-                    kernel_size,
-                    1,
-                    dilation=dilation,
-                    bias=bias,
-                    padding=(kernel_size - 1) // 2 * dilation,
-                )
-            ]
-            if use_additional_convs:
-                self.convs2 += [
+                torch.nn.Sequential(
+                    getattr(torch.nn, nonlinear_activation)(
+                        **nonlinear_activation_params
+                    ),
                     torch.nn.Conv1d(
                         channels,
                         channels,
                         kernel_size,
                         1,
-                        dilation=1,
+                        dilation=dilation,
                         bias=bias,
-                        padding=(kernel_size - 1) // 2,
+                        padding=(kernel_size - 1) // 2 * dilation,
+                    ),
+                )
+            ]
+            if use_additional_convs:
+                self.convs2 += [
+                    torch.nn.Sequential(
+                        getattr(torch.nn, nonlinear_activation)(
+                            **nonlinear_activation_params
+                        ),
+                        torch.nn.Conv1d(
+                            channels,
+                            channels,
+                            kernel_size,
+                            1,
+                            dilation=1,
+                            bias=bias,
+                            padding=(kernel_size - 1) // 2,
+                        ),
                     )
                 ]
-        self.activation = getattr(torch.nn, nonlinear_activation)(
-            **nonlinear_activation_params
-        )
 
     def forward(self, x):
         """Calculate forward propagation.
@@ -208,9 +215,8 @@ class HiFiGANResidualBlock(torch.nn.Module):
 
         """
         for idx in range(len(self.convs1)):
-            residual = x
-            x = self.convs1[idx](self.activation(x))
+            xt = self.convs1[idx](x)
             if self.use_additional_convs:
-                x = self.convs2[idx](self.activation(x))
-            x = residual + x
+                xt = self.convs2[idx](xt)
+            x = xt + x
         return x
