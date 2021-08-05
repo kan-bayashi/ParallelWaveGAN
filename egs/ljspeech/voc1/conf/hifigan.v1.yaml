@@ -86,8 +86,18 @@ discriminator_params:
 ###########################################################
 #                   STFT LOSS SETTING                     #
 ###########################################################
-use_stft_loss: false                 # Whether to use multi-resolution STFT loss.
-use_mel_loss: true                   # Whether to use Mel-spectrogram loss.
+use_stft_loss: false # Whether to use multi-resolution STFT loss.
+use_mel_loss: true   # Whether to use Mel-spectrogram loss.
+mel_loss_params:     # Mel-spectrogram loss parameters.
+    fs: 22050
+    fft_size: 1024
+    hop_size: 256
+    win_length: null
+    window: "hann"
+    num_mels: 80
+    fmin: 0
+    fmax: 11025
+    log_base: null   # Log base. If set to null, use natural logarithm.
 generator_adv_loss_params:
     average_by_discriminators: false # Whether to average loss by #discriminators.
 discriminator_adv_loss_params:
