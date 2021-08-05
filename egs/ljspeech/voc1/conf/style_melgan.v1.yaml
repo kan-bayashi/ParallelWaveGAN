@@ -4,7 +4,7 @@
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
 ###########################################################
-sampling_rate: 8000      # Sampling rate.
+sampling_rate: 22050     # Sampling rate.
 fft_size: 1024           # FFT size.
 hop_size: 256            # Hop size.
 win_length: null         # Window length.
