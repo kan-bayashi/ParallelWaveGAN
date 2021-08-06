@@ -125,14 +125,15 @@ def test_style_melgan_generator(dict_g):
 
 
 @pytest.mark.parametrize(
-    "dict_g, dict_d, dict_loss",
+    "dict_g, dict_d, dict_loss, loss_type",
     [
-        ({}, {}, {}),
-        ({"noise_upsample_scales": [4, 4, 4]}, {}, {}),
-        ({"gated_function": "sigmoid"}, {}, {}),
+        ({}, {}, {}, "mse"),
+        ({}, {}, {}, "hinge"),
+        ({"noise_upsample_scales": [4, 4, 4]}, {}, {}, "mse"),
+        ({"gated_function": "sigmoid"}, {}, {}, "mse"),
     ],
 )
-def test_style_melgan_trainable(dict_g, dict_d, dict_loss):
+def test_style_melgan_trainable(dict_g, dict_d, dict_loss, loss_type):
     # setup
     args_g = make_style_melgan_generator_args(**dict_g)
     args_d = make_style_melgan_discriminator_args(**dict_d)
@@ -150,8 +151,8 @@ def test_style_melgan_trainable(dict_g, dict_d, dict_loss):
     model_g = StyleMelGANGenerator(**args_g)
     model_d = StyleMelGANDiscriminator(**args_d)
     aux_criterion = MultiResolutionSTFTLoss(**args_loss)
-    gen_adv_criterion = GeneratorAdversarialLoss()
-    dis_adv_criterion = DiscriminatorAdversarialLoss()
+    gen_adv_criterion = GeneratorAdversarialLoss(loss_type=loss_type)
+    dis_adv_criterion = DiscriminatorAdversarialLoss(loss_type=loss_type)
     optimizer_g = torch.optim.Adam(model_g.parameters())
     optimizer_d = torch.optim.Adam(model_d.parameters())
 
