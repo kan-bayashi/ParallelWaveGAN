@@ -1,6 +1,11 @@
 # This is the configuration file for LJSpeech dataset.
-# This configuration is based on HiFiGAN V1, derived
-# from official repository (https://github.com/jik876/hifi-gan).
+# This configuration is based on HiFiGAN V1, which is
+# an official configuration. But I found that the optimizer
+# setting does not work well with my implementation.
+# So I changed optimizer settings as follows:
+# - AdamW -> Adam
+# - betas: [0.8, 0.99] -> betas: [0.5, 0.9]
+# - Scheduler: ExponentialLR -> MultiStepLR
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -86,9 +91,9 @@ discriminator_params:
 ###########################################################
 #                   STFT LOSS SETTING                     #
 ###########################################################
-use_stft_loss: false # Whether to use multi-resolution STFT loss.
-use_mel_loss: true   # Whether to use Mel-spectrogram loss.
-mel_loss_params:     # Mel-spectrogram loss parameters.
+use_stft_loss: false                 # Whether to use multi-resolution STFT loss.
+use_mel_loss: true                   # Whether to use Mel-spectrogram loss.
+mel_loss_params:
     fs: 22050
     fft_size: 1024
     hop_size: 256
@@ -97,7 +102,7 @@ mel_loss_params:     # Mel-spectrogram loss parameters.
     num_mels: 80
     fmin: 0
     fmax: 11025
-    log_base: null   # Log base. If set to null, use natural logarithm.
+    log_base: null
 generator_adv_loss_params:
     average_by_discriminators: false # Whether to average loss by #discriminators.
 discriminator_adv_loss_params:
@@ -106,7 +111,7 @@ use_feat_match_loss: true
 feat_match_loss_params:
     average_by_discriminators: false # Whether to average loss by #discriminators.
     average_by_layers: false         # Whether to average loss by #layers in each discriminator.
-    include_final_outputs: true      # Whether to include final outputs in feat match loss calculation.
+    include_final_outputs: false     # Whether to include final outputs in feat match loss calculation.
 
 ###########################################################
 #               ADVERSARIAL LOSS SETTING                  #
@@ -128,24 +133,34 @@ allow_cache: true           # Whether to allow cache in dataset. If true, it req
 ###########################################################
 #             OPTIMIZER & SCHEDULER SETTING               #
 ###########################################################
-generator_optimizer_type: AdamW
+generator_optimizer_type: Adam
 generator_optimizer_params:
-    lr: 0.0002            # Generator's learning rate.
-    betas: [0.8, 0.99]    # Generator's optimizer beta
-    weight_decay: 0.0     # Generator's weight decay coefficient.
-generator_scheduler_type: ExponentialLR
+    lr: 2.0e-4
+    betas: [0.5, 0.9]
+    weight_decay: 0.0
+generator_scheduler_type: MultiStepLR
 generator_scheduler_params:
-    gamma: 0.999           # Generator's scheduler gamma.
-generator_grad_norm: -1    # Generator's gradient norm.
-discriminator_optimizer_type: AdamW
+    gamma: 0.5
+    milestones:
+        - 200000
+        - 400000
+        - 600000
+        - 800000
+generator_grad_norm: -1
+discriminator_optimizer_type: Adam
 discriminator_optimizer_params:
-    lr: 0.0002            # Discriminator's learning rate.
-    betas: [0.8, 0.99]    # Discriminator's optimizer beta
-    weight_decay: 0.0     # Discriminator's weight decay coefficient.
-discriminator_scheduler_type: ExponentialLR
+    lr: 2.0e-4
+    betas: [0.5, 0.9]
+    weight_decay: 0.0
+discriminator_scheduler_type: MultiStepLR
 discriminator_scheduler_params:
-    gamma: 0.999            # Discriminator's scheduler gamma.
-discriminator_grad_norm: -1 # Discriminator's gradient norm.
+    gamma: 0.5
+    milestones:
+        - 200000
+        - 400000
+        - 600000
+        - 800000
+discriminator_grad_norm: -1
 
 ###########################################################
 #                    INTERVAL SETTING                     #
@@ -153,7 +168,7 @@ discriminator_grad_norm: -1 # Discriminator's gradient norm.
 generator_train_start_steps: 1     # Number of steps to start to train discriminator.
 discriminator_train_start_steps: 0 # Number of steps to start to train discriminator.
 train_max_steps: 2500000           # Number of training steps.
-save_interval_steps: 50000         # Interval steps to save checkpoint.
+save_interval_steps: 10000         # Interval steps to save checkpoint.
 eval_interval_steps: 1000          # Interval steps to evaluate the network.
 log_interval_steps: 100            # Interval steps to record the training log.
 
