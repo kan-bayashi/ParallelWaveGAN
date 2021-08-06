@@ -47,16 +47,14 @@ class GeneratorAdversarialLoss(torch.nn.Module):
             if self.average_by_discriminators:
                 adv_loss /= i + 1
         else:
-            adv_loss = self.criterion(outputs_)
+            adv_loss = self.criterion(outputs)
 
         return adv_loss
 
-    @classmethod
-    def _mse_loss(x):
+    def _mse_loss(self, x):
         return F.mse_loss(x, x.new_ones(x.size()))
 
-    @classmethod
-    def _hinge_loss(x):
+    def _hinge_loss(self, x):
         return -x.mean()
 
 
@@ -101,8 +99,8 @@ class DiscriminatorAdversarialLoss(torch.nn.Module):
                     # NOTE(kan-bayashi): case including feature maps
                     outputs_hat_ = outputs_hat_[-1]
                     outputs_ = outputs_[-1]
-                real_loss += self.real_criterion(outputs)
-                fake_loss += self.fake_criterion(outputs_hat)
+                real_loss += self.real_criterion(outputs_)
+                fake_loss += self.fake_criterion(outputs_hat_)
             if self.average_by_discriminators:
                 fake_loss /= i + 1
                 real_loss /= i + 1
@@ -112,18 +110,14 @@ class DiscriminatorAdversarialLoss(torch.nn.Module):
 
         return real_loss, fake_loss
 
-    @classmethod
-    def _mse_real_loss(x):
+    def _mse_real_loss(self, x):
         return F.mse_loss(x, x.new_ones(x.size()))
 
-    @classmethod
-    def _mse_fake_loss(x):
+    def _mse_fake_loss(self, x):
         return F.mse_loss(x, x.new_zeros(x.size()))
 
-    @classmethod
-    def _hinge_real_loss(x):
+    def _hinge_real_loss(self, x):
         return -torch.mean(torch.min(x - 1, x.new_zeros(x.size())))
 
-    @classmethod
-    def _hinge_fake_loss(x):
+    def _hinge_fake_loss(self, x):
         return -torch.mean(torch.min(-x - 1, x.new_zeros(x.size())))
