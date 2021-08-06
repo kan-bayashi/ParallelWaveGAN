@@ -1,5 +1,9 @@
 # This is the configuration file for LJSpeech dataset.
-# This configuration is based on StyleMelGAN paper.
+# This configuration is based on StyleMelGAN paper but
+# uses MSE loss instead of Hinge loss. And I found that
+# batch_size = 8 is also working good. So maybe if you
+# want to accelerate the training, you can reduce the
+# batch size (e.g. 8 or 16).
 
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
@@ -125,7 +129,7 @@ discriminator_scheduler_params:
         - 400000
         - 600000
         - 800000
-discriminator_grad_norm: -1 # Discriminator's gradient norm.
+discriminator_grad_norm: -1
 
 ###########################################################
 #                    INTERVAL SETTING                     #
