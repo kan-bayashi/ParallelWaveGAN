@@ -1028,8 +1028,16 @@ def main():
             )
         model["generator"] = DistributedDataParallel(model["generator"])
         model["discriminator"] = DistributedDataParallel(model["discriminator"])
+
+    # show settings
     logging.info(model["generator"])
     logging.info(model["discriminator"])
+    logging.info(optimizer["generator"])
+    logging.info(optimizer["discriminator"])
+    logging.info(scheduler["generator"])
+    logging.info(scheduler["discriminator"])
+    for criterion_ in criterion.values():
+        logging.info(criterion_)
 
     # define trainer
     trainer = Trainer(
