@@ -81,8 +81,10 @@ lambda_aux: 1.0                   # Loss balancing coefficient for aux loss.
 lambda_adv: 1.0 # Loss balancing coefficient for adv loss.
 generator_adv_loss_params:
     average_by_discriminators: false # Whether to average loss by #discriminators.
+    loss_type: hinge                 # Loss function type ("mse" or "hinge").
 discriminator_adv_loss_params:
     average_by_discriminators: false # Whether to average loss by #discriminators.
+    loss_type: hinge                 # Loss function type ("mse" or "hinge").
 
 ###########################################################
 #                  DATA LOADER SETTING                    #
