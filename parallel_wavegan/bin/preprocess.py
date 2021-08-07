@@ -33,6 +33,7 @@ def logmelfilterbank(
     fmin=None,
     fmax=None,
     eps=1e-10,
+    log_base=10.0,
 ):
     """Compute log-Mel filterbank feature.
 
@@ -47,6 +48,7 @@ def logmelfilterbank(
         fmin (int): Minimum frequency in mel basis calculation.
         fmax (int): Maximum frequency in mel basis calculation.
         eps (float): Epsilon value to avoid inf in log calculation.
+        log_base (float): Log base. If set to None, use np.log.
 
     Returns:
         ndarray: Log Mel filterbank feature (#frames, num_mels).
@@ -67,8 +69,16 @@ def logmelfilterbank(
     fmin = 0 if fmin is None else fmin
     fmax = sampling_rate / 2 if fmax is None else fmax
     mel_basis = librosa.filters.mel(sampling_rate, fft_size, num_mels, fmin, fmax)
+    mel = np.maximum(eps, np.dot(spc, mel_basis.T))
 
-    return np.log10(np.maximum(eps, np.dot(spc, mel_basis.T)))
+    if log_base is None:
+        return np.log(mel)
+    elif log_base == 10.0:
+        return np.log10(mel)
+    elif log_base == 2.0:
+        return np.log2(mel)
+    else:
+        raise ValueError(f"{log_base} is not supported.")
 
 
 def main():
@@ -210,6 +220,8 @@ def main():
             num_mels=config["num_mels"],
             fmin=config["fmin"],
             fmax=config["fmax"],
+            # keep compatibility
+            log_base=config.get("log_base", 10.0),
         )
 
         # make sure the audio length and feature length are matched
