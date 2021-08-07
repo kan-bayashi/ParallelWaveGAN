@@ -13,6 +13,7 @@ import torch
 from parallel_wavegan.layers import CausalConv1d
 from parallel_wavegan.layers import CausalConvTranspose1d
 from parallel_wavegan.layers import ResidualStack
+from parallel_wavegan.utils import read_hdf5
 
 
 class MelGANGenerator(torch.nn.Module):
@@ -219,11 +220,30 @@ class MelGANGenerator(torch.nn.Module):
 
         self.apply(_reset_parameters)
 
-    def inference(self, c):
+    def register_stats(self, stats):
+        """Register stats for de-normalization as buffer.
+
+        Args:
+            stats (str): Path of statistics file (".npy" or ".h5").
+
+        """
+        assert stats.endswith(".h5") or stats.endswith(".npy")
+        if stats.endswith(".h5"):
+            mean = read_hdf5(stats, "mean").reshape(-1)
+            scale = read_hdf5(stats, "scale").reshape(-1)
+        else:
+            mean = np.load(stats)[0].reshape(-1)
+            scale = np.load(stats)[1].reshape(-1)
+        self.register_buffer("mean", torch.from_numpy(mean).float())
+        self.register_buffer("scale", torch.from_numpy(scale).float())
+        logging.info("Successfully registered stats as buffer.")
+
+    def inference(self, c, normalize_before=False):
         """Perform inference.
 
         Args:
             c (Union[Tensor, ndarray]): Input tensor (T, in_channels).
+            normalize_before (bool): Whether to perform normalization.
 
         Returns:
             Tensor: Output tensor (T ** prod(upsample_scales), out_channels).
@@ -231,6 +251,8 @@ class MelGANGenerator(torch.nn.Module):
         """
         if not isinstance(c, torch.Tensor):
             c = torch.tensor(c, dtype=torch.float).to(next(self.parameters()).device)
+        if normalize_before:
+            c = (c - self.mean) / self.scale
         c = self.melgan(c.transpose(1, 0).unsqueeze(0))
         if self.pqmf is not None:
             c = self.pqmf.synthesis(c)

@@ -16,6 +16,7 @@ from parallel_wavegan.layers import Conv1d1x1
 from parallel_wavegan.layers import upsample
 from parallel_wavegan.layers import WaveNetResidualBlock as ResidualBlock
 from parallel_wavegan import models
+from parallel_wavegan.utils import read_hdf5
 
 
 class ParallelWaveGANGenerator(torch.nn.Module):
@@ -210,12 +211,31 @@ class ParallelWaveGANGenerator(torch.nn.Module):
             self.layers, self.stacks, self.kernel_size
         )
 
-    def inference(self, c=None, x=None):
+    def register_stats(self, stats):
+        """Register stats for de-normalization as buffer.
+
+        Args:
+            stats (str): Path of statistics file (".npy" or ".h5").
+
+        """
+        assert stats.endswith(".h5") or stats.endswith(".npy")
+        if stats.endswith(".h5"):
+            mean = read_hdf5(stats, "mean").reshape(-1)
+            scale = read_hdf5(stats, "scale").reshape(-1)
+        else:
+            mean = np.load(stats)[0].reshape(-1)
+            scale = np.load(stats)[1].reshape(-1)
+        self.register_buffer("mean", torch.from_numpy(mean).float())
+        self.register_buffer("scale", torch.from_numpy(scale).float())
+        logging.info("Successfully registered stats as buffer.")
+
+    def inference(self, c=None, x=None, normalize_before=False):
         """Perform inference.
 
         Args:
             c (Union[Tensor, ndarray]): Local conditioning auxiliary features (T' ,C).
             x (Union[Tensor, ndarray]): Input noise signal (T, 1).
+            normalize_before (bool): Whether to perform normalization.
 
         Returns:
             Tensor: Output tensor (T, out_channels)
@@ -238,6 +258,8 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                     next(self.parameters()).device
                 )
             c = c.transpose(1, 0).unsqueeze(0)
+            if normalize_before:
+                c = (c - self.mean) / self.scale
             c = torch.nn.ReplicationPad1d(self.aux_context_window)(c)
         return self.forward(x, c).squeeze(0).transpose(1, 0)
 
