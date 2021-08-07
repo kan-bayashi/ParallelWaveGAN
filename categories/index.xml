@@ -5,10 +5,6 @@
     <link>https://kan-bayashi.github.io/ParallelWaveGAN/categories/</link>
     <description>Recent content in Categories on Unofficial Parallel WaveGAN Implementation Demo</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    
-	<atom:link href="https://kan-bayashi.github.io/ParallelWaveGAN/categories/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en-us</language><atom:link href="https://kan-bayashi.github.io/ParallelWaveGAN/categories/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

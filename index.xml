@@ -5,16 +5,11 @@
     <link>https://kan-bayashi.github.io/ParallelWaveGAN/</link>
     <description>Recent content on Unofficial Parallel WaveGAN Implementation Demo</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    <lastBuildDate>Tue, 05 Nov 2019 00:00:00 +0900</lastBuildDate>
-    
-	<atom:link href="https://kan-bayashi.github.io/ParallelWaveGAN/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en-us</language><atom:link href="https://kan-bayashi.github.io/ParallelWaveGAN/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title></title>
       <link>https://kan-bayashi.github.io/ParallelWaveGAN/</link>
-      <pubDate>Tue, 05 Nov 2019 00:00:00 +0900</pubDate>
+      <pubDate>Fri, 06 Aug 2021 00:00:00 +0900</pubDate>
       
       <guid>https://kan-bayashi.github.io/ParallelWaveGAN/</guid>
       <description>Unofficial Parallel WaveGAN (+ MelGAN &amp;amp; Multi-band MelGAN) implementation demo This is the demonstration page of UNOFFICIAL Parallel WaveGAN, MelGAN and Multi-band MelGAN implementations.

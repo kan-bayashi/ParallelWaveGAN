@@ -20,7 +20,7 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
     <link rel="apple-touch-icon" href="https://kan-bayashi.github.io/ParallelWaveGAN/apple-touch-icon.png">
     <link rel="icon" href="https://kan-bayashi.github.io/ParallelWaveGAN/favicon.ico">
     
-    <meta name="generator" content="Hugo 0.70.0" />
+    <meta name="generator" content="Hugo 0.79.1" />
     
     <link rel="alternate" type="application/atom+xml" href="https://kan-bayashi.github.io/ParallelWaveGAN/index.xml" title="Unofficial Parallel WaveGAN Implementation Demo">
     
@@ -87,7 +87,7 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 <article class="post-single">
   <header class="post-header">
     <h1 class="post-title"></h1>
-    <div class="post-meta">November 5, 2019</div>
+    <div class="post-meta">August 6, 2021</div>
   </header>
   <div class="post-content"><h1 id="unofficial-parallel-wavegan--melgan--multi-band-melgan-implementation-demo">Unofficial Parallel WaveGAN (+ MelGAN &amp; Multi-band MelGAN) implementation demo</h1>
 <p>This is the demonstration page of <strong>UNOFFICIAL</strong> Parallel WaveGAN, MelGAN and Multi-band MelGAN implementations.</p>
@@ -102,6 +102,8 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 <li><strong>MelGAN + STFT-loss (ours)</strong>: Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/melgan.v3.long.yaml">this config</a>.</li>
 <li><strong>FB-MelGAN (ours)</strong>: Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/full_band_melgan.v1.yaml">this config</a>.</li>
 <li><strong>MB-MelGAN (ours)</strong>: Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/multi_band_melgan.v1.yaml">this config</a>.</li>
+<li><strong>HiFi-GAN (ours)</strong>: Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/hifigan.v1.yaml">this config</a>.</li>
+<li><strong>StyleMelGAN (ours)</strong>: Our samples based <a href="https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/style_melgan.v1.yaml">this config</a>.</li>
 </ul>
 <table>
 <thead>
@@ -136,6 +138,14 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 <td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_mb-melgan/LJ050-0029.wav"/></audio></td>
 </tr>
 <tr>
+<td><strong>HiFiGAN (ours)</strong></td>
+<td><strong>StyleMelGAN (ours)</strong></td>
+</tr>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_hifigan/LJ050-0029.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_style-melgan/LJ050-0029.wav"/></audio></td>
+</tr>
+<tr>
 <td></td>
 <td></td>
 </tr>
@@ -162,6 +172,14 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 <tr>
 <td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_fb-melgan/LJ050-0030.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_mb-melgan/LJ050-0030.wav"/></audio></td>
+</tr>
+<tr>
+<td><strong>HiFiGAN (ours)</strong></td>
+<td><strong>StyleMelGAN (ours)</strong></td>
+</tr>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_hifigan/LJ050-0030.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_style-melgan/LJ050-0030.wav"/></audio></td>
 </tr>
 <tr>
 <td></td>
@@ -192,6 +210,14 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 <td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_mb-melgan/LJ050-0031.wav"/></audio></td>
 </tr>
 <tr>
+<td><strong>HiFiGAN (ours)</strong></td>
+<td><strong>StyleMelGAN (ours)</strong></td>
+</tr>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_hifigan/LJ050-0031.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_style-melgan/LJ050-0031.wav"/></audio></td>
+</tr>
+<tr>
 <td></td>
 <td></td>
 </tr>
@@ -220,6 +246,14 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 <td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_mb-melgan/LJ050-0032.wav"/></audio></td>
 </tr>
 <tr>
+<td><strong>HiFiGAN (ours)</strong></td>
+<td><strong>StyleMelGAN (ours)</strong></td>
+</tr>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_hifigan/LJ050-0032.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_style-melgan/LJ050-0032.wav"/></audio></td>
+</tr>
+<tr>
 <td></td>
 <td></td>
 </tr>
@@ -246,6 +280,14 @@ Note that we limit the frequency range from 80 to 7600 Hz in Mel spectrogram cal
 <tr>
 <td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_fb-melgan/LJ050-0033.wav"/></audio></td>
 <td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_mb-melgan/LJ050-0033.wav"/></audio></td>
+</tr>
+<tr>
+<td><strong>HiFiGAN (ours)</strong></td>
+<td><strong>StyleMelGAN (ours)</strong></td>
+</tr>
+<tr>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_hifigan/LJ050-0033.wav"/></audio></td>
+<td><audio controls="" ><source src="wav/ljspeech/kan-bayashi_style-melgan/LJ050-0033.wav"/></audio></td>
 </tr>
 </tbody>
 </table>
@@ -350,7 +392,7 @@ e-mail: <a href="mailto:hayashi.tomoki@g.sp.m.is.nagoya-u.ac.jp">hayashi.tomoki@
 
 </main>
 <footer class="footer">
-  <span>&copy; 2020 <a href="https://kan-bayashi.github.io/ParallelWaveGAN/">Unofficial Parallel WaveGAN Implementation Demo</a></span>
+  <span>&copy; 2021 <a href="https://kan-bayashi.github.io/ParallelWaveGAN/">Unofficial Parallel WaveGAN Implementation Demo</a></span>
   <span>&middot;</span>
   <span>Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>️</span>
   <span>&middot;</span>
