@@ -26,6 +26,7 @@ You can try the real-time end-to-end text-to-speech demonstration in Google Cola
 
 ## What's new
 
+- 2021/08/07 Add initial pretrained models of StyleMelGAN and HiFi-GAN.
 - 2021/08/03 Support [StyleMelGAN](https://arxiv.org/abs/2011.01557) generator and discriminator!
 - 2021/08/02 Support [HiFi-GAN](https://arxiv.org/abs/2010.05646) generator and discriminator!
 - 2020/10/07 [JSSS](https://sites.google.com/site/shinnosuketakamichi/research-topics/jsss_corpus) recipe is available!
@@ -195,6 +196,8 @@ You can listen to the samples and download pretrained models from the link to ou
 | [ljspeech_full_band_melgan.v2](https://drive.google.com/open?id=1d9DWOzwOyxT1K5lPnyMqr2nED62vlHaX)                | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/full_band_melgan.v2.yaml)          | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 1000k   |
 | [ljspeech_multi_band_melgan.v1](https://drive.google.com/open?id=1ls_YxCccQD-v6ADbG6qXlZ8f30KrrhLT)               | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/multi_band_melgan.v1.yaml)         | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 1000k   |
 | [ljspeech_multi_band_melgan.v2](https://drive.google.com/open?id=1wevYP2HQ7ec2fSixTpZIX0sNBtYZJz_I)               | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/multi_band_melgan.v2.yaml)         | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 1000k   |
+| [ljspeech_hifigan.v1](https://drive.google.com/open?id=18_R5-pGHDIbIR1QvrtBZwVRHHpBy5xiZ)                         | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/hifigan.v1.yaml)                   | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 400k    |
+| [ljspeech_style_melgan.v1](https://drive.google.com/open?id=1WFlVknhyeZhTT5R6HznVJCJ4fwXKtb3B)                    | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ljspeech/voc1/conf/style_melgan.v1.yaml)              | EN    | 22.05k  | 80-7600        | 1024 / 256 / None    | 500k    |
 | [jsut_parallel_wavegan.v1](https://drive.google.com/open?id=1UDRL0JAovZ8XZhoH0wi9jj_zeCKb-AIA)                    | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jsut/voc1/conf/parallel_wavegan.v1.yaml)              | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
 | [jsut_multi_band_melgan.v2](https://drive.google.com/open?id=1E4fe0c5gMLtmSS0Hrzj-9nUbMwzke4PS)                   | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/jsut/voc1/conf/multi_band_melgan.v2.yaml)             | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 1000k   |
 | [csmsc_parallel_wavegan.v1](https://drive.google.com/open?id=1C2nu9nOFdKcEd-D9xGquQ0bCia0B2v_4)                   | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csmsc/voc1/conf/parallel_wavegan.v1.yaml)             | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
