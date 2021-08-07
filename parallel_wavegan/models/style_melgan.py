@@ -9,6 +9,7 @@ import math
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 from parallel_wavegan.layers import PQMF
 from parallel_wavegan.layers import TADEResBlock
@@ -191,6 +192,8 @@ class StyleMelGANGenerator(torch.nn.Module):
         if not isinstance(c, torch.Tensor):
             c = torch.tensor(c, dtype=torch.float).to(next(self.parameters()).device)
         c = c.transpose(1, 0).unsqueeze(0)
+
+        # prepare noise input
         noise_size = (
             1,
             self.in_channels,
@@ -199,11 +202,20 @@ class StyleMelGANGenerator(torch.nn.Module):
         noise = torch.randn(*noise_size, dtype=torch.float).to(
             next(self.parameters()).device
         )
-        noise_up = self.noise_upsample(noise)
-        x = noise_up[:, :, : c.size(2)]
+        x = self.noise_upsample(noise)
+
+        # NOTE(kan-bayashi): To remove pop noise at the end of audio, perform padding
+        #    for feature sequence and after generation cut the generated audio. This
+        #    requires additional computation but it can prevent pop noise.
+        total_length = c.size(2) * self.upsample_factor
+        c = F.pad(c, (0, x.size(2) - c.size(2)), "replicate")
+
+        # This version causes pop noise.
+        # x = x[:, :, :c.size(2)]
+
         for block in self.blocks:
             x, c = block(x, c)
-        x = self.output_conv(x)
+        x = self.output_conv(x)[..., :total_length]
 
         return x.squeeze(0).transpose(1, 0)
 
