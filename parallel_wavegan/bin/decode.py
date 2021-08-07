@@ -65,7 +65,7 @@ def main():
         "it will be searched in the checkpoint directory. (default=None)",
     )
     parser.add_argument(
-        "--normalize_before",
+        "--normalize-before",
         default=False,
         action="store_true",
         help="whether to perform feature normalization before input to the model. "
