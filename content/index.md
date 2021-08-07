@@ -3,9 +3,15 @@ date: 2021-08-06T00:00:00+09:00
 type: "index"
 ---
 
-# Unofficial Parallel WaveGAN (+ MelGAN & Multi-band MelGAN) implementation demo
+# Unofficial Parallel WaveGAN implementation demo
 
-This is the demonstration page of **UNOFFICIAL** Parallel WaveGAN, MelGAN and Multi-band MelGAN implementations.
+This is the demonstration page of **UNOFFICIAL** following model implementations.
+
+- [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
+- [MelGAN](https://arxiv.org/abs/1910.06711)
+- [Multiband-MelGAN](https://arxiv.org/abs/2005.05106)
+- [HiFi-GAN](https://arxiv.org/abs/2010.05646)
+- [StyleMelGAN](https://arxiv.org/abs/2011.01557)
 
 Github: https://github.com/kan-bayashi/ParallelWaveGAN
 
