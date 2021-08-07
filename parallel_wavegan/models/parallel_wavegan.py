@@ -257,9 +257,9 @@ class ParallelWaveGANGenerator(torch.nn.Module):
                 c = torch.tensor(c, dtype=torch.float).to(
                     next(self.parameters()).device
                 )
-            c = c.transpose(1, 0).unsqueeze(0)
             if normalize_before:
                 c = (c - self.mean) / self.scale
+            c = c.transpose(1, 0).unsqueeze(0)
             c = torch.nn.ReplicationPad1d(self.aux_context_window)(c)
         return self.forward(x, c).squeeze(0).transpose(1, 0)
 
