@@ -278,12 +278,13 @@ class NpyScpLoader(object):
             yield self[key]
 
 
-def load_model(checkpoint, config=None):
+def load_model(checkpoint, config=None, stats=None):
     """Load trained model.
 
     Args:
         checkpoint (str): Checkpoint path.
         config (dict): Configuration dict.
+        stats (dict): Statistics file.
 
     Return:
         torch.nn.Module: Model instance.
@@ -308,6 +309,22 @@ def load_model(checkpoint, config=None):
     model.load_state_dict(
         torch.load(checkpoint, map_location="cpu")["model"]["generator"]
     )
+
+    # check stats existence
+    if stats is None:
+        dirname = os.path.dirname(checkpoint)
+        if config["format"] == "hdf5":
+            ext = "h5"
+        else:
+            ext = "npy"
+        if os.path.exists(os.path.join(dirname, f"stats.{ext}")):
+            stats = os.path.join(dirname, f"stats.{ext}")
+        else:
+            logging.warning("Not found stats file. Skipped loading.")
+
+    # load stats
+    if stats is not None:
+        model.register_stats(stats)
 
     # add pqmf if needed
     if config["generator_params"]["out_channels"] > 1:

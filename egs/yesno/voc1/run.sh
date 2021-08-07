@@ -153,6 +153,17 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
                 --outdir "${outdir}/${name}" \
                 --verbose "${verbose}"
         echo "Successfully finished decoding of ${name} set."
+
+        # NOTE(kan-bayashi): Extra decoding for debugging
+        echo "Decoding start. See the progress via ${outdir}/${name}/decode.log."
+        ${cuda_cmd} --gpu "${n_gpus}" "${outdir}/${name}/decode.log" \
+            parallel-wavegan-decode \
+                --normalize-before \
+                --dumpdir "${dumpdir}/${name}/raw" \
+                --checkpoint "${checkpoint}" \
+                --outdir "${outdir}/${name}" \
+                --verbose "${verbose}"
+        echo "Successfully finished decoding of ${name} set."
     ) &
     pids+=($!)
     done

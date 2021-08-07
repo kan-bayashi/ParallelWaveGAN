@@ -65,6 +65,14 @@ def main():
         "it will be searched in the checkpoint directory. (default=None)",
     )
     parser.add_argument(
+        "--normalize-before",
+        default=False,
+        action="store_true",
+        help="whether to perform feature normalization before input to the model. "
+        "if true, it assumes that the feature is de-normalized. this is useful when "
+        "text2mel model and vocoder use different feature statistics.",
+    )
+    parser.add_argument(
         "--verbose",
         type=int,
         default=1,
@@ -148,7 +156,7 @@ def main():
             # generate
             c = torch.tensor(c, dtype=torch.float).to(device)
             start = time.time()
-            y = model.inference(c).view(-1)
+            y = model.inference(c, normalize_before=args.normalize_before).view(-1)
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf

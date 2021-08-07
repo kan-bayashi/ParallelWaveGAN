@@ -341,34 +341,22 @@ $ ls <path_to_outdir>
 **Case 2**: If you use different datasets for Text2Mel and Mel2Wav models
 
 ```bash
-# In this case, you must perform normlization at first.
-# Please specify `feats.scp` path for `--feats-scp`, which is located in
-# exp/<your_model_dir>/outputs_*_decode_denorm/<set_name>/feats.scp.
-$ parallel-wavegan-normalize \
-    --skip-wav-copy \
-    --config pretrain_model/<pretrain_model_tag>/config.yml \
-    --stats pretrain_model/<pretrain_model_tag>/stats.h5 \
-    --feats-scp exp/<your_model_dir>/outputs_*_decode_denorm/<set_name>/feats.scp \
-    --dumpdir <path_to_dumpdir>
+# In this case, you must provide `--normalize-before` option additionally.
+# And use `feats.scp` of de-normalized generated features.
 
-# In the case of ESPnet2, the denormalized generated feature can be found in
-# exp/<your_model_dir>/decode_*/<set_name>/denorm/feats.scp.
-$ parallel-wavegan-normalize \
-    --skip-wav-copy \
-    --config pretrain_model/<pretrain_model_tag>/config.yml \
-    --stats pretrain_model/<pretrain_model_tag>/stats.h5 \
-    --feats-scp exp/<your_model_dir>/decode_*/<set_name>/denorm/feats.scp \
-    --dumpdir <path_to_dumpdir>
-
-# Normalized features dumped in <path_to_dumpdir>/.
-$ ls <path_to_dumpdir>
-  utt_id_1.h5    utt_id_2.h5  ...    utt_id_N.h5
-
-# Then, decode normalzied features with the pretrained model.
+# ESPnet1 case
 $ parallel-wavegan-decode \
     --checkpoint pretrain_model/<pretrain_model_tag>/checkpoint-400000steps.pkl \
-    --dumpdir <path_to_dumpdir>  \
-    --outdir <path_to_outdir>
+    --feats-scp exp/<your_model_dir>/outputs_*_decode_denorm/<set_name>/feats.scp \
+    --outdir <path_to_outdir> \
+    --normalize-before
+
+# ESPnet2 case
+$ parallel-wavegan-decode \
+    --checkpoint pretrain_model/<pretrain_model_tag>/checkpoint-400000steps.pkl \
+    --feats-scp exp/<your_model_dir>/decode_*/<set_name>/denorm/feats.scp \
+    --outdir <path_to_outdir> \
+    --normalize-before
 
 # You can find the generated waveforms in <path_to_outdir>/.
 $ ls <path_to_outdir>

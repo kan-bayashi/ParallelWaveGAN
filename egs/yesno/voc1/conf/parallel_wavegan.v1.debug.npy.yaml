@@ -13,6 +13,7 @@ window: "hann"           # Window function.
 num_mels: 80             # Number of mel basis.
 fmin: 80                 # Minimum freq in mel basis calculation.
 fmax: 3800               # Maximum frequency in mel basis calculation.
+log_base: null           # Log base.
 global_gain_scale: 1.0   # Will be multiplied to all of waveform.
 trim_silence: true       # Whether to trim the start and end of silence.
 trim_threshold_in_db: 20 # Need to tune carefully if the recording is not good.
