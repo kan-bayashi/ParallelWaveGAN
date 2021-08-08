@@ -4,22 +4,24 @@ PYTORCH_VERSION:= 1.7.1
 DOT:= .
 .PHONY: all clean
 
-all: virtualenv.done
+all: virtualenv.done pytorch.done parallel_wavegan.done
 
 virtualenv.done:
+	@echo PYTHON=$(PYTHON)
+	@echo CUDA_VERSION=$(CUDA_VERSION)
+	@echo PYTORCH_VERSION=$(PYTORCH_VERSION)
 	test -d venv || $(PYTHON) -m venv venv
 	touch virtualenv.done
 
-pytorch.done:
+pytorch.done: virtualenv.done
 ifeq ($(CUDA_VERSION),)
 	. venv/bin/activate; pip install torch==$(PYTORCH_VERSION) \
 		-f https://download.pytorch.org/whl/cpu/stable.html
-	touch pytorch.done
 else
 	. venv/bin/activate; pip install torch==$(PYTORCH_VERSION) \
 		-f https://download.pytorch.org/whl/cu$(subst $(DOT),,$(CUDA_VERSION))/torch_stable.html
-	touch pytorch.done
 endif
+	touch pytorch.done
 
 parallel_wavegan.done: virtualenv.done pytorch.done
 	. venv/bin/activate; cd ../; pip install -e .

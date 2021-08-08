@@ -43,8 +43,7 @@ requirements = {
     ],
     "test": [
         "pytest>=3.3.0",
-        "hacking>=1.1.0",
-        "flake8>=3.7.8",
+        "hacking>=4.1.0",
         "flake8-docstrings>=1.3.1",
         "black",
     ],
