@@ -39,7 +39,6 @@ def main():
     parser.add_argument(
         "--rootdir",
         type=str,
-        required=True,
         help="directory including feature files. "
         "you need to specify either feats-scp or rootdir.",
     )
@@ -53,6 +52,7 @@ def main():
         "--dumpdir",
         default=None,
         type=str,
+        required=True,
         help="directory to save statistics. if not provided, "
         "stats will be saved in the above root directory. (default=None)",
     )
@@ -94,8 +94,6 @@ def main():
         raise ValueError("Please specify either --rootdir or --feats-scp.")
 
     # check directory existence
-    if args.dumpdir is None:
-        args.dumpdir = os.path.dirname(args.rootdir)
     if not os.path.exists(args.dumpdir):
         os.makedirs(args.dumpdir)
 
