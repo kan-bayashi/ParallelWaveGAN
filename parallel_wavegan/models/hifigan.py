@@ -75,6 +75,7 @@ class HiFiGANGenerator(torch.nn.Module):
         self.upsamples = torch.nn.ModuleList()
         self.blocks = torch.nn.ModuleList()
         for i in range(len(upsample_kernal_sizes)):
+            assert upsample_kernal_sizes[i] == 2 * upsample_scales[i]
             self.upsamples += [
                 torch.nn.Sequential(
                     getattr(torch.nn, nonlinear_activation)(
@@ -85,7 +86,8 @@ class HiFiGANGenerator(torch.nn.Module):
                         channels // (2 ** (i + 1)),
                         upsample_kernal_sizes[i],
                         upsample_scales[i],
-                        padding=(upsample_kernal_sizes[i] - upsample_scales[i]) // 2,
+                        padding=upsample_scales[i] // 2 + upsample_scales[i] % 2,
+                        output_padding=upsample_scales[i] % 2,
                     ),
                 )
             ]
