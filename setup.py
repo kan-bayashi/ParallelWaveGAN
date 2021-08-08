@@ -68,7 +68,7 @@ extras_require = {
 dirname = os.path.dirname(__file__)
 setup(
     name="parallel_wavegan",
-    version="0.5.1a1",
+    version="0.5.1",
     url="http://github.com/kan-bayashi/ParallelWaveGAN",
     author="Tomoki Hayashi",
     author_email="hayashi.tomoki@g.sp.m.is.nagoya-u.ac.jp",
