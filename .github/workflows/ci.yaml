@@ -34,12 +34,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install libsndfile-dev
-          # install python modules
-          python -m pip install --upgrade pip
-          pip install -q -U numpy
-          pip install -q torch==${{ matrix.pytorch-version }} -f https://download.pytorch.org/whl/cpu/stable.html
-          pip install -q -e .
-          pip install -q -e .[test]
+          # make python env
+          cd tools; make CUDA_VERSION="" PYTHON=python${{ matrix.python-version }} PYTORCH_VERSION=${{ matrix.pytorch-version }}
           # install shell check
           wget https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.linux.x86_64.tar.xz
           tar -xvf shellcheck-stable.linux.x86_64.tar.xz
@@ -49,11 +45,13 @@ jobs:
           find egs -name "*.sh" | grep -v path.sh | while read line; do shellcheck -x --shell=bash -P $(dirname $line) ${line}; done
       - name: Black & Flake8
         run: |
+          source tools/venv/bin/activate
           black --diff parallel_wavegan
           flake8 parallel_wavegan
           flake8 --extend-ignore=D test
       - name: Pytest
         run: |
+          source tools/venv/bin/activate
           pytest test
 
   integration:
@@ -87,11 +85,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install libsndfile-dev jq
-          # install python modules
-          python -m pip install --upgrade pip
-          pip install -q -U numpy
-          pip install -q torch==${{ matrix.pytorch-version }} -f https://download.pytorch.org/whl/cpu/stable.html
-          pip install -q -e .
+          # make python env
+          cd tools; make CUDA_VERSION="" PYTHON=python${{ matrix.python-version }} PYTORCH_VERSION=${{ matrix.pytorch-version }}
       - name: Integration
         run: |
           cd egs/yesno/voc1 && ./run.sh --conf conf/${{ matrix.config }}

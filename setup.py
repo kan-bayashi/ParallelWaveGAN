@@ -43,8 +43,7 @@ requirements = {
     ],
     "test": [
         "pytest>=3.3.0",
-        "hacking>=1.1.0",
-        "flake8>=3.7.8",
+        "hacking>=4.1.0",
         "flake8-docstrings>=1.3.1",
         "black",
     ],
@@ -86,6 +85,8 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Intended Audience :: Science/Research",
         "Operating System :: POSIX :: Linux",
         "License :: OSI Approved :: MIT License",
