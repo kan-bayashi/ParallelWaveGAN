@@ -2,15 +2,18 @@ PYTHON:= python3.7
 CUDA_VERSION:= 11.0
 PYTORCH_VERSION:= 1.7.1
 DOT:= .
-.PHONY: all clean
+.PHONY: all clean show_variables
 
-all: virtualenv.done pytorch.done parallel_wavegan.done
+all: show_variables virtualenv.done pytorch.done parallel_wavegan.done
 
-virtualenv.done:
+show_variables:
 	@echo PYTHON=$(PYTHON)
 	@echo CUDA_VERSION=$(CUDA_VERSION)
 	@echo PYTORCH_VERSION=$(PYTORCH_VERSION)
+
+virtualenv.done: show_variables
 	test -d venv || $(PYTHON) -m venv venv
+	. venv/bin/activate; cd ../; pip install -U pip
 	touch virtualenv.done
 
 pytorch.done: virtualenv.done
