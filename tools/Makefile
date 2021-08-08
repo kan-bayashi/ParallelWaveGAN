@@ -14,6 +14,8 @@ show_variables:
 virtualenv.done: show_variables
 	test -d venv || $(PYTHON) -m venv venv
 	. venv/bin/activate; cd ../; pip install -U pip
+	# install numpy 1.19.X since python3.6 is not supported in > 1.20
+	. venv/bin/activate; cd ../; pip install numpy<=1.19
 	touch virtualenv.done
 
 pytorch.done: virtualenv.done
