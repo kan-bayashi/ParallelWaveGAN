@@ -97,7 +97,7 @@ batch_max_steps: 24000      # Length of each audio in batch. Make sure dividable
 pin_memory: true            # Whether to pin memory in Pytorch DataLoader.
 num_workers: 2              # Number of workers in Pytorch DataLoader.
 remove_short_samples: false # Whether to remove samples the length of which are less than batch_max_steps.
-allow_cache: true           # Whether to allow cache in dataset. If true, it requires cpu memory.
+allow_cache: false          # Whether to allow cache in dataset. If true, it requires cpu memory.
 
 ###########################################################
 #             OPTIMIZER & SCHEDULER SETTING               #
