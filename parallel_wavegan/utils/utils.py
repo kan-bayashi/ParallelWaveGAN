@@ -284,7 +284,7 @@ def load_model(checkpoint, config=None, stats=None):
     Args:
         checkpoint (str): Checkpoint path.
         config (dict): Configuration dict.
-        stats (dict): Statistics file.
+        stats (str): Statistics file path.
 
     Return:
         torch.nn.Module: Model instance.
@@ -319,8 +319,6 @@ def load_model(checkpoint, config=None, stats=None):
             ext = "npy"
         if os.path.exists(os.path.join(dirname, f"stats.{ext}")):
             stats = os.path.join(dirname, f"stats.{ext}")
-        else:
-            logging.warning("Not found stats file. Skipped loading.")
 
     # load stats
     if stats is not None:

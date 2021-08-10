@@ -146,6 +146,9 @@ def main():
         device = torch.device("cpu")
     model = load_model(args.checkpoint, config)
     logging.info(f"Loaded model parameters from {args.checkpoint}.")
+    if args.normalize_before:
+        assert hasattr(model, "mean"), "Feature stats are not registered."
+        assert hasattr(model, "scale"), "Feature stats are not registered."
     model.remove_weight_norm()
     model = model.eval().to(device)
 
