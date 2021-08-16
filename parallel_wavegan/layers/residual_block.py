@@ -151,7 +151,7 @@ class HiFiGANResidualBlock(torch.nn.Module):
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.1},
     ):
-        """Initialize WaveNetResidualBlock module.
+        """Initialize HiFiGANResidualBlock module.
 
         Args:
             kernel_size (int): Kernel size of dilation convolution layer.
