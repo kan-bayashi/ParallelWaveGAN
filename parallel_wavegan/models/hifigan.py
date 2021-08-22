@@ -27,7 +27,7 @@ class HiFiGANGenerator(torch.nn.Module):
         channels=512,
         kernel_size=7,
         upsample_scales=(8, 8, 2, 2),
-        upsample_kernal_sizes=(16, 16, 4, 4),
+        upsample_kernel_sizes=(16, 16, 4, 4),
         resblock_kernel_sizes=(3, 7, 11),
         resblock_dilations=[(1, 3, 5), (1, 3, 5), (1, 3, 5)],
         use_additional_convs=True,
@@ -44,8 +44,8 @@ class HiFiGANGenerator(torch.nn.Module):
             channels (int): Number of hidden representation channels.
             kernel_size (int): Kernel size of initial and final conv layer.
             upsample_scales (list): List of upsampling scales.
-            upsample_kernal_sizes (list): List of kernal sizes for upsampling layers.
-            resblock_kernal_sizes (list): List of kernal sizes for residual blocks.
+            upsample_kernel_sizes (list): List of kernel sizes for upsampling layers.
+            resblock_kernel_sizes (list): List of kernel sizes for residual blocks.
             resblock_dilations (list): List of dilation list for residual blocks.
             use_additional_convs (bool): Whether to use additional conv layers in residual blocks.
             bias (bool): Whether to add bias parameter in convolution layers.
@@ -59,11 +59,11 @@ class HiFiGANGenerator(torch.nn.Module):
 
         # check hyperparameters are valid
         assert kernel_size % 2 == 1, "Kernal size must be odd number."
-        assert len(upsample_scales) == len(upsample_kernal_sizes)
+        assert len(upsample_scales) == len(upsample_kernel_sizes)
         assert len(resblock_dilations) == len(resblock_kernel_sizes)
 
         # define modules
-        self.num_upsamples = len(upsample_kernal_sizes)
+        self.num_upsamples = len(upsample_kernel_sizes)
         self.num_blocks = len(resblock_kernel_sizes)
         self.input_conv = torch.nn.Conv1d(
             in_channels,
@@ -74,8 +74,8 @@ class HiFiGANGenerator(torch.nn.Module):
         )
         self.upsamples = torch.nn.ModuleList()
         self.blocks = torch.nn.ModuleList()
-        for i in range(len(upsample_kernal_sizes)):
-            assert upsample_kernal_sizes[i] == 2 * upsample_scales[i]
+        for i in range(len(upsample_kernel_sizes)):
+            assert upsample_kernel_sizes[i] == 2 * upsample_scales[i]
             self.upsamples += [
                 torch.nn.Sequential(
                     getattr(torch.nn, nonlinear_activation)(
@@ -84,7 +84,7 @@ class HiFiGANGenerator(torch.nn.Module):
                     torch.nn.ConvTranspose1d(
                         channels // (2 ** i),
                         channels // (2 ** (i + 1)),
-                        upsample_kernal_sizes[i],
+                        upsample_kernel_sizes[i],
                         upsample_scales[i],
                         padding=upsample_scales[i] // 2 + upsample_scales[i] % 2,
                         output_padding=upsample_scales[i] % 2,
