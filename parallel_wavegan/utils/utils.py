@@ -12,6 +12,7 @@ import sys
 import tarfile
 
 from distutils.version import LooseVersion
+from filelock import FileLock
 
 import h5py
 import numpy as np
@@ -363,18 +364,19 @@ def download_pretrained_model(tag, download_dir=None):
         download_dir = os.path.expanduser("~/.cache/parallel_wavegan")
     output_path = f"{download_dir}/{tag}.tar.gz"
     os.makedirs(f"{download_dir}", exist_ok=True)
-    if not os.path.exists(output_path):
-        # lazy load for compatibility
-        import gdown
+    with FileLock(output_path + ".lock"):
+        if not os.path.exists(output_path):
+            # lazy load for compatibility
+            import gdown
 
-        gdown.download(
-            f"https://drive.google.com/uc?id={id_}", output_path, quiet=False
-        )
-        with tarfile.open(output_path, "r:*") as tar:
-            for member in tar.getmembers():
-                if member.isreg():
-                    member.name = os.path.basename(member.name)
-                    tar.extract(member, f"{download_dir}/{tag}")
+            gdown.download(
+                f"https://drive.google.com/uc?id={id_}", output_path, quiet=False
+            )
+            with tarfile.open(output_path, "r:*") as tar:
+                for member in tar.getmembers():
+                    if member.isreg():
+                        member.name = os.path.basename(member.name)
+                        tar.extract(member, f"{download_dir}/{tag}")
     checkpoint_path = find_files(f"{download_dir}/{tag}", "checkpoint*.pkl")
 
     return checkpoint_path[0]

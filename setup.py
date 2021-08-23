@@ -36,6 +36,7 @@ requirements = {
         "h5py>=2.9.0",
         "yq>=2.10.0",
         "gdown",
+        "filelock",
     ],
     "setup": [
         "numpy",
