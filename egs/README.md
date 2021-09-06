@@ -182,8 +182,8 @@ Then move on vocoder recipe and run fine-tuning:
 cd parallel_wavegan/egs/your_recipe/voc1
 
 # make symlink to text2mel model and dump dirs
-ln -s /path/to/espnet/egs2/your_recipe/tts/dump/raw dump
-ln -s /path/to/espnet/egs2/your_recipe/tts/exp/your_text2mel_mode_dir exp/
+ln -s /path/to/espnet/egs2/your_recipe/tts1/dump/raw dump
+ln -s /path/to/espnet/egs2/your_recipe/tts1/exp/your_text2mel_mode_dir exp/
 
 # make config for finetune
 # e.g.
