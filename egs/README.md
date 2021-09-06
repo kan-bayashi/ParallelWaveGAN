@@ -19,7 +19,6 @@ Currently, the following recipes are supported.
 ```bash
 # Let us move on the recipe directory
 $ cd egs/ljspeech/voc1
-
 # Run the recipe from scratch
 $ ./run.sh
 
@@ -163,3 +162,42 @@ vim conf/parallel_wavegan.v1.yaml
 ```
 
 That's it!
+
+## Run finetuning using ESPnet2-TTS GTA outputs
+
+Here, assume that you already finished the training of text2mel model with ESPnet2 recipe and vocoder with this repository.
+At first, run teacher-forcing decoding for train and dev sets in ESPnet2 recipe.
+
+```sh
+cd espnet/egs2/your_recipe/tts1
+./run.sh \
+    --ngpu 1 \
+    --stage 7 \
+    --test_sets "tr_no_dev dev" \
+    --inference_args "--use_teacher_forcing true"
+```
+
+Then move on vocoder recipe and run fine-tuning:
+```sh
+cd parallel_wavegan/egs/your_recipe/voc1
+
+# make symlink to text2mel model and dump dirs
+ln -s /path/to/espnet/egs2/your_recipe/tts/dump/raw dump
+ln -s /path/to/espnet/egs2/your_recipe/tts/exp/your_text2mel_mode_dir exp/
+
+# make config for finetune
+# e.g.
+vim conf/hifigan_melgan.v1.finetune.yaml
+
+# run fine-tuning
+. ./path.sh
+parallel-wavegan-train \
+    --config conf/hifigan_melgan.v1.finetune.yaml \
+    --train-wav-scp dump/raw/tr_no_dev/wav.scp \
+    --train-feats-scp exp/your_text2mel_mode_dir/decode_use_teacher_forcingtrue_train.loss.ave/tr_no_dev/norm/feats.scp \
+    --dev-wav-scp dump/raw/dev/wav.scp \
+    --dev-feats-scp exp/your_text2mel_mode_dir/decode_use_teacher_forcingtrue_train.loss.ave/dev/norm/feats.scp \
+    --outdir exp/your_finetuned_vocoder_outdir \
+    --pretrain /path/to/vocoder_checkpoint.pkl \
+    --verbose 1
+```
