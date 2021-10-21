@@ -26,6 +26,7 @@ You can try the real-time end-to-end text-to-speech demonstration in Google Cola
 
 ## What's new
 
+- 2021/10/21 Single-speaker Korean recipe [egs/kss/voc1] is available.
 - 2021/08/24 Add more pretrained models of StyleMelGAN and HiFi-GAN.
 - 2021/08/07 Add initial pretrained models of StyleMelGAN and HiFi-GAN.
 - 2021/08/03 Support [StyleMelGAN](https://arxiv.org/abs/2011.01557) generator and discriminator!

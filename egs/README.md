@@ -12,6 +12,7 @@ Currently, the following recipes are supported.
 - [VCTK](https://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html): English multi-speaker
 - [LibriTTS](https://arxiv.org/abs/1904.02882): English multi-speaker
 - [YesNo](https://arxiv.org/abs/1904.02882): English speaker (For debugging)
+- [KSS](https://www.kaggle.com/bryanpark/korean-single-speaker-speech-dataset): Single Korean female speaker
 
 
 ## How to run the recipe
