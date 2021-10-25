@@ -40,7 +40,7 @@ set -euo pipefail
 [ ! -e "${data_dir}" ] && mkdir -p "${data_dir}"
 
 # set filenames
-mkdir -p ${data_dir}/all
+mkdir -p "${data_dir}/all"
 scp=${data_dir}/all/wav.scp
 
 # check file existence
