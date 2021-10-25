@@ -1,0 +1,147 @@
+# This is the hyperparameter configuration file for MelGAN.
+# Please make sure this is adjusted for the LJSpeech dataset. If you want to
+# apply to the other dataset, you might need to carefully change some parameters.
+# This configuration requires ~ 8GB memory and will finish within 5 days on Titan V.
+
+# This configuration is based on multi-band MelGAN. Hop size and sampling rate are
+# different from the paper (16kHz vs 22.05kHz). And we use RAdam instaed of Adam
+# with batch size = 64 instaed of 128. Tne number of iteraions is now shown in
+# the paper so currently we train 1M iterations (not sure enough to converge).
+
+###########################################################
+#                FEATURE EXTRACTION SETTING               #
+###########################################################
+sampling_rate: 44100     # Sampling rate.
+fft_size: 2048           # FFT size.
+hop_size: 512            # Hop size.
+win_length: null         # Window length.
+                         # If set to null, it will be the same as fft_size.
+window: "hann"           # Window function.
+num_mels: 120             # Number of mel basis.
+fmin: 80                 # Minimum freq in mel basis calculation.
+fmax: 22050               # Maximum frequency in mel basis calculation.
+global_gain_scale: 1.0   # Will be multiplied to all of waveform.
+trim_silence: true       # Whether to trim the start and end of silence.
+trim_threshold_in_db: 60 # Need to tune carefully if the recording is not good.
+trim_frame_size: 2048    # Frame size in trimming.
+trim_hop_size: 512       # Hop size in trimming.
+format: "hdf5"           # Feature file format. "npy" or "hdf5" is supported.
+
+###########################################################
+#         GENERATOR NETWORK ARCHITECTURE SETTING          #
+###########################################################
+generator_type: "MelGANGenerator" # Generator type.
+generator_params:
+    in_channels: 120               # Number of input channels.
+    out_channels: 4               # Number of output channels.
+    kernel_size: 7                # Kernel size of initial and final conv layers.
+    channels: 384                 # Initial number of channels for conv layers.
+    upsample_scales: [8, 4, 4]    # List of Upsampling scales.
+    stack_kernel_size: 3          # Kernel size of dilated conv layers in residual stack.
+    stacks: 4                     # Number of stacks in a single residual stack module.
+    use_weight_norm: True         # Whether to use weight normalization.
+    use_causal_conv: False        # Whether to use causal convolution.
+
+###########################################################
+#       DISCRIMINATOR NETWORK ARCHITECTURE SETTING        #
+###########################################################
+discriminator_type: "MelGANMultiScaleDiscriminator" # Discriminator type.
+discriminator_params:
+    in_channels: 1                    # Number of input channels.
+    out_channels: 1                   # Number of output channels.
+    scales: 3                         # Number of multi-scales.
+    downsample_pooling: "AvgPool1d"   # Pooling type for the input downsampling.
+    downsample_pooling_params:        # Parameters of the above pooling function.
+        kernel_size: 4
+        stride: 2
+        padding: 1
+        count_include_pad: False
+    kernel_sizes: [5, 3]              # List of kernel size.
+    channels: 16                      # Number of channels of the initial conv layer.
+    max_downsample_channels: 512      # Maximum number of channels of downsampling layers.
+    downsample_scales: [8, 4, 4]      # List of downsampling scales.
+    nonlinear_activation: "LeakyReLU" # Nonlinear activation function.
+    nonlinear_activation_params:      # Parameters of nonlinear activation function.
+        negative_slope: 0.2
+    use_weight_norm: True             # Whether to use weight norm.
+
+###########################################################
+#                   STFT LOSS SETTING                     #
+###########################################################
+stft_loss_params:
+    fft_sizes: [2048, 4096, 1024]  # List of FFT size for STFT-based loss.
+    hop_sizes: [240, 480, 100]     # List of hop size for STFT-based loss
+    win_lengths: [1200, 2400, 480] # List of window length for STFT-based loss.
+    window: "hann_window"         # Window function for STFT-based loss
+use_subband_stft_loss: true
+subband_stft_loss_params:
+    fft_sizes: [768, 1366, 342]  # List of FFT size for STFT-based loss.
+    hop_sizes: [60, 120, 20]     # List of hop size for STFT-based loss
+    win_lengths: [300, 600, 120] # List of window length for STFT-based loss.
+    window: "hann_window"       # Window function for STFT-based loss
+
+###########################################################
+#               ADVERSARIAL LOSS SETTING                  #
+###########################################################
+use_feat_match_loss: false # Whether to use feature matching loss.
+lambda_adv: 2.5            # Loss balancing coefficient for adversarial loss.
+
+###########################################################
+#                  DATA LOADER SETTING                    #
+###########################################################
+batch_size: 64             # Batch size.
+batch_max_steps: 16384     # Length of each audio in batch. Make sure dividable by hop_size.
+pin_memory: true           # Whether to pin memory in Pytorch DataLoader.
+num_workers: 4             # Number of workers in Pytorch DataLoader.
+remove_short_samples: true # Whether to remove samples the length of which are less than batch_max_steps.
+allow_cache: true          # Whether to allow cache in dataset. If true, it requires cpu memory.
+
+###########################################################
+#             OPTIMIZER & SCHEDULER SETTING               #
+###########################################################
+generator_optimizer_type: "RAdam"       # Generator's optimizer type.
+generator_optimizer_params:
+    lr: 0.0001                          # Generator's learning rate.
+    eps: 1.0e-6                         # Generator's epsilon.
+    weight_decay: 0.0                   # Generator's weight decay coefficient.
+generator_grad_norm: 10                 # Generator's gradient norm.
+generator_scheduler_type: "MultiStepLR" # Generator's scheduler type.
+generator_scheduler_params:
+    gamma: 0.5                          # Generator's scheduler gamma.
+    milestones:                         # At each milestone, lr will be multiplied by gamma.
+        - 100000
+        - 200000
+        - 300000
+        - 400000
+        - 500000
+        - 600000
+discriminator_optimizer_type: "RAdam"       # Discriminator's optimizer type.
+discriminator_optimizer_params:
+    lr: 0.0001                              # Discriminator's learning rate.
+    eps: 1.0e-6                             # Discriminator's epsilon.
+    weight_decay: 0.0                       # Discriminator's weight decay coefficient.
+discriminator_grad_norm: 1                  # Discriminator's gradient norm.
+discriminator_scheduler_type: "MultiStepLR" # Discriminator's scheduler type.
+discriminator_scheduler_params:
+    gamma: 0.5                              # Discriminator's scheduler gamma.
+    milestones:                             # At each milestone, lr will be multiplied by gamma.
+        - 100000
+        - 200000
+        - 300000
+        - 400000
+        - 500000
+        - 600000
+
+###########################################################
+#                    INTERVAL SETTING                     #
+###########################################################
+discriminator_train_start_steps: 200000 # Number of steps to start to train discriminator.
+train_max_steps: 1000000                # Number of training steps.
+save_interval_steps: 50000              # Interval steps to save checkpoint.
+eval_interval_steps: 1000               # Interval steps to evaluate the network.
+log_interval_steps: 1000                # Interval steps to record the training log.
+
+###########################################################
+#                     OTHER SETTING                       #
+###########################################################
+num_save_intermediate_results: 4  # Number of results to be saved as intermediate results.
