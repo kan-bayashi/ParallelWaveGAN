@@ -218,7 +218,7 @@ class StyleMelGANGenerator(torch.nn.Module):
         noise_size = (
             1,
             self.in_channels,
-            (c.size(2)-1) // self.noise_upsample_factor + 1,
+            (c.size(2) - 1) // self.noise_upsample_factor + 1,
         )
         noise = torch.randn(*noise_size, dtype=torch.float).to(
             next(self.parameters()).device
