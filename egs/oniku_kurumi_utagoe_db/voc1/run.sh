@@ -41,22 +41,24 @@ set -euo pipefail
 
 if [ "${stage}" -le -1 ] && [ "${stop_stage}" -ge -1 ]; then
     echo "Stage -1: Data download"
-    # The KIRITAN data should be downloaded from https://zunko.jp/kiridev/login.php
-    # with Facebook authentication
+    if [ ! -e "${download_dir}/ONIKU_KURUMI_UTAGOE_DB" ]; then
+    	echo "ERROR: KIRITAN data does not exist."
+    	echo "ERROR: Please download from https://zunko.jp/kiridev/login.php and locate it at ${download_dir}"
+    	exit 1
+    fi
 fi
 
 if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"
-    python local/dataset_split.py ${download_dir}/ONIKU_KURUMI_UTAGOE_DB \
-	    data/${train_set} data/${dev_set} data/${eval_set} --fs 24000
+    python local/dataset_split.py "${download_dir}/ONIKU_KURUMI_UTAGOE_DB" \
+        "data/${train_set}" "data/${dev_set}" "data/${eval_set}" --fs 24000
 
-    for x in ${train_set} ${dev_set} ${eval_set}; do
+    for x in "${train_set}" "${dev_set}" "${eval_set}"; do
         src_data=data/${x}
-        python local/prep_segments.py --silence pau --silence sil ${src_data} 10000 # in ms
-        mv ${src_data}/segments.tmp ${src_data}/segments
-        cat ${src_data}/segments | awk '{printf("%s oniku\n", $1);}' > ${src_data}/utt2spk
+        python local/prep_segments.py --silence pau --silence sil "${src_data}" 10000 # in ms
+        mv "${src_data}/segments.tmp" "${src_data}/segments"
+        awk < "${src_data}/segments" '{printf("%s oniku\n", $1);}' > ${src_data}/utt2spk
     done
-
 fi
 
 stats_ext=$(grep -q "hdf5" <(yq ".format" "${conf}") && echo "h5" || echo "npy")

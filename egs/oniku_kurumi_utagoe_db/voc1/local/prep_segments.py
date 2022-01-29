@@ -95,7 +95,6 @@ def make_segment(file_id, labels, threshold=13.5, sil=["pau", "br", "sil"]):
 
 
 if __name__ == "__main__":
-    # os.chdir(sys.path[0]+'/..')
     args = get_parser().parse_args()
     args.threshold *= 1e-3
     segments = []
