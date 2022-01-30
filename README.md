@@ -109,6 +109,8 @@ Currently, the following recipes are supported.
 - [VCTK](https://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html): English multi-speaker
 - [LibriTTS](https://arxiv.org/abs/1904.02882): English multi-speaker
 - [YesNo](https://arxiv.org/abs/1904.02882): English speaker (For debugging)
+- [KSS](https://www.kaggle.com/bryanpark/korean-single-speaker-speech-dataset): Single Korean female speaker
+- [Oniku\_kurumi\_utagoe\_db/](http://onikuru.info/db-download/): Single Japanese female singer (singing voice)
 
 To run the recipe, please follow the below instruction.
 
@@ -223,7 +225,7 @@ You can listen to the samples and download pretrained models from the link to ou
 | [kss_parallel_wavegan.v1](https://drive.google.com/open?id=1n5kitXZqPHUr-veoUKCyfJvb3p1g0VlY)                | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.yaml)          | KO    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
 | [hui_acg_hokuspokus_parallel_wavegan.v1](https://drive.google.com/open?id=1rwzpIwb65xbW5fFPsqPWdforsk4U-vDg) | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.yaml)          | DE    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
 | [ruslan_parallel_wavegan.v1](https://drive.google.com/open?id=1QGuesaRKGful0bUTTaFZdbjqHNhy2LpE)             | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.yaml)          | RU    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
-
+| [oniku_hifigan.v1](https://drive.google.com/drive/folders/1K1WNqmZVJaZqTwWNVcucZNeGKHu8-LVm?usp=sharing)     | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/oniku_kurumi_utagoe_db/voc1/conf/hifigan.v1.yaml)     | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
 Please access at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi) to check more results.
 
 ## How-to-use pretrained models

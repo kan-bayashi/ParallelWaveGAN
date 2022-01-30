@@ -13,7 +13,7 @@ Currently, the following recipes are supported.
 - [LibriTTS](https://arxiv.org/abs/1904.02882): English multi-speaker
 - [YesNo](https://arxiv.org/abs/1904.02882): English speaker (For debugging)
 - [KSS](https://www.kaggle.com/bryanpark/korean-single-speaker-speech-dataset): Single Korean female speaker
-
+- [Oniku\_kurumi\_utagoe\_db/](http://onikuru.info/db-download/): Single Japanese female singer (singing voice)
 
 ## How to run the recipe
 

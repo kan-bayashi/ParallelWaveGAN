@@ -42,8 +42,8 @@ set -euo pipefail
 if [ "${stage}" -le -1 ] && [ "${stop_stage}" -ge -1 ]; then
     echo "Stage -1: Data download"
     if [ ! -e "${download_dir}/ONIKU_KURUMI_UTAGOE_DB" ]; then
-    	echo "ERROR: KIRITAN data does not exist."
-    	echo "ERROR: Please download from https://zunko.jp/kiridev/login.php and locate it at ${download_dir}"
+    	echo "ERROR: ONIKU_KURUMI_UTAGOE_DB data does not exist."
+    	echo "ERROR: Please download http://onikuru.info/db-download/ and locate it at ${download_dir}"
     	exit 1
     fi
 fi
