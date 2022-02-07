@@ -442,6 +442,10 @@ $ parallel-wavegan-decode \
 2021-08-10 09:13:29,660 (decode:174) INFO: Finished generation of 2 utterances (RTF = 0.005).
 ```
 
+## Notes
+
+The terms of use follow that of each corpus. Please carefully check by yourself.  
+
 ## References
 
 - [Parallel WaveGAN](https://arxiv.org/abs/1910.11480)
