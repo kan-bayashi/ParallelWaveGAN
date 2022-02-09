@@ -150,6 +150,7 @@ class HiFiGANResidualBlock(torch.nn.Module):
         use_additional_convs=True,
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.1},
+        use_causal_conv=False,
     ):
         """Initialize HiFiGANResidualBlock module.
 
@@ -161,6 +162,7 @@ class HiFiGANResidualBlock(torch.nn.Module):
             bias (bool): Whether to add bias parameter in convolution layers.
             nonlinear_activation (str): Activation function module name.
             nonlinear_activation_params (dict): Hyperparameters for activation function.
+            use_causal_conv (bool): Whether to use causal structure.
 
         """
         super().__init__()
@@ -168,8 +170,13 @@ class HiFiGANResidualBlock(torch.nn.Module):
         self.convs1 = torch.nn.ModuleList()
         if use_additional_convs:
             self.convs2 = torch.nn.ModuleList()
+        self.use_causal_conv = use_causal_conv
         assert kernel_size % 2 == 1, "Kernel size must be odd number."
         for dilation in dilations:
+            if use_causal_conv:
+                padding = (kernel_size - 1) * dilation
+            else:
+                padding = (kernel_size - 1) // 2 * dilation
             self.convs1 += [
                 torch.nn.Sequential(
                     getattr(torch.nn, nonlinear_activation)(
@@ -182,11 +189,12 @@ class HiFiGANResidualBlock(torch.nn.Module):
                         1,
                         dilation=dilation,
                         bias=bias,
-                        padding=(kernel_size - 1) // 2 * dilation,
+                        padding=padding,
                     ),
                 )
             ]
             if use_additional_convs:
+                padding = kernel_size - 1 if use_causal_conv else (kernel_size - 1) // 2
                 self.convs2 += [
                     torch.nn.Sequential(
                         getattr(torch.nn, nonlinear_activation)(
@@ -199,7 +207,7 @@ class HiFiGANResidualBlock(torch.nn.Module):
                             1,
                             dilation=1,
                             bias=bias,
-                            padding=(kernel_size - 1) // 2,
+                            padding=padding,
                         ),
                     )
                 ]
@@ -216,7 +224,11 @@ class HiFiGANResidualBlock(torch.nn.Module):
         """
         for idx in range(len(self.convs1)):
             xt = self.convs1[idx](x)
+            if self.use_causal_conv:
+                xt = xt[:, :, : x.size(-1)]
             if self.use_additional_convs:
                 xt = self.convs2[idx](xt)
+                if self.use_causal_conv:
+                    xt = xt[:, :, : x.size(-1)]
             x = xt + x
         return x
