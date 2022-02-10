@@ -68,7 +68,13 @@ def logmelfilterbank(
     # get mel basis
     fmin = 0 if fmin is None else fmin
     fmax = sampling_rate / 2 if fmax is None else fmax
-    mel_basis = librosa.filters.mel(sampling_rate, fft_size, num_mels, fmin, fmax)
+    mel_basis = librosa.filters.mel(
+        sr=sampling_rate,
+        n_fft=fft_size,
+        n_mels=num_mels,
+        fmin=fmin,
+        fmax=fmax,
+    )
     mel = np.maximum(eps, np.dot(spc, mel_basis.T))
 
     if log_base is None:
