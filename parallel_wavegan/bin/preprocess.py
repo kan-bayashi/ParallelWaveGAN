@@ -68,7 +68,13 @@ def logmelfilterbank(
     # get mel basis
     fmin = 0 if fmin is None else fmin
     fmax = sampling_rate / 2 if fmax is None else fmax
-    mel_basis = librosa.filters.mel(sampling_rate, fft_size, num_mels, fmin, fmax)
+    mel_basis = librosa.filters.mel(
+        sr=sampling_rate,
+        n_fft=fft_size,
+        n_mels=num_mels,
+        fmin=fmin,
+        fmax=fmax,
+    )
     mel = np.maximum(eps, np.dot(spc, mel_basis.T))
 
     if log_base is None:
@@ -202,7 +208,11 @@ def main():
             # NOTE(kan-bayashi): this procedure enables to train the model with different
             #   sampling rate for feature and audio, e.g., training with mel extracted
             #   using 16 kHz audio and 24 kHz audio as a target waveform
-            x = librosa.resample(audio, fs, config["sampling_rate_for_feats"])
+            x = librosa.resample(
+                audio,
+                orig_sr=fs,
+                target_sr=config["sampling_rate_for_feats"],
+            )
             sampling_rate = config["sampling_rate_for_feats"]
             assert (
                 config["hop_size"] * config["sampling_rate_for_feats"] % fs == 0
