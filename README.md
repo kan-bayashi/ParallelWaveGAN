@@ -60,7 +60,7 @@ This repository is tested on Ubuntu 20.04 with a GPU Titan V.
 - sox (you can install via `sudo apt install sox` in ubuntu)
 
 Different cuda version should be working but not explicitly tested.  
-All of the codes are tested on Pytorch 1.4, 1.5.1, 1.7.1, 1.8.1, and 1.9.
+All of the codes are tested on Pytorch 1.4, 1.5.1, 1.7.1, 1.8.1, 1.9 and 10.2.
 
 Pytorch 1.6 works but there are some issues in cpu mode (See #198).
 
@@ -444,7 +444,7 @@ $ parallel-wavegan-decode \
 
 ## Notes
 
-The terms of use follow that of each corpus. Please carefully check by yourself.  
+The terms of use of the pretrained model follow that of each corpus used for the training. Please carefully check by yourself.  
 
 ## References
 
