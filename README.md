@@ -60,7 +60,7 @@ This repository is tested on Ubuntu 20.04 with a GPU Titan V.
 - sox (you can install via `sudo apt install sox` in ubuntu)
 
 Different cuda version should be working but not explicitly tested.  
-All of the codes are tested on Pytorch 1.4, 1.5.1, 1.7.1, 1.8.1, and 1.9.
+All of the codes are tested on Pytorch 1.4, 1.5.1, 1.7.1, 1.8.1, 1.9 and 10.2.
 
 Pytorch 1.6 works but there are some issues in cpu mode (See #198).
 
@@ -109,6 +109,8 @@ Currently, the following recipes are supported.
 - [VCTK](https://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html): English multi-speaker
 - [LibriTTS](https://arxiv.org/abs/1904.02882): English multi-speaker
 - [YesNo](https://arxiv.org/abs/1904.02882): English speaker (For debugging)
+- [KSS](https://www.kaggle.com/bryanpark/korean-single-speaker-speech-dataset): Single Korean female speaker
+- [Oniku\_kurumi\_utagoe\_db/](http://onikuru.info/db-download/): Single Japanese female singer (singing voice)
 
 To run the recipe, please follow the below instruction.
 
@@ -223,7 +225,7 @@ You can listen to the samples and download pretrained models from the link to ou
 | [kss_parallel_wavegan.v1](https://drive.google.com/open?id=1n5kitXZqPHUr-veoUKCyfJvb3p1g0VlY)                | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.yaml)          | KO    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
 | [hui_acg_hokuspokus_parallel_wavegan.v1](https://drive.google.com/open?id=1rwzpIwb65xbW5fFPsqPWdforsk4U-vDg) | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.yaml)          | DE    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
 | [ruslan_parallel_wavegan.v1](https://drive.google.com/open?id=1QGuesaRKGful0bUTTaFZdbjqHNhy2LpE)             | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.yaml)          | RU    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
-
+| [oniku_hifigan.v1](https://drive.google.com/drive/folders/1K1WNqmZVJaZqTwWNVcucZNeGKHu8-LVm?usp=sharing)     | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/oniku_kurumi_utagoe_db/voc1/conf/hifigan.v1.yaml)     | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
 Please access at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi) to check more results.
 
 ## How-to-use pretrained models
@@ -439,6 +441,10 @@ $ parallel-wavegan-decode \
 [decode]: 100%|████████████████████████████████████████| 2/2 [00:00<00:00, 13.84it/s, RTF=0.00264]
 2021-08-10 09:13:29,660 (decode:174) INFO: Finished generation of 2 utterances (RTF = 0.005).
 ```
+
+## Notes
+
+The terms of use of the pretrained model follow that of each corpus used for the training. Please carefully check by yourself.  
 
 ## References
 
