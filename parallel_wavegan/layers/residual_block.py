@@ -13,6 +13,8 @@ import math
 import torch
 import torch.nn.functional as F
 
+from parallel_wavegan.layers.causal_conv import CausalConv1d
+
 
 class Conv1d(torch.nn.Conv1d):
     """Conv1d module with customized initialization."""
@@ -150,6 +152,8 @@ class HiFiGANResidualBlock(torch.nn.Module):
         use_additional_convs=True,
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.1},
+        pad="ReplicationPad1d",
+        pad_params={},
         use_causal_conv=False,
     ):
         """Initialize HiFiGANResidualBlock module.
@@ -162,6 +166,8 @@ class HiFiGANResidualBlock(torch.nn.Module):
             bias (bool): Whether to add bias parameter in convolution layers.
             nonlinear_activation (str): Activation function module name.
             nonlinear_activation_params (dict): Hyperparameters for activation function.
+            pad (str): Padding function module name before convolution layer.
+            pad_params (dict): Hyperparameters for padding function.
             use_causal_conv (bool): Whether to use causal structure.
 
         """
@@ -173,42 +179,65 @@ class HiFiGANResidualBlock(torch.nn.Module):
         self.use_causal_conv = use_causal_conv
         assert kernel_size % 2 == 1, "Kernel size must be odd number."
         for dilation in dilations:
-            if use_causal_conv:
-                padding = (kernel_size - 1) * dilation
-            else:
-                padding = (kernel_size - 1) // 2 * dilation
-            self.convs1 += [
-                torch.nn.Sequential(
-                    getattr(torch.nn, nonlinear_activation)(
-                        **nonlinear_activation_params
+            if not use_causal_conv:
+                conv = torch.nn.Sequential(
+                    getattr(torch.nn, pad)(
+                        (kernel_size - 1) // 2 * dilation, **pad_params
                     ),
                     torch.nn.Conv1d(
                         channels,
                         channels,
                         kernel_size,
-                        1,
                         dilation=dilation,
                         bias=bias,
-                        padding=padding,
                     ),
+                )
+            else:
+                conv = CausalConv1d(
+                    channels,
+                    channels,
+                    kernel_size,
+                    dilation=dilation,
+                    bias=bias,
+                    pad=pad,
+                    pad_params=pad_params,
+                )
+            self.convs1 += [
+                torch.nn.Sequential(
+                    getattr(torch.nn, nonlinear_activation)(
+                        **nonlinear_activation_params
+                    ),
+                    conv,
                 )
             ]
             if use_additional_convs:
-                padding = kernel_size - 1 if use_causal_conv else (kernel_size - 1) // 2
+                if not use_causal_conv:
+                    conv = torch.nn.Sequential(
+                        getattr(torch.nn, pad)((kernel_size - 1) // 2, **pad_params),
+                        torch.nn.Conv1d(
+                            channels,
+                            channels,
+                            kernel_size,
+                            dilation=1,
+                            bias=bias,
+                        ),
+                    )
+                else:
+                    conv = CausalConv1d(
+                        channels,
+                        channels,
+                        kernel_size,
+                        dilation=1,
+                        bias=bias,
+                        pad=pad,
+                        pad_params=pad_params,
+                    )
                 self.convs2 += [
                     torch.nn.Sequential(
                         getattr(torch.nn, nonlinear_activation)(
                             **nonlinear_activation_params
                         ),
-                        torch.nn.Conv1d(
-                            channels,
-                            channels,
-                            kernel_size,
-                            1,
-                            dilation=1,
-                            bias=bias,
-                            padding=padding,
-                        ),
+                        conv,
                     )
                 ]
 
@@ -224,11 +253,7 @@ class HiFiGANResidualBlock(torch.nn.Module):
         """
         for idx in range(len(self.convs1)):
             xt = self.convs1[idx](x)
-            if self.use_causal_conv:
-                xt = xt[:, :, : x.size(-1)]
             if self.use_additional_convs:
                 xt = self.convs2[idx](xt)
-                if self.use_causal_conv:
-                    xt = xt[:, :, : x.size(-1)]
             x = xt + x
         return x
