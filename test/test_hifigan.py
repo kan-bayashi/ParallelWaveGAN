@@ -40,7 +40,10 @@ def make_hifigan_generator_args(**kwargs):
         bias=True,
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.1},
+        pad="ReplicationPad1d",
+        pad_params={},
         use_weight_norm=True,
+        use_causal_conv=False,
     )
     defaults.update(kwargs)
     return defaults
@@ -153,3 +156,65 @@ def test_hifigan_trainable(dict_g, dict_d, dict_loss):
 
     print(model_d)
     print(model_g)
+
+
+@pytest.mark.parametrize(
+    "dict_g",
+    [
+        (
+            {
+                "use_causal_conv": True,
+                "upsample_scales": [5, 5, 4, 3],
+                "upsample_kernel_sizes": [10, 10, 8, 6],
+            }
+        ),
+        (
+            {
+                "use_causal_conv": True,
+                "upsample_scales": [8, 8, 2, 2],
+                "upsample_kernel_sizes": [16, 16, 4, 4],
+            }
+        ),
+        (
+            {
+                "use_causal_conv": True,
+                "upsample_scales": [4, 5, 4, 3],
+                "upsample_kernel_sizes": [8, 10, 8, 6],
+            }
+        ),
+        (
+            {
+                "use_causal_conv": True,
+                "upsample_scales": [4, 4, 2, 2],
+                "upsample_kernel_sizes": [8, 8, 4, 4],
+            }
+        ),
+    ],
+)
+def test_causal_hifigan(dict_g):
+    batch_size = 4
+    batch_length = 8192
+    args_g = make_hifigan_generator_args(**dict_g)
+    upsampling_factor = np.prod(args_g["upsample_scales"])
+    c = torch.randn(
+        batch_size, args_g["in_channels"], batch_length // upsampling_factor
+    )
+    model_g = HiFiGANGenerator(**args_g)
+    c_ = c.clone()
+    c_[..., c.size(-1) // 2 :] = torch.randn(c[..., c.size(-1) // 2 :].shape)
+    try:
+        # check not equal
+        np.testing.assert_array_equal(c.numpy(), c_.numpy())
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Must be different.")
+
+    # check causality
+    y = model_g(c)
+    y_ = model_g(c_)
+    assert y.size(2) == c.size(2) * upsampling_factor
+    np.testing.assert_array_equal(
+        y[..., : c.size(-1) // 2 * upsampling_factor].detach().cpu().numpy(),
+        y_[..., : c_.size(-1) // 2 * upsampling_factor].detach().cpu().numpy(),
+    )
