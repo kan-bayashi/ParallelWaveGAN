@@ -58,7 +58,7 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     sort -o data/train/wav.scp data/train/wav.scp
 
     dev_num=50
-    train_num=$(( $(wc -l < data/train/wav.scp) - ${dev_num} ))
+    train_num=$(( $(wc -l < data/train/wav.scp) - dev_num ))
     mkdir -p data/${dev_set}
     mkdir -p data/${train_set}
     head -n $train_num data/train/wav.scp > data/${train_set}/wav.scp
