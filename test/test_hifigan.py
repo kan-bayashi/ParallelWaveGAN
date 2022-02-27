@@ -40,8 +40,6 @@ def make_hifigan_generator_args(**kwargs):
         bias=True,
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.1},
-        pad="ReplicationPad1d",
-        pad_params={},
         use_weight_norm=True,
         use_causal_conv=False,
     )
