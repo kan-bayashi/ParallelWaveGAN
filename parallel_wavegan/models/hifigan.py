@@ -54,8 +54,6 @@ class HiFiGANGenerator(torch.nn.Module):
             bias (bool): Whether to add bias parameter in convolution layers.
             nonlinear_activation (str): Activation function module name.
             nonlinear_activation_params (dict): Hyperparameters for activation function.
-            pad (str): Padding function module name before convolution layer.
-            pad_params (dict): Hyperparameters for padding function.
             use_causal_conv (bool): Whether to use causal structure.
             use_weight_norm (bool): Whether to use weight norm.
                 If set to true, it will be applied to all of the conv layers.

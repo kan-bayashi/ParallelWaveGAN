@@ -164,8 +164,6 @@ class HiFiGANResidualBlock(torch.nn.Module):
             bias (bool): Whether to add bias parameter in convolution layers.
             nonlinear_activation (str): Activation function module name.
             nonlinear_activation_params (dict): Hyperparameters for activation function.
-            pad (str): Padding function module name before convolution layer.
-            pad_params (dict): Hyperparameters for padding function.
             use_causal_conv (bool): Whether to use causal structure.
 
         """
