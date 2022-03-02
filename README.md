@@ -234,9 +234,11 @@ You can listen to the samples and download pretrained models from the link to ou
 | [kiritan_hifigan.v1](https://drive.google.com/open?id=1FHUUF5uUnlJ9-D7HmXw3_Sn_GRS48I36)                     | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/kiritan/voc1/conf/hifigan.v1.yaml)                    | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
 | [ofuton_hifigan.v1](https://drive.google.com/open?id=1fq8ITA2KpdtrzzD2hOlroParMg-qKjr7)                      | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ofuton_p_utagoe_db/voc1/conf/hifigan.v1.yaml)          | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
 | [opencpop_hifigan.v1](https://drive.google.com/open?id=1hMf5yew_MrbPW0qy5qzXn0mxqbfHTadC)                    | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/opencpop/voc1/conf/hifigan.v1.yaml)                    | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 250k    |
+
 Please access at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi) to check more results.
 
-(Please check the license of database (e.g., whether it is proper for commercial usage) before using the pre-trained model. The authors will not be responsible for any loss due to the use of the model and legal disputes regarding the use of the dataset.)
+Please check the license of database (e.g., whether it is proper for commercial usage) before using the pre-trained model.   
+The authors will not be responsible for any loss due to the use of the model and legal disputes regarding the use of the dataset.
 
 ## How-to-use pretrained models
 
