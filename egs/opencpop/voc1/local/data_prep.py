@@ -50,7 +50,7 @@ if __name__ == "__main__":
     parser.add_argument("src_data", type=str, help="source data directory")
     parser.add_argument("--tgt_dir", type=str, default="data")
     parser.add_argument(
-        "--wav_dumpdir", type=str, help="wav dump directoyr (rebit)", default="wav_dump"
+        "--wav_dumpdir", type=str, help="wav dump directory (rebit)", default="wav_dump"
     )
     parser.add_argument("--sr", type=int, help="sampling rate (Hz)")
     args = parser.parse_args()
