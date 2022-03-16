@@ -53,17 +53,17 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"
     mkdir -p wav_dump
     # we convert the music score to midi format
-    python local/data_prep.py ${KISING} \
+    python local/data_prep.py "${KISING}" \
         --wav_dumpdir wav_dump \
         --sr 24000
 
-    for x in ${train_set} ${train_dev} ${eval_set}; do
+    for x in ${train_set} ${dev_set} ${eval_set}; do
         src_data=data/${x}
-        python local/prep_segments.py ${src_data}
-        mv ${src_data}/segments.tmp ${src_data}/segments
-        cat ${src_data}/segments | awk '{printf("%s kising\n", $1);}' > ${src_data}/utt2spk
-        utils/utt2spk_to_spk2utt.pl < ${src_data}/utt2spk > ${src_data}/spk2utt
-        utils/fix_data_dir.sh ${src_data}
+        python local/prep_segments.py "${src_data}"
+        mv "${src_data}"/segments.tmp "${src_data}"/segments
+        awk '{printf("%s kising\n", $1);}' "${src_data}"/segments > "${src_data}"/utt2spk
+        utils/utt2spk_to_spk2utt.pl < "${src_data}"/utt2spk > "${src_data}"/spk2utt
+        utils/fix_data_dir.sh "${src_data}"
     done
 fi
 

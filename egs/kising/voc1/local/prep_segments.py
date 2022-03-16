@@ -55,7 +55,6 @@ def make_segment(file_id, labels):
         segment.add(label.start, label.end, label.label_id)
         running_end = label.end
 
-
     if len(segment.segs) > 0:
         segments.append(segment.segs)
 
@@ -95,9 +94,7 @@ if __name__ == "__main__":
             temp_info.append(
                 LabelInfo(phn_info[i * 3], phn_info[i * 3 + 1], phn_info[i * 3 + 2])
             )
-        segments.append(
-            make_segment(recording_id, temp_info)
-        )
+        segments.append(make_segment(recording_id, temp_info))
 
     for file in segments:
         for key, val in file.items():
@@ -109,4 +106,3 @@ if __name__ == "__main__":
                     key, "_".join(key.split("_")[:-1]), segment_begin, segment_end
                 )
             )
-

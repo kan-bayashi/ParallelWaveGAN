@@ -33,9 +33,7 @@ def process_text_info(text):
     for line in info.readlines():
         line = line.strip().split()
         label_info.append(
-            "{} {} {}".format(
-                float(line[0]) , float(line[1]) , line[2].strip()
-            )
+            "{} {} {}".format(float(line[0]), float(line[1]), line[2].strip())
         )
         text_info.append(line[2].strip())
     return " ".join(label_info), " ".join(text_info)
@@ -68,9 +66,11 @@ def process_subset(args, set_name, check_func):
         cmd = f"sox {os.path.join(src_wavdir, song)} -c 1 -t wavpcm -b 16 -r {args.sr} {os.path.join(args.wav_dumpdir, utt_id)}_bits16.wav"
         os.system(cmd)
 
-        wavscp.write("{} {}\n".format(
-            utt_id, os.path.join(args.wav_dumpdir, utt_id) + "_bits16.wav"
-        ))
+        wavscp.write(
+            "{} {}\n".format(
+                utt_id, os.path.join(args.wav_dumpdir, utt_id) + "_bits16.wav"
+            )
+        )
 
         utt2spk.write("{} {}\n".format(utt_id, UTT_PREFIX))
         label_info, text_info = process_text_info(
@@ -91,7 +91,6 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.wav_dumpdir):
         os.makedirs(args.wav_dumpdir)
-
 
     process_subset(args, "tr_no_dev", train_check)
     process_subset(args, "dev", dev_check)
