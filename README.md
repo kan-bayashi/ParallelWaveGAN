@@ -27,7 +27,7 @@ You can try the real-time end-to-end text-to-speech and singing voice synthesis 
 
 ## What's new
 
-- 2022/02/27 Support singing voice vocoder [egs/{kiritan, opencpop, oniku\_kurumi\_utagoe\_db, ofuton\_p\_utagoe\_db}/voc1]
+- 2022/02/27 Support singing voice vocoder [egs/{kiritan, opencpop, oniku\_kurumi\_utagoe\_db, ofuton\_p\_utagoe\_db, csd, kising}/voc1]
 - 2021/10/21 Single-speaker Korean recipe [egs/kss/voc1] is available.
 - 2021/08/24 Add more pretrained models of StyleMelGAN and HiFi-GAN.
 - 2021/08/07 Add initial pretrained models of StyleMelGAN and HiFi-GAN.
@@ -116,6 +116,8 @@ Currently, the following recipes are supported.
 - [Kiritan](https://zunko.jp/kiridev/login.php): Single Japanese male singer (singing voice)
 - [Ofuton\_p\_utagoe\_db](https://sites.google.com/view/oftn-utagoedb/%E3%83%9B%E3%83%BC%E3%83%A0): Single Japanese female singer (singing voice)
 - [Opencpop](https://wenet.org.cn/opencpop/download/): Single Mandarin female singer (singing voice)
+- [CSD](https://zenodo.org/record/4785016/): Single Korean/English female singer (singing voice)
+- [KiSing](http://shijt.site/index.php/2021/05/16/kising-the-first-open-source-mandarin-singing-voice-synthesis-corpus/): Single Mandarin female singer (singing voice)
 
 To run the recipe, please follow the below instruction.
 
@@ -232,8 +234,13 @@ You can listen to the samples and download pretrained models from the link to ou
 | [ruslan_parallel_wavegan.v1](https://drive.google.com/open?id=1QGuesaRKGful0bUTTaFZdbjqHNhy2LpE)             | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts/voc1/conf/parallel_wavegan.v1.yaml)          | RU    | 24k     | 80-7600        | 2048 / 300 / 1200    | 400k    |
 | [oniku_hifigan.v1](https://drive.google.com/open?id=1K1WNqmZVJaZqTwWNVcucZNeGKHu8-LVm)                       | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/oniku_kurumi_utagoe_db/voc1/conf/hifigan.v1.yaml)     | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 250k    |
 | [kiritan_hifigan.v1](https://drive.google.com/open?id=1FHUUF5uUnlJ9-D7HmXw3_Sn_GRS48I36)                     | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/kiritan/voc1/conf/hifigan.v1.yaml)                    | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
-| [ofuton_hifigan.v1](https://drive.google.com/open?id=1fq8ITA2KpdtrzzD2hOlroParMg-qKjr7)                      | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ofuton_p_utagoe_db/voc1/conf/hifigan.v1.yaml)          | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
-| [opencpop_hifigan.v1](https://drive.google.com/open?id=1hMf5yew_MrbPW0qy5qzXn0mxqbfHTadC)                    | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/opencpop/voc1/conf/hifigan.v1.yaml)                    | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 250k    |
+| [ofuton_hifigan.v1](https://drive.google.com/open?id=1fq8ITA2KpdtrzzD2hOlroParMg-qKjr7)                      | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/ofuton_p_utagoe_db/voc1/conf/hifigan.v1.yaml)         | JP    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
+| [opencpop_hifigan.v1](https://drive.google.com/open?id=1hMf5yew_MrbPW0qy5qzXn0mxqbfHTadC)                    | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/opencpop/voc1/conf/hifigan.v1.yaml)                   | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 250k    |
+| [csd_english_hifigan.v1](https://drive.google.com/open?id=1NACjfBqmaecwh4dZMl714RukEkV8XLAi)                 | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csd/voc1/conf/hifigan.v1.yaml)                        | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
+| [csd_korean_hifigan.v1](https://drive.google.com/open?id=1BGxIoRg4VgXcX0G-4Dwea030-qQ_Ynyp)                  | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csd/voc1/conf/hifigan.v1.yaml)                        | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 250k    |
+| [kising_hifigan.v1](https://drive.google.com/open?id=1GGu3pW89qxmJapd0Vm1aqp6lqgZARLO9)                      | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/kising/voc1/conf/hifigan.v1.yaml)                     | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
+
+
 
 Please access at [our google drive](https://drive.google.com/open?id=1sd_QzcUNnbiaWq7L0ykMP7Xmk-zOuxTi) to check more results.
 

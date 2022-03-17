@@ -14,6 +14,11 @@ Currently, the following recipes are supported.
 - [YesNo](https://arxiv.org/abs/1904.02882): English speaker (For debugging)
 - [KSS](https://www.kaggle.com/bryanpark/korean-single-speaker-speech-dataset): Single Korean female speaker
 - [Oniku\_kurumi\_utagoe\_db/](http://onikuru.info/db-download/): Single Japanese female singer (singing voice)
+- [Kiritan](https://zunko.jp/kiridev/login.php): Single Japanese male singer (singing voice)
+- [Ofuton\_p\_utagoe\_db](https://sites.google.com/view/oftn-utagoedb/%E3%83%9B%E3%83%BC%E3%83%A0): Single Japanese female singer (singing voice)
+- [Opencpop](https://wenet.org.cn/opencpop/download/): Single Mandarin female singer (singing voice)
+- [CSD](https://zenodo.org/record/4785016/): Single Korean/English female singer (singing voice)
+- [KiSing](http://shijt.site/index.php/2021/05/16/kising-the-first-open-source-mandarin-singing-voice-synthesis-corpus/): Single Mandarin female singer (singing voice) 
 
 ## How to run the recipe
 
