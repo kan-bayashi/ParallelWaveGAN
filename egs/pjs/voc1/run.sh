@@ -42,7 +42,7 @@ set -euo pipefail
 if [ "${stage}" -le -1 ] && [ "${stop_stage}" -ge -1 ]; then
     echo "Stage -1: Data download"
     if [ ! -e "${download_dir}/PJS_corpus_ver1.1" ]; then
-    	echo "ERROR: PJS data does not exist."
+    	echo "ERROR: pjs data does not exist."
     	echo "ERROR: Please download https://sites.google.com/site/shinnosuketakamichi/research-topics/pjs_corpus "
         echo "with authentication and locate it at ${download_dir}"
     	exit 1
