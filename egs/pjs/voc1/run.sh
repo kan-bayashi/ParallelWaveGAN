@@ -120,9 +120,9 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp/${train_set}_PJS_$(basename "${conf}" .yaml)"
+    expdir="exp/${train_set}_pjs_$(basename "${conf}" .yaml)"
 else
-    expdir="exp/${train_set}_PJS_${tag}"
+    expdir="exp/${train_set}_pjs_${tag}"
 fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
