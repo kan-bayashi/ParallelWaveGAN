@@ -5,7 +5,7 @@
 #SBATCH --partition=longrunning
 #SBATCH --time=14-00:00:00 # days-hh:mm:ss
 
-# Copyright 2020 Tomoki Hayashi
+# Copyright 2020 Tomoki Hayashi, Adapted in 2022 Gunnar Thor Örnólfsson
 #  MIT License (https://opensource.org/licenses/MIT)
 
 . ./cmd.sh || exit 1;
@@ -22,7 +22,7 @@ n_jobs=4       # number of parallel jobs in feature extraction
 conf=conf/parallel_wavegan.v1_small.yaml
 
 # directory path setting
-db_root=/data/tts/talromur/published # direcotry including wavfiles (MODIFY BY YOURSELF)
+db_root=downloads # direcotry including wavfiles (MODIFY BY YOURSELF)
                           # each wav filename in the directory should be unique
                           # e.g.
                           # /path/to/database
@@ -58,6 +58,11 @@ dev_set="dev"           # name of development data direcotry
 eval_set="eval"         # name of evaluation data direcotry
 
 set -euo pipefail
+
+if [ "${stage}" -le -1 ] && [ "${stop_stage}" -ge -1 ]; then
+    echo "Stage -1: Data download"
+    local/data_download.sh "${download_dir}"
+fi
 
 if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"

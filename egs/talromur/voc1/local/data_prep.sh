@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2022 Gunnar Thor Örnólfsson
+# Copyright 2020 Tomoki Hayashi, Adapted in 2022 Gunnar Thor Örnólfsson
 #  MIT License (https://opensource.org/licenses/MIT)
 
 # shellcheck disable=SC1091

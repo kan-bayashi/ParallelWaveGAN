@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2019 Tomoki Hayashi
+# Copyright 2022 Gunnar Thor Örnólfsson
 #  Apache 2.0  (http://www.apache.org/licenses/LICENSE-2.0)
 
 download_dir=$1
@@ -79,22 +79,4 @@ if [ ! -e "${download_dir}/split"]; then
     echo "successfully fetched splits."
 else
     echo "splits already present. skipped."
-fi
-if [ ! -e "${download_dir}/alignments"]; then
-    mkdir -p "${download_dir}/alignments"
-    cd "${download_dir}/alignments"
-    wget https://repository.clarin.is/repository/xmlui/bitstream/handle/20.500.12537/201/a.zip
-    wget https://repository.clarin.is/repository/xmlui/bitstream/handle/20.500.12537/201/b.zip
-    wget https://repository.clarin.is/repository/xmlui/bitstream/handle/20.500.12537/201/c.zip
-    wget https://repository.clarin.is/repository/xmlui/bitstream/handle/20.500.12537/201/d.zip
-    wget https://repository.clarin.is/repository/xmlui/bitstream/handle/20.500.12537/201/e.zip
-    wget https://repository.clarin.is/repository/xmlui/bitstream/handle/20.500.12537/201/f.zip
-    wget https://repository.clarin.is/repository/xmlui/bitstream/handle/20.500.12537/201/g.zip
-    wget https://repository.clarin.is/repository/xmlui/bitstream/handle/20.500.12537/201/h.zip
-    unzip *.zip
-    rm ./*.zip
-    cd "${cwd}"
-    echo "successfully fetched alignments."
-else
-    echo "alignments already present. skipped."
 fi
