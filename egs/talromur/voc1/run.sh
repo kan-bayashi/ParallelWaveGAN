@@ -22,7 +22,7 @@ n_jobs=4       # number of parallel jobs in feature extraction
 conf=conf/parallel_wavegan.v1_small.yaml
 
 # directory path setting
-db_root=downloads # direcotry including wavfiles (MODIFY BY YOURSELF)
+download_dir=downloads # direcotry including wavfiles (MODIFY BY YOURSELF)
                           # each wav filename in the directory should be unique
                           # e.g.
                           # /path/to/database
@@ -68,13 +68,10 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"
     local/data_prep.sh \
         --fs "$(yq ".sampling_rate" "${conf}")" \
-        --num_dev "${num_dev}" \
-        --num_eval "${num_eval}" \
         --train_set "${train_set}" \
         --dev_set "${dev_set}" \
         --eval_set "${eval_set}" \
-        --shuffle "${shuffle}" \
-        "${db_root}" data
+        "${download_dir}" data
 fi
 
 stats_ext=$(grep -q "hdf5" <(yq ".format" "${conf}") && echo "h5" || echo "npy")

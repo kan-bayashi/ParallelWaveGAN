@@ -7,12 +7,9 @@
 . ./path.sh || exit 1;
 
 fs=22050
-num_dev=250
-num_eval=50
 train_set="train_nodev"
 dev_set="dev"
 eval_set="eval"
-shuffle=false
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
@@ -25,12 +22,9 @@ if [ $# != 2 ]; then
     echo "Usage: $0 [Options] <db_root> <data_dir>"
     echo ""
     echo "Options:"
-    echo "    --num_dev: number of development uttreances (default=250)."
-    echo "    --num_eval: number of evaluation uttreances (default=250)."
     echo "    --train_set: name of train set (default=train_nodev)."
     echo "    --dev_set: name of dev set (default=dev)."
     echo "    --eval_set: name of eval set (default=eval)."
-    echo "    --shuffle: whether to perform shuffle in making dev / eval set (default=false)."
     exit 1
 fi
 
