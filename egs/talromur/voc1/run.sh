@@ -1,9 +1,4 @@
 #!/bin/bash
-#SBATCH --gres=gpu:2
-#SBATCH --mem=12G
-#SBATCH --output=train_all.log
-#SBATCH --partition=longrunning
-#SBATCH --time=14-00:00:00 # days-hh:mm:ss
 
 # Copyright 2020 Tomoki Hayashi, Adapted in 2022 Gunnar Thor Örnólfsson
 #  MIT License (https://opensource.org/licenses/MIT)
