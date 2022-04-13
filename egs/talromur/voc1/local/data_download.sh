@@ -14,7 +14,7 @@ fi
 set -euo pipefail
 
 cwd=$(pwd)
-if [ ! -e ${download_dir} ]; then
+if [ ! -e "${download_dir}" ]; then
     mkdir -p "${download_dir}"
 fi
 cd "${download_dir}"
@@ -66,14 +66,14 @@ if [ ! -e "e" ]; then
 else
     echo "e already exists, skipping..."
 fi
-unzip *.zip
+unzip ./*.zip
 rm ./*.zip
 cd "${cwd}"
 echo "successfully fetched data."
-if [ ! -e "${download_dir}/split"]; then
+if [ ! -e "${download_dir}/split" ]; then
     cd "${download_dir}"
     wget https://repository.clarin.is/repository/xmlui/bitstream/handle/20.500.12537/201/talromur-splits.zip
-    unzip *.zip
+    unzip ./*.zip
     rm ./*.zip
     cd "${cwd}"
     echo "successfully fetched splits."
