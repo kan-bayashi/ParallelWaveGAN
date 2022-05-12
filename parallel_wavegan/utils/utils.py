@@ -9,6 +9,7 @@ import fnmatch
 import logging
 import os
 import sys
+import re
 import tarfile
 
 from distutils.version import LooseVersion
@@ -359,7 +360,7 @@ def load_model(checkpoint, config=None, stats=None):
     return model
 
 
-def download_pretrained_model(tag, download_dir=None):
+def download_pretrained_model(tag_or_url, download_dir=None):
     """Download pretrained model form google drive.
 
     Args:
@@ -370,11 +371,18 @@ def download_pretrained_model(tag, download_dir=None):
         str: Path of downloaded model checkpoint.
 
     """
-    assert tag in PRETRAINED_MODEL_LIST, f"{tag} does not exists."
-    id_ = PRETRAINED_MODEL_LIST[tag]
     if download_dir is None:
         download_dir = os.path.expanduser("~/.cache/parallel_wavegan")
-    output_path = f"{download_dir}/{tag}.tar.gz"
+    if tag_or_url in PRETRAINED_MODEL_LIST:
+        id_ = PRETRAINED_MODEL_LIST[tag_or_url]
+        output_path = f"{download_dir}/{tag_or_url}.tar.gz"
+    else:
+        # get google drive id from the url link
+        p = re.compile(r"/[-\w]{25,}")
+        id_ = p.findall(tag_or_url)[0][1:]
+        tag_or_url = id_
+        output_path = f"{download_dir}/{id_}.tar.gz"
+
     os.makedirs(f"{download_dir}", exist_ok=True)
     with FileLock(output_path + ".lock"):
         if not os.path.exists(output_path):
@@ -388,7 +396,7 @@ def download_pretrained_model(tag, download_dir=None):
                 for member in tar.getmembers():
                     if member.isreg():
                         member.name = os.path.basename(member.name)
-                        tar.extract(member, f"{download_dir}/{tag}")
-    checkpoint_path = find_files(f"{download_dir}/{tag}", "checkpoint*.pkl")
+                        tar.extract(member, f"{download_dir}/{tag_or_url}")
+    checkpoint_path = find_files(f"{download_dir}/{tag_or_url}", "checkpoint*.pkl")
 
     return checkpoint_path[0]
