@@ -8,8 +8,8 @@
 import fnmatch
 import logging
 import os
-import sys
 import re
+import sys
 import tarfile
 
 from distutils.version import LooseVersion
