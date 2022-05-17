@@ -14,10 +14,11 @@ jobs:
   linter_and_test:
     runs-on: ubuntu-20.04
     strategy:
-      max-parallel: 5
+      max-parallel: 8
       matrix:
-        python-version: [3.6]
+        python-version: [3.7]
         # 1.6 is failed on cpu: https://github.com/kan-bayashi/ParallelWaveGAN/issues/198
+        # 1.10 does not support python 3.6
         pytorch-version: [1.4, 1.5.1, 1.7.1, 1.8.1, 1.9, 1.10.2, 1.11.0]
     steps:
       - uses: actions/checkout@master
@@ -59,7 +60,7 @@ jobs:
     strategy:
       max-parallel: 10
       matrix:
-        python-version: [3.7]
+        python-version: [3.9]
         pytorch-version: [1.11.0]
         config:
           - "parallel_wavegan.v1.debug.yaml"
