@@ -53,7 +53,7 @@ You can try the real-time end-to-end text-to-speech and singing voice synthesis 
 
 This repository is tested on Ubuntu 20.04 with a GPU Titan V.
 
-- Python 3.6+
+- Python 3.7+
 - Cuda 10.0+
 - CuDNN 7+
 - NCCL 2+ (for distributed multi-gpu training)
