@@ -102,7 +102,7 @@ def make_hifigan_multi_scale_multi_period_discriminator_args(**kwargs):
 def test_hifigan_trainable(dict_g, dict_d, dict_loss):
     # setup
     batch_size = 4
-    batch_length = 2 ** 13
+    batch_length = 2**13
     args_g = make_hifigan_generator_args(**dict_g)
     args_d = make_hifigan_multi_scale_multi_period_discriminator_args(**dict_d)
     args_loss = make_mutli_reso_stft_loss_args(**dict_loss)

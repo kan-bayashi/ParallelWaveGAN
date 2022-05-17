@@ -95,7 +95,7 @@ class TFMelGANGenerator(tf.keras.layers.Layer):
                     TFResidualStack(
                         kernel_size=stack_kernel_size,
                         channels=channels // (2 ** (i + 1)),
-                        dilation=stack_kernel_size ** j,
+                        dilation=stack_kernel_size**j,
                         bias=bias,
                         nonlinear_activation=nonlinear_activation,
                         nonlinear_activation_params=nonlinear_activation_params,

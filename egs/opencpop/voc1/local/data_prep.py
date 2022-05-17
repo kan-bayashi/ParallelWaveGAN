@@ -10,7 +10,10 @@ def process_utterance(wavscp, utt2spk, audio_dir, wav_dumpdir, segment, tgt_sr=2
     utt2spk.write("{} {}\n".format(uid, "opencpop"))
 
     # apply bit convert, there is a known issue in direct convert in format wavscp
-    cmd = f"sox {os.path.join(audio_dir, uid)}.wav -c 1 -t wavpcm -b 16 -r {tgt_sr} {os.path.join(wav_dumpdir, uid)}_bits16.wav"
+    cmd = (
+        f"sox {os.path.join(audio_dir, uid)}.wav -c 1 -t wavpcm -b 16 -r"
+        f" {tgt_sr} {os.path.join(wav_dumpdir, uid)}_bits16.wav"
+    )
     os.system(cmd)
 
     wavscp.write("{} {}_bits16.wav\n".format(uid, os.path.join(wav_dumpdir, uid)))

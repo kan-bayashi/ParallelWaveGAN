@@ -25,22 +25,28 @@ from parallel_wavegan.utils import write_hdf5
 def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
-        description="Compute mean and variance of dumped raw features "
-        "(See detail in parallel_wavegan/bin/compute_statistics.py)."
+        description=(
+            "Compute mean and variance of dumped raw features "
+            "(See detail in parallel_wavegan/bin/compute_statistics.py)."
+        )
     )
     parser.add_argument(
         "--feats-scp",
         "--scp",
         default=None,
         type=str,
-        help="kaldi-style feats.scp file. "
-        "you need to specify either feats-scp or rootdir.",
+        help=(
+            "kaldi-style feats.scp file. "
+            "you need to specify either feats-scp or rootdir."
+        ),
     )
     parser.add_argument(
         "--rootdir",
         type=str,
-        help="directory including feature files. "
-        "you need to specify either feats-scp or rootdir.",
+        help=(
+            "directory including feature files. "
+            "you need to specify either feats-scp or rootdir."
+        ),
     )
     parser.add_argument(
         "--config",
@@ -53,8 +59,10 @@ def main():
         default=None,
         type=str,
         required=True,
-        help="directory to save statistics. if not provided, "
-        "stats will be saved in the above root directory. (default=None)",
+        help=(
+            "directory to save statistics. if not provided, "
+            "stats will be saved in the above root directory. (default=None)"
+        ),
     )
     parser.add_argument(
         "--verbose",

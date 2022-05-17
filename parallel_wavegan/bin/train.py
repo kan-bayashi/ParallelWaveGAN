@@ -628,21 +628,27 @@ class Collater(object):
 def main():
     """Run training process."""
     parser = argparse.ArgumentParser(
-        description="Train Parallel WaveGAN (See detail in parallel_wavegan/bin/train.py)."
+        description=(
+            "Train Parallel WaveGAN (See detail in parallel_wavegan/bin/train.py)."
+        )
     )
     parser.add_argument(
         "--train-wav-scp",
         default=None,
         type=str,
-        help="kaldi-style wav.scp file for training. "
-        "you need to specify either train-*-scp or train-dumpdir.",
+        help=(
+            "kaldi-style wav.scp file for training. "
+            "you need to specify either train-*-scp or train-dumpdir."
+        ),
     )
     parser.add_argument(
         "--train-feats-scp",
         default=None,
         type=str,
-        help="kaldi-style feats.scp file for training. "
-        "you need to specify either train-*-scp or train-dumpdir.",
+        help=(
+            "kaldi-style feats.scp file for training. "
+            "you need to specify either train-*-scp or train-dumpdir."
+        ),
     )
     parser.add_argument(
         "--train-segments",
@@ -654,22 +660,28 @@ def main():
         "--train-dumpdir",
         default=None,
         type=str,
-        help="directory including training data. "
-        "you need to specify either train-*-scp or train-dumpdir.",
+        help=(
+            "directory including training data. "
+            "you need to specify either train-*-scp or train-dumpdir."
+        ),
     )
     parser.add_argument(
         "--dev-wav-scp",
         default=None,
         type=str,
-        help="kaldi-style wav.scp file for validation. "
-        "you need to specify either dev-*-scp or dev-dumpdir.",
+        help=(
+            "kaldi-style wav.scp file for validation. "
+            "you need to specify either dev-*-scp or dev-dumpdir."
+        ),
     )
     parser.add_argument(
         "--dev-feats-scp",
         default=None,
         type=str,
-        help="kaldi-style feats.scp file for vaidation. "
-        "you need to specify either dev-*-scp or dev-dumpdir.",
+        help=(
+            "kaldi-style feats.scp file for vaidation. "
+            "you need to specify either dev-*-scp or dev-dumpdir."
+        ),
     )
     parser.add_argument(
         "--dev-segments",
@@ -681,8 +693,10 @@ def main():
         "--dev-dumpdir",
         default=None,
         type=str,
-        help="directory including development data. "
-        "you need to specify either dev-*-scp or dev-dumpdir.",
+        help=(
+            "directory including development data. "
+            "you need to specify either dev-*-scp or dev-dumpdir."
+        ),
     )
     parser.add_argument(
         "--outdir",
