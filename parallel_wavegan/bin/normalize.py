@@ -27,28 +27,31 @@ from parallel_wavegan.utils import write_hdf5
 def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
-        description="Normalize dumped raw features (See detail in parallel_wavegan/bin/normalize.py)."
+        description=(
+            "Normalize dumped raw features (See detail in"
+            " parallel_wavegan/bin/normalize.py)."
+        )
     )
     parser.add_argument(
         "--rootdir",
         default=None,
         type=str,
-        help="directory including feature files to be normalized. "
-        "you need to specify either *-scp or rootdir.",
+        help=(
+            "directory including feature files to be normalized. "
+            "you need to specify either *-scp or rootdir."
+        ),
     )
     parser.add_argument(
         "--wav-scp",
         default=None,
         type=str,
-        help="kaldi-style wav.scp file. "
-        "you need to specify either *-scp or rootdir.",
+        help="kaldi-style wav.scp file. you need to specify either *-scp or rootdir.",
     )
     parser.add_argument(
         "--feats-scp",
         default=None,
         type=str,
-        help="kaldi-style feats.scp file. "
-        "you need to specify either *-scp or rootdir.",
+        help="kaldi-style feats.scp file. you need to specify either *-scp or rootdir.",
     )
     parser.add_argument(
         "--segments",

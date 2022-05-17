@@ -90,7 +90,10 @@ def logmelfilterbank(
 def main():
     """Run preprocessing process."""
     parser = argparse.ArgumentParser(
-        description="Preprocess audio and then extract features (See detail in parallel_wavegan/bin/preprocess.py)."
+        description=(
+            "Preprocess audio and then extract features (See detail in"
+            " parallel_wavegan/bin/preprocess.py)."
+        )
     )
     parser.add_argument(
         "--wav-scp",
@@ -103,13 +106,18 @@ def main():
         "--segments",
         default=None,
         type=str,
-        help="kaldi-style segments file. if use, you must to specify both scp and segments.",
+        help=(
+            "kaldi-style segments file. if use, you must to specify both scp and"
+            " segments."
+        ),
     )
     parser.add_argument(
         "--rootdir",
         default=None,
         type=str,
-        help="directory including wav files. you need to specify either scp or rootdir.",
+        help=(
+            "directory including wav files. you need to specify either scp or rootdir."
+        ),
     )
     parser.add_argument(
         "--dumpdir",
@@ -214,9 +222,10 @@ def main():
                 target_sr=config["sampling_rate_for_feats"],
             )
             sampling_rate = config["sampling_rate_for_feats"]
-            assert (
-                config["hop_size"] * config["sampling_rate_for_feats"] % fs == 0
-            ), "hop_size must be int value. please check sampling_rate_for_feats is correct."
+            assert config["hop_size"] * config["sampling_rate_for_feats"] % fs == 0, (
+                "hop_size must be int value. please check sampling_rate_for_feats is"
+                " correct."
+            )
             hop_size = config["hop_size"] * config["sampling_rate_for_feats"] // fs
 
         # extract feature
@@ -245,7 +254,7 @@ def main():
         if np.abs(audio).max() >= 1.0:
             logging.warn(
                 f"{utt_id} causes clipping. "
-                f"it is better to re-consider global gain scale."
+                "it is better to re-consider global gain scale."
             )
             continue
 

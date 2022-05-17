@@ -27,23 +27,29 @@ from parallel_wavegan.utils import read_hdf5
 def main():
     """Run decoding process."""
     parser = argparse.ArgumentParser(
-        description="Decode dumped features with trained Parallel WaveGAN Generator "
-        "(See detail in parallel_wavegan/bin/decode.py)."
+        description=(
+            "Decode dumped features with trained Parallel WaveGAN Generator "
+            "(See detail in parallel_wavegan/bin/decode.py)."
+        )
     )
     parser.add_argument(
         "--feats-scp",
         "--scp",
         default=None,
         type=str,
-        help="kaldi-style feats.scp file. "
-        "you need to specify either feats-scp or dumpdir.",
+        help=(
+            "kaldi-style feats.scp file. "
+            "you need to specify either feats-scp or dumpdir."
+        ),
     )
     parser.add_argument(
         "--dumpdir",
         default=None,
         type=str,
-        help="directory including feature files. "
-        "you need to specify either feats-scp or dumpdir.",
+        help=(
+            "directory including feature files. "
+            "you need to specify either feats-scp or dumpdir."
+        ),
     )
     parser.add_argument(
         "--outdir",
@@ -61,16 +67,20 @@ def main():
         "--config",
         default=None,
         type=str,
-        help="yaml format configuration file. if not explicitly provided, "
-        "it will be searched in the checkpoint directory. (default=None)",
+        help=(
+            "yaml format configuration file. if not explicitly provided, "
+            "it will be searched in the checkpoint directory. (default=None)"
+        ),
     )
     parser.add_argument(
         "--normalize-before",
         default=False,
         action="store_true",
-        help="whether to perform feature normalization before input to the model. "
-        "if true, it assumes that the feature is de-normalized. this is useful when "
-        "text2mel model and vocoder use different feature statistics.",
+        help=(
+            "whether to perform feature normalization before input to the model. if"
+            " true, it assumes that the feature is de-normalized. this is useful when"
+            " text2mel model and vocoder use different feature statistics."
+        ),
     )
     parser.add_argument(
         "--verbose",

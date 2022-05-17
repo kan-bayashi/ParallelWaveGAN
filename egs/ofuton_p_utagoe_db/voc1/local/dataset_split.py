@@ -4,8 +4,20 @@ import shutil
 
 
 UTT_PREFIX = "ofuton"
-DEV_LIST = ["chatsumi", "my_grandfathers_clock_3_2", "haruyo_koi", "momiji", "tetsudou_shouka"]
-TEST_LIST = ["usagito_kame", "my_grandfathers_clock_1_2", "antagata_dokosa", "momotarou", "furusato"]
+DEV_LIST = [
+    "chatsumi",
+    "my_grandfathers_clock_3_2",
+    "haruyo_koi",
+    "momiji",
+    "tetsudou_shouka",
+]
+TEST_LIST = [
+    "usagito_kame",
+    "my_grandfathers_clock_1_2",
+    "antagata_dokosa",
+    "momotarou",
+    "furusato",
+]
 
 
 def train_check(song):
@@ -65,10 +77,13 @@ def process_subset(src_data, subset, check_func, fs):
         utt_id = "{}_{}".format(UTT_PREFIX, pack_zero(folder))
 
         makedir(os.path.join(fixed_data, folder))
-        cmd = f"sox {os.path.join(src_data, folder, folder)}.wav -c 1 -t wavpcm -b 16 -r {fs} {os.path.join(fixed_data, folder, folder)}_bits16.wav"
+        cmd = (
+            f"sox {os.path.join(src_data, folder, folder)}.wav -c 1 -t wavpcm -b 16 -r"
+            f" {fs} {os.path.join(fixed_data, folder, folder)}_bits16.wav"
+        )
         print(f"cmd: {cmd}")
         os.system(cmd)
-        
+
         wavscp.write(
             "{} {}\n".format(
                 utt_id, os.path.join(fixed_data, folder, "{}_bits16.wav".format(folder))

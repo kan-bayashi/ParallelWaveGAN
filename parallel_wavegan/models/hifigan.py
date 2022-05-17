@@ -96,7 +96,7 @@ class HiFiGANGenerator(torch.nn.Module):
                             **nonlinear_activation_params
                         ),
                         torch.nn.ConvTranspose1d(
-                            channels // (2 ** i),
+                            channels // (2**i),
                             channels // (2 ** (i + 1)),
                             upsample_kernel_sizes[i],
                             upsample_scales[i],
@@ -113,7 +113,7 @@ class HiFiGANGenerator(torch.nn.Module):
                             **nonlinear_activation_params
                         ),
                         CausalConvTranspose1d(
-                            channels // (2 ** i),
+                            channels // (2**i),
                             channels // (2 ** (i + 1)),
                             upsample_kernel_sizes[i],
                             upsample_scales[i],

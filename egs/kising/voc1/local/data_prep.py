@@ -63,7 +63,10 @@ def process_subset(args, set_name, check_func):
         utt = song.split("_")[0]
         utt_id = "{}_{}".format(UTT_PREFIX, pack_zero(utt))
 
-        cmd = f"sox {os.path.join(src_wavdir, song)} -c 1 -t wavpcm -b 16 -r {args.sr} {os.path.join(args.wav_dumpdir, utt_id)}_bits16.wav"
+        cmd = (
+            f"sox {os.path.join(src_wavdir, song)} -c 1 -t wavpcm -b 16 -r"
+            f" {args.sr} {os.path.join(args.wav_dumpdir, utt_id)}_bits16.wav"
+        )
         os.system(cmd)
 
         wavscp.write(

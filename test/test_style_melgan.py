@@ -84,7 +84,7 @@ def make_style_melgan_discriminator_args(**kwargs):
 )
 def test_style_melgan_discriminator(dict_d):
     batch_size = 4
-    batch_length = 2 ** 14
+    batch_length = 2**14
     args_d = make_style_melgan_discriminator_args(**dict_d)
     y = torch.randn(batch_size, 1, batch_length)
     model_d = StyleMelGANDiscriminator(**args_d)

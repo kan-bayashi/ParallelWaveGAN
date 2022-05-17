@@ -45,7 +45,9 @@ def process_text_info(text):
         line = line.strip().split()
         label_info.append(
             "{} {} {}".format(
-                float(line[0])/1e7, float(line[1])/1e7, line[2].strip() # no7singing timings to seconds
+                float(line[0]) / 1e7,
+                float(line[1]) / 1e7,
+                line[2].strip(),  # no7singing timings to seconds
             )
         )
         text_info.append(line[2].strip())
@@ -67,10 +69,13 @@ def process_subset(src_data, subset, check_func, fs):
             continue
         utt_id = "{}_{}".format(UTT_PREFIX, pack_zero(song_index))
 
-        cmd = f"sox {os.path.join(src_data, 'wav', song_index)}.wav -c 1 -t wavpcm -b 16 -r {fs} {os.path.join(fixed_data, song_index)}_bits16.wav"
+        cmd = (
+            f"sox {os.path.join(src_data, 'wav', song_index)}.wav -c 1 -t wavpcm -b 16"
+            f" -r {fs} {os.path.join(fixed_data, song_index)}_bits16.wav"
+        )
         print(f"cmd: {cmd}")
         os.system(cmd)
-        
+
         wavscp.write(
             "{} {}\n".format(
                 utt_id, os.path.join(fixed_data, "{}_bits16.wav".format(song_index))

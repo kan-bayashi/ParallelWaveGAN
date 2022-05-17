@@ -4,8 +4,30 @@ import shutil
 
 
 UTT_PREFIX = "pjs"
-DEV_LIST = ["pjs002", "pjs0012", "pjs022", "pjs032", "pjs042", "pjs052", "pjs062", "pjs072", "pjs082", "pjs092"]
-TEST_LIST = ["pjs007", "pjs017", "pjs027", "pjs037", "pjs047", "pjs057", "pjs067", "pjs077", "pjs087", "pjs097"]
+DEV_LIST = [
+    "pjs002",
+    "pjs0012",
+    "pjs022",
+    "pjs032",
+    "pjs042",
+    "pjs052",
+    "pjs062",
+    "pjs072",
+    "pjs082",
+    "pjs092",
+]
+TEST_LIST = [
+    "pjs007",
+    "pjs017",
+    "pjs027",
+    "pjs037",
+    "pjs047",
+    "pjs057",
+    "pjs067",
+    "pjs077",
+    "pjs087",
+    "pjs097",
+]
 
 
 def train_check(song):
@@ -62,15 +84,18 @@ def process_subset(src_data, subset, check_func, fs):
             continue
         if not check_func(folder):
             continue
-        if folder == 'background_noise':
+        if folder == "background_noise":
             continue
         utt_id = "{}_{}".format(UTT_PREFIX, pack_zero(folder))
 
         makedir(os.path.join(fixed_data, folder))
-        cmd = f"sox {os.path.join(src_data, folder, folder)}_song.wav -c 1 -t wavpcm -b 16 -r {fs} {os.path.join(fixed_data, folder, folder)}_bits16.wav"
+        cmd = (
+            f"sox {os.path.join(src_data, folder, folder)}_song.wav -c 1 -t wavpcm -b"
+            f" 16 -r {fs} {os.path.join(fixed_data, folder, folder)}_bits16.wav"
+        )
         print(f"cmd: {cmd}")
         os.system(cmd)
-        
+
         wavscp.write(
             "{} {}\n".format(
                 utt_id, os.path.join(fixed_data, folder, "{}_bits16.wav".format(folder))

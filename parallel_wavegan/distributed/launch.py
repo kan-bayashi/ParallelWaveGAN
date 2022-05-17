@@ -17,9 +17,11 @@ from argparse import REMAINDER
 def parse_args():
     """Parse arguments."""
     parser = ArgumentParser(
-        description="PyTorch distributed training launch "
-        "helper utilty that will spawn up "
-        "multiple distributed processes"
+        description=(
+            "PyTorch distributed training launch "
+            "helper utilty that will spawn up "
+            "multiple distributed processes"
+        )
     )
 
     # Optional arguments for the launch helper
@@ -27,74 +29,86 @@ def parse_args():
         "--nnodes",
         type=int,
         default=1,
-        help="The number of nodes to use for distributed " "training",
+        help="The number of nodes to use for distributed training",
     )
     parser.add_argument(
         "--node_rank",
         type=int,
         default=0,
-        help="The rank of the node for multi-node distributed " "training",
+        help="The rank of the node for multi-node distributed training",
     )
     parser.add_argument(
         "--nproc_per_node",
         type=int,
         default=1,
-        help="The number of processes to launch on each node, "
-        "for GPU training, this is recommended to be set "
-        "to the number of GPUs in your system so that "
-        "each process can be bound to a single GPU.",
+        help=(
+            "The number of processes to launch on each node, "
+            "for GPU training, this is recommended to be set "
+            "to the number of GPUs in your system so that "
+            "each process can be bound to a single GPU."
+        ),
     )
     parser.add_argument(
         "--master_addr",
         default="127.0.0.1",
         type=str,
-        help="Master node (rank 0)'s address, should be either "
-        "the IP address or the hostname of node 0, for "
-        "single node multi-proc training, the "
-        "--master_addr can simply be 127.0.0.1",
+        help=(
+            "Master node (rank 0)'s address, should be either "
+            "the IP address or the hostname of node 0, for "
+            "single node multi-proc training, the "
+            "--master_addr can simply be 127.0.0.1"
+        ),
     )
     parser.add_argument(
         "--master_port",
         default=29500,
         type=int,
-        help="Master node (rank 0)'s free port that needs to "
-        "be used for communciation during distributed "
-        "training",
+        help=(
+            "Master node (rank 0)'s free port that needs to "
+            "be used for communciation during distributed "
+            "training"
+        ),
     )
     parser.add_argument(
         "--use_env",
         default=False,
         action="store_true",
-        help="Use environment variable to pass "
-        "'local rank'. For legacy reasons, the default value is False. "
-        "If set to True, the script will not pass "
-        "--local_rank as argument, and will instead set LOCAL_RANK.",
+        help=(
+            "Use environment variable to pass "
+            "'local rank'. For legacy reasons, the default value is False. "
+            "If set to True, the script will not pass "
+            "--local_rank as argument, and will instead set LOCAL_RANK."
+        ),
     )
     parser.add_argument(
         "-m",
         "--module",
         default=False,
         action="store_true",
-        help="Changes each process to interpret the launch script "
-        "as a python module, executing with the same behavior as"
-        "'python -m'.",
+        help=(
+            "Changes each process to interpret the launch script "
+            "as a python module, executing with the same behavior as"
+            "'python -m'."
+        ),
     )
     parser.add_argument(
         "-c",
         "--command",
         default=False,
         action="store_true",
-        help="Changes each process to interpret the launch script " "as a command.",
+        help="Changes each process to interpret the launch script as a command.",
     )
 
     # positional
     parser.add_argument(
         "training_script",
         type=str,
-        help="The full path to the single GPU training "
-        "program/script/command to be launched in parallel, "
-        "followed by all the arguments for the "
-        "training script",
+        help=(
+            "The full path to the single GPU training "
+            "program/script/command to be launched in parallel, "
+            "followed by all the arguments for the "
+            "training script"
+        ),
     )
 
     # rest from the training program

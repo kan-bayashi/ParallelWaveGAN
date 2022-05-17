@@ -61,7 +61,7 @@ class AudioMelDataset(Dataset):
             ]
             if len(audio_files) != len(idxs):
                 logging.warning(
-                    f"Some files are filtered by audio length threshold "
+                    "Some files are filtered by audio length threshold "
                     f"({len(audio_files)} -> {len(idxs)})."
                 )
             audio_files = [audio_files[idx] for idx in idxs]
@@ -75,7 +75,7 @@ class AudioMelDataset(Dataset):
             ]
             if len(mel_files) != len(idxs):
                 logging.warning(
-                    f"Some files are filtered by mel length threshold "
+                    "Some files are filtered by mel length threshold "
                     f"({len(mel_files)} -> {len(idxs)})."
                 )
             audio_files = [audio_files[idx] for idx in idxs]
@@ -83,9 +83,10 @@ class AudioMelDataset(Dataset):
 
         # assert the number of files
         assert len(audio_files) != 0, f"Not found any audio files in ${root_dir}."
-        assert len(audio_files) == len(
-            mel_files
-        ), f"Number of audio and mel files are different ({len(audio_files)} vs {len(mel_files)})."
+        assert len(audio_files) == len(mel_files), (
+            f"Number of audio and mel files are different ({len(audio_files)} vs"
+            f" {len(mel_files)})."
+        )
 
         self.audio_files = audio_files
         self.audio_load_fn = audio_load_fn
@@ -182,7 +183,7 @@ class AudioDataset(Dataset):
             ]
             if len(audio_files) != len(idxs):
                 logging.waning(
-                    f"some files are filtered by audio length threshold "
+                    "some files are filtered by audio length threshold "
                     f"({len(audio_files)} -> {len(idxs)})."
                 )
             audio_files = [audio_files[idx] for idx in idxs]
@@ -281,7 +282,7 @@ class MelDataset(Dataset):
             ]
             if len(mel_files) != len(idxs):
                 logging.warning(
-                    f"Some files are filtered by mel length threshold "
+                    "Some files are filtered by mel length threshold "
                     f"({len(mel_files)} -> {len(idxs)})."
                 )
             mel_files = [mel_files[idx] for idx in idxs]
