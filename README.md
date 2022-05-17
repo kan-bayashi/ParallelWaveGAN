@@ -53,7 +53,7 @@ You can try the real-time end-to-end text-to-speech and singing voice synthesis 
 
 This repository is tested on Ubuntu 20.04 with a GPU Titan V.
 
-- Python 3.6+
+- Python 3.7+
 - Cuda 10.0+
 - CuDNN 7+
 - NCCL 2+ (for distributed multi-gpu training)
@@ -62,7 +62,7 @@ This repository is tested on Ubuntu 20.04 with a GPU Titan V.
 - sox (you can install via `sudo apt install sox` in ubuntu)
 
 Different cuda version should be working but not explicitly tested.  
-All of the codes are tested on Pytorch 1.4, 1.5.1, 1.7.1, 1.8.1, 1.9, 10.2 and 11.0.
+All of the codes are tested on Pytorch 1.4, 1.5.1, 1.7.1, 1.8.1, 1.9, 1.10.2, and 1.11.0.
 
 Pytorch 1.6 works but there are some issues in cpu mode (See #198).
 
