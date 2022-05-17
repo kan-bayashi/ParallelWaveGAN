@@ -370,9 +370,21 @@ def download_pretrained_model(tag_or_url, download_dir=None):
     Returns:
         str: Path of downloaded model checkpoint.
 
-    Example:
-        from parallel_wavegan.utils import download_pretrained_model
-        download_path = download_pretrained_model("https://drive.google.com/file/d/10GYvB_mIKzXzSjD67tSnBhknZRoBjsNb/")
+    Examples:
+        # Download by specifying tag
+        >>> from parallel_wavegan.utils import download_pretrained_model
+        >>> tag = "ljspeech_parallel_wavegan.v1"
+        >>> download_path = download_pretrained_model(tag)
+
+        # Download by specifying URL
+        >>> from parallel_wavegan.utils import download_pretrained_model
+        >>> url = "https://drive.google.com/file/d/10GYvB_mIKzXzSjD67tSnBhknZRoBjsNb"
+        >>> download_path = download_pretrained_model(url)
+
+        # The following URL also works
+        >>> url = "https://drive.google.com/file/d/10GYvB_mIKzXzSjD67tSnBhknZRoBjsNb/view?usp=sharing"
+        >>> download_path = download_pretrained_model(url)
+
     """
     if download_dir is None:
         download_dir = os.path.expanduser("~/.cache/parallel_wavegan")
@@ -382,7 +394,9 @@ def download_pretrained_model(tag_or_url, download_dir=None):
         tag = tag_or_url
     else:
         # get google drive id from the url link
-        assert "drive.google.com" in tag_or_url, "Unknown URL format. Please use google drive for the model"
+        assert (
+            "drive.google.com" in tag_or_url
+        ), "Unknown URL format. Please use google drive for the model."
         p = re.compile(r"/[-\w]{25,}")
         id_ = p.findall(tag_or_url)[0][1:]
         tag = id_
