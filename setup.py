@@ -37,6 +37,8 @@ requirements = {
         "yq>=2.10.0",
         "gdown",
         "filelock",
+        # https://github.com/kan-bayashi/ParallelWaveGAN/runs/6646851174?check_suite_focus=true#step:6:294
+        "protobuf<=3.20.1",
     ],
     "setup": [
         "numpy",
