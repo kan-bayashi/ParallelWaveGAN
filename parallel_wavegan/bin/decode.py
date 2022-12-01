@@ -18,7 +18,7 @@ import yaml
 
 from tqdm import tqdm
 
-from parallel_wavegan.datasets import MelDataset
+from parallel_wavegan.datasets import MelDataset, MelF0ExcitationDataset
 from parallel_wavegan.datasets import MelSCPDataset
 from parallel_wavegan.utils import load_model
 from parallel_wavegan.utils import read_hdf5
@@ -131,17 +131,35 @@ def main():
         if config["format"] == "hdf5":
             mel_query = "*.h5"
             mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+            f0_query = "*.h5"
+            f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
+            excitation_query = "*.h5"
+            excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
         elif config["format"] == "npy":
             mel_query = "*-feats.npy"
             mel_load_fn = np.load
+            f0_query = "*-f0.npy"
+            f0_load_fn = np.load
+            excitation_query = "*-excitation.npy"
+            excitation_load_fn = np.load
         else:
             raise ValueError("Support only hdf5 or npy format.")
-        dataset = MelDataset(
-            args.dumpdir,
+        dataset = MelF0ExcitationDataset(
+            root_dir=args.dumpdir,
             mel_query=mel_query,
+            f0_query=f0_query,
+            excitation_query=excitation_query,
             mel_load_fn=mel_load_fn,
+            f0_load_fn=f0_load_fn,
+            excitation_load_fn=excitation_load_fn,
             return_utt_id=True,
         )
+        # dataset = MelDataset(
+        #     args.dumpdir,
+        #     mel_query=mel_query,
+        #     mel_load_fn=mel_load_fn,
+        #     return_utt_id=True,
+        # )
     else:
         dataset = MelSCPDataset(
             feats_scp=args.feats_scp,
@@ -165,11 +183,15 @@ def main():
     # start generation
     total_rtf = 0.0
     with torch.no_grad(), tqdm(dataset, desc="[decode]") as pbar:
-        for idx, (utt_id, c) in enumerate(pbar, 1):
+        for idx, (utt_id, c, f0, excitation) in enumerate(pbar, 1):
+        # for idx, (utt_id, c) in enumerate(pbar, 1):
             # generate
             c = torch.tensor(c, dtype=torch.float).to(device)
+            f0 = torch.tensor(f0, dtype=torch.float).to(device)
+            excitation = torch.tensor(excitation, dtype=torch.float).to(device)
             start = time.time()
-            y = model.inference(c, normalize_before=args.normalize_before).view(-1)
+            # y = model.inference(None, None, c, normalize_before=args.normalize_before).view(-1)
+            y = model.inference(excitation, f0, c, normalize_before=args.normalize_before).view(-1)
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf

@@ -20,6 +20,8 @@ from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.datasets import AudioMelSCPDataset
 from parallel_wavegan.datasets import MelDataset
 from parallel_wavegan.datasets import MelSCPDataset
+from parallel_wavegan.datasets import AudioMelF0ExcitationDataset
+from parallel_wavegan.datasets import MelF0ExcitationDataset
 from parallel_wavegan.utils import read_hdf5
 from parallel_wavegan.utils import write_hdf5
 
@@ -123,30 +125,53 @@ def main():
 
     # get dataset
     if args.rootdir is not None:
-        if config["format"] == "hdf5":
+        if config["format"] == "hdf5":    
             audio_query, mel_query = "*.h5", "*.h5"
+            f0_query, excitation_query = "*.h5", "*.h5"
             audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
             mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+            f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
+            excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
         elif config["format"] == "npy":
             audio_query, mel_query = "*-wave.npy", "*-feats.npy"
+            f0_query, excitation_query = "*-f0.npy", "*-excitation.npy"
             audio_load_fn = np.load
             mel_load_fn = np.load
+            f0_load_fn = np.load
+            excitation_load_fn = np.load
         else:
             raise ValueError("support only hdf5 or npy format.")
         if not args.skip_wav_copy:
-            dataset = AudioMelDataset(
+            logging.warn(f'use audiomelf0ex')
+            dataset = AudioMelF0ExcitationDataset(
                 root_dir=args.rootdir,
                 audio_query=audio_query,
                 mel_query=mel_query,
+                f0_query=f0_query,
+                excitation_query=excitation_query,
                 audio_load_fn=audio_load_fn,
                 mel_load_fn=mel_load_fn,
+                f0_load_fn=f0_load_fn,
+                excitation_load_fn=excitation_load_fn,
                 return_utt_id=True,
             )
+            # dataset = AudioMelDataset(
+            #     root_dir=args.rootdir,
+            #     audio_query=audio_query,
+            #     mel_query=mel_query,
+            #     audio_load_fn=audio_load_fn,
+            #     mel_load_fn=mel_load_fn,
+            #     return_utt_id=True,
+            # )
         else:
             dataset = MelDataset(
                 root_dir=args.rootdir,
                 mel_query=mel_query,
+                f0_query=f0_query,
+                excitation_query=excitation_query,
                 mel_load_fn=mel_load_fn,
+                f0_load_fn=f0_load_fn,
+                excitation_load_fn=excitation_load_fn,
                 return_utt_id=True,
             )
     else:
@@ -180,10 +205,16 @@ def main():
     # process each file
     for items in tqdm(dataset):
         if not args.skip_wav_copy:
-            utt_id, audio, mel = items
+            utt_id, audio, mel, f0, excitation = items
         else:
-            utt_id, mel = items
-
+            utt_id, mel, f0, excitation = items
+        
+        # logging.warn(f'len(items)={len(items)}')
+        # logging.warn(f'audio:{audio.shape}')
+        # logging.warn(f'mel:{mel.shape}')
+        # logging.warn(f'f0:{f0.shape}')
+        # logging.warn(f'excitation:{excitation.shape}')
+        
         # normalize
         mel = scaler.transform(mel)
 
@@ -193,6 +224,16 @@ def main():
                 os.path.join(args.dumpdir, f"{utt_id}.h5"),
                 "feats",
                 mel.astype(np.float32),
+            )
+            write_hdf5(
+                os.path.join(args.dumpdir, f"{utt_id}.h5"),
+                "f0",
+                f0.astype(np.float32),
+            )
+            write_hdf5(
+                os.path.join(args.dumpdir, f"{utt_id}.h5"),
+                "excitation",
+                excitation.astype(np.float32),
             )
             if not args.skip_wav_copy:
                 write_hdf5(
@@ -204,6 +245,16 @@ def main():
             np.save(
                 os.path.join(args.dumpdir, f"{utt_id}-feats.npy"),
                 mel.astype(np.float32),
+                allow_pickle=False,
+            )
+            np.save(
+                os.path.join(args.dumpdir, f"{utt_id}-f0.npy"),
+                f0.astype(np.float32),
+                allow_pickle=False,
+            )
+            np.save(
+                os.path.join(args.dumpdir, f"{utt_id}-excitation.npy"),
+                excitation.astype(np.float32),
                 allow_pickle=False,
             )
             if not args.skip_wav_copy:

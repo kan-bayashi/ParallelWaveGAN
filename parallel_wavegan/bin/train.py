@@ -7,6 +7,7 @@
 """Train Parallel WaveGAN."""
 
 import argparse
+from cmath import log
 import logging
 import os
 import sys
@@ -29,6 +30,7 @@ import parallel_wavegan.optimizers
 
 from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.datasets import AudioMelSCPDataset
+from parallel_wavegan.datasets import AudioMelF0ExcitationDataset
 from parallel_wavegan.layers import PQMF
 from parallel_wavegan.losses import DiscriminatorAdversarialLoss
 from parallel_wavegan.losses import FeatureMatchLoss
@@ -576,10 +578,12 @@ class Collater(object):
 
         """
         # check length
+        # logging.warn(f'len(batch[0]):{len(batch[0])}')
         batch = [
             self._adjust_length(*b) for b in batch if len(b[1]) > self.mel_threshold
         ]
-        xs, cs = [b[0] for b in batch], [b[1] for b in batch]
+        xs, es = [b[0] for b in batch], [b[2] for b in batch]
+        fs, cs = [b[1] for b in batch], [b[3] for b in batch]
 
         # make batch with random cut
         c_lengths = [len(c) for c in cs]
@@ -595,20 +599,41 @@ class Collater(object):
         c_ends = start_frames + self.batch_max_frames + self.aux_context_window
         y_batch = [x[start:end] for x, start, end in zip(xs, x_starts, x_ends)]
         c_batch = [c[start:end] for c, start, end in zip(cs, c_starts, c_ends)]
+        f_batch = [f[start:end] for f, start, end in zip(fs, c_starts, c_ends)]
+        e_batch = [e[start:end] for e, start, end in zip(es, c_starts, c_ends)]
 
         # convert each batch to tensor, asuume that each item in batch has the same length
         y_batch, c_batch = np.array(y_batch), np.array(c_batch)
+        f_batch, e_batch = np.array(f_batch), np.array(e_batch)
+
+
+        # logging.info(f'bef y_batch:{y_batch.shape}')
+        # logging.info(f'bef c_batch:{c_batch.shape}')
+        # logging.info(f'bef f_batch:{f_batch.shape}')
+        # logging.info(f'bef e_batch:{e_batch.shape}')
+
         y_batch = torch.tensor(y_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T)
+        # logging.info(f'aft y_batch:{y_batch.shape}')
+
         c_batch = torch.tensor(c_batch, dtype=torch.float).transpose(2, 1)  # (B, C, T')
+        # logging.info(f'aft c_batch:{c_batch.shape}')
+
+        f_batch = torch.tensor(f_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T')
+        # logging.info(f'aft f_batch:{f_batch.shape}')
+
+        e_batch = torch.tensor(e_batch, dtype=torch.float)  # (B, 1, T', C')
+        bz = e_batch.shape[0]
+        e_batch = e_batch.reshape(bz, 1, -1) # (B, 1, T' * C')
+        # logging.info(f'aft e_batch:{e_batch.shape}')
 
         # make input noise signal batch tensor
         if self.use_noise_input:
             z_batch = torch.randn(y_batch.size())  # (B, 1, T)
-            return (z_batch, c_batch), y_batch
+            return (z_batch, c_batch, f_batch, e_batch, ), y_batch
         else:
-            return (c_batch,), y_batch
+            return (c_batch, f_batch, e_batch, ), y_batch
 
-    def _adjust_length(self, x, c):
+    def _adjust_length(self, x, c, f0=None, excitatioin=None):
         """Adjust the audio and feature lengths.
 
         Note:
@@ -623,7 +648,7 @@ class Collater(object):
         # check the legnth is valid
         assert len(x) == len(c) * self.hop_size
 
-        return x, c
+        return x, c, f0, excitatioin
 
 
 def main():
@@ -816,21 +841,41 @@ def main():
     if args.train_wav_scp is None or args.dev_wav_scp is None:
         if config["format"] == "hdf5":
             audio_query, mel_query = "*.h5", "*.h5"
+            f0_query, excitation_query = "*.h5", "*.h5"
             audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
-            mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+            mel_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
+            f0_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
+            excitation_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
         elif config["format"] == "npy":
             audio_query, mel_query = "*-wave.npy", "*-feats.npy"
+            f0_query, excitation_query = "*-f0.npy", "*-excitation.npy"
             audio_load_fn = np.load
             mel_load_fn = np.load
+            f0_load_fn = np.load
+            excitation_load_fn = np.load
         else:
             raise ValueError("support only hdf5 or npy format.")
     if args.train_dumpdir is not None:
-        train_dataset = AudioMelDataset(
+        # train_dataset = AudioMelDataset(
+        #     root_dir=args.train_dumpdir,
+        #     audio_query=audio_query,
+        #     mel_query=mel_query,
+        #     audio_load_fn=audio_load_fn,
+        #     mel_load_fn=mel_load_fn,
+        #     mel_length_threshold=mel_length_threshold,
+        #     allow_cache=config.get("allow_cache", False),  # keep compatibility
+        # )
+        # logging.info(f'train AudioMelF0ExcitationDataset')
+        train_dataset = AudioMelF0ExcitationDataset(
             root_dir=args.train_dumpdir,
             audio_query=audio_query,
             mel_query=mel_query,
+            f0_query=f0_query,
+            excitation_query=excitation_query,
             audio_load_fn=audio_load_fn,
             mel_load_fn=mel_load_fn,
+            f0_load_fn = f0_load_fn,
+            excitation_load_fn = excitation_load_fn,
             mel_length_threshold=mel_length_threshold,
             allow_cache=config.get("allow_cache", False),  # keep compatibility
         )
@@ -844,12 +889,26 @@ def main():
         )
     logging.info(f"The number of training files = {len(train_dataset)}.")
     if args.dev_dumpdir is not None:
-        dev_dataset = AudioMelDataset(
+        # dev_dataset = AudioMelDataset(
+        #     root_dir=args.dev_dumpdir,
+        #     audio_query=audio_query,
+        #     mel_query=mel_query,
+        #     audio_load_fn=audio_load_fn,
+        #     mel_load_fn=mel_load_fn,
+        #     mel_length_threshold=mel_length_threshold,
+        #     allow_cache=config.get("allow_cache", False),  # keep compatibility
+        # )
+        # logging.info(f'dev AudioMelF0ExcitationDataset')
+        dev_dataset = AudioMelF0ExcitationDataset(
             root_dir=args.dev_dumpdir,
             audio_query=audio_query,
             mel_query=mel_query,
+            f0_query=f0_query,
+            excitation_query=excitation_query,
             audio_load_fn=audio_load_fn,
             mel_load_fn=mel_load_fn,
+            f0_load_fn = f0_load_fn,
+            excitation_load_fn = excitation_load_fn,
             mel_length_threshold=mel_length_threshold,
             allow_cache=config.get("allow_cache", False),  # keep compatibility
         )
