@@ -90,9 +90,9 @@ class UHiFiGANGenerator(torch.nn.Module):
                         torch.nn.Conv1d(
                             pre_channels,
                             nxt_channels,
-                            kernel_size=downsample_kernel_sizes[i],
+                            kernel_size=kernel_size,
                             bias=bias,
-                            padding=(downsample_kernel_sizes[i] - 1) // 2,
+                            padding=(kernel_size - 1 ) // 2 ,
                         ),
                         torch.nn.Dropout(dropout),
                         getattr(torch.nn, nonlinear_activation)(
@@ -106,14 +106,15 @@ class UHiFiGANGenerator(torch.nn.Module):
                             nxt_channels,
                             nxt_channels,
                             kernel_size=downsample_kernel_sizes[i],
+                            stride=downsample_scales[i],
                             bias=bias,
-                            padding=(downsample_kernel_sizes[i] - 1) // 2,
+                            padding=downsample_scales[i] // 2 + downsample_scales[i] % 2,
                         ),
                         torch.nn.Dropout(dropout),
                         getattr(torch.nn, nonlinear_activation)(
                             **nonlinear_activation_params
                         ),
-                        torch.nn.MaxPool1d(downsample_scales[i], return_indices=False, padding=(downsample_scales[i] - 1) // 2),
+                        # torch.nn.MaxPool1d(downsample_scales[i], return_indices=False, padding=(downsample_scales[i] - 1) // 2),
                     )
                 ]
                 pre_channels = nxt_channels
@@ -165,9 +166,9 @@ class UHiFiGANGenerator(torch.nn.Module):
                         CausalConv1d(
                             pre_channels,
                             nxt_channels,
-                            kernel_size=downsample_kernel_sizes[i],
+                            kernel_size=kernel_size,
                             bias=bias,
-                            padding=(downsample_kernel_sizes[i] - 1) // 2,
+                            padding=(kernel_size - 1 ) // 2 ,
                         ),
                         torch.nn.Dropout(dropout),
                         getattr(torch.nn, nonlinear_activation)(
@@ -182,14 +183,15 @@ class UHiFiGANGenerator(torch.nn.Module):
                             nxt_channels,
                             nxt_channels,
                             kernel_size=downsample_kernel_sizes[i],
+                            stride=downsample_scales[i],
                             bias=bias,
-                            padding=(downsample_kernel_sizes[i] - 1) // 2,
+                            padding=downsample_scales[i] // 2 + downsample_scales[i] % 2,
                         ),
                         torch.nn.Dropout(dropout),
                         getattr(torch.nn, nonlinear_activation)(
                             **nonlinear_activation_params
                         ),
-                        torch.nn.MaxPool1d(downsample_scales[i], return_indices=False, padding=(downsample_scales[i] - 1) // 2),
+                        # torch.nn.MaxPool1d(downsample_scales[i], return_indices=False, padding=(downsample_scales[i] - 1) // 2),
                     )
                 ]
                 pre_channels = nxt_channels
@@ -233,7 +235,7 @@ class UHiFiGANGenerator(torch.nn.Module):
         hidden_channel = pre_channels
 
         for i in range(len(upsample_kernel_sizes)):
-            assert upsample_kernel_sizes[i] == 2 * upsample_scales[i]
+            # assert upsample_kernel_sizes[i] == 2 * upsample_scales[i]
             if not use_causal_conv:
                 self.upsamples += [
                     torch.nn.Sequential(
@@ -271,8 +273,8 @@ class UHiFiGANGenerator(torch.nn.Module):
                         torch.nn.Conv1d(
                             pre_channels * 2,
                             pre_channels // 2,
-                            kernel_size=upsample_kernel_sizes[i] - 1,
-                            padding=(upsample_kernel_sizes[i] - 1 - 1) // 2,
+                            kernel_size=kernel_size,
+                            padding=(kernel_size - 1 ) // 2,
                             bias=bias,
                         ),
                     )
@@ -311,8 +313,8 @@ class UHiFiGANGenerator(torch.nn.Module):
                         CausalConv1d(
                             pre_channels * 2,
                             pre_channels // 2,
-                            kernel_size=upsample_kernel_sizes[i] - 1,
-                            padding=(upsample_kernel_sizes[i] - 1 - 1) // 2,
+                            kernel_size=kernel_size ,
+                            padding=(kernel_size - 1) // 2,
                             bias=bias,
                         ),
                     )
@@ -422,7 +424,9 @@ class UHiFiGANGenerator(torch.nn.Module):
         #     i += 1
 
         for i in range(len(self.downsamples)):
+            # logging.warn(f'bef {i}-th downsample:{hidden.shape}')
             hidden = self.downsamples[i](hidden)
+            # logging.warn(f'aft {i}-th downsampe:{hidden.shape}')
             residual_results.append(hidden)
         
 

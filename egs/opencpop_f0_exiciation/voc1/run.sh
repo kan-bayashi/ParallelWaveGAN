@@ -7,7 +7,7 @@
 . ./path.sh || exit 1;
 
 # basic settings
-stage=3       # stage to start
+stage=2       # stage to start
 stop_stage=4 # stage to stop
 verbose=1      # verbosity level (lower is less info)
 n_gpus=1       # number of gpus in training
@@ -124,9 +124,9 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp_excitation/${train_set}_opencpop_$(basename "${conf}" .yaml)"
+    expdir="exp_unet/${train_set}_opencpop_$(basename "${conf}" .yaml)"
 else
-    expdir="exp_excitation/${train_set}_opencpop_${tag}"
+    expdir="exp_unet/${train_set}_opencpop_${tag}"
 fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
@@ -155,7 +155,8 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
     [ -z "${checkpoint}" ] && checkpoint="$(ls -dt "${expdir}"/*.pkl | head -1 || true)"
     outdir="${expdir}/wav/$(basename "${checkpoint}" .pkl)"
     pids=()
-    for name in "${dev_set}" "${eval_set}"; do
+    for name in "${train_set}" ; do
+    # for name in "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
         [ "${n_gpus}" -gt 1 ] && n_gpus=1

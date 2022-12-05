@@ -38,7 +38,7 @@ generator_params:
     channels: 32                          # Number of initial channels.
     kernel_size: 7                        # Kernel size of initial and final conv layers.
     downsample_scales: [5, 5, 4, 3]       # Downsampling scales.
-    downsample_kernel_sizes: [9, 9, 7, 5] # Kernel size for downsampling layers.
+    downsample_kernel_sizes: [10, 10, 8, 6] # Kernel size for downsampling layers.
     upsample_scales: [3, 4, 5, 5]         # Upsampling scales.
     upsample_kernel_sizes: [6, 8, 10, 10] # Kernel size for upsampling layers.
     resblock_kernel_sizes: [3, 7, 11]     # Kernel size for residual blocks.
