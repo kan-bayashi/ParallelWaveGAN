@@ -168,6 +168,7 @@ class HiFiGANResidualBlock(torch.nn.Module):
 
         """
         super().__init__()
+        
         self.use_additional_convs = use_additional_convs
         self.convs1 = torch.nn.ModuleList()
         if use_additional_convs:
