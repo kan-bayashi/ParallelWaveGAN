@@ -233,7 +233,6 @@ class UHiFiGANGenerator(torch.nn.Module):
         
 
         hidden_channel = pre_channels
-        # pre_channels = pre_channels * 2
 
         for i in range(len(upsample_kernel_sizes)):
             # assert upsample_kernel_sizes[i] == 2 * upsample_scales[i]
@@ -280,7 +279,7 @@ class UHiFiGANGenerator(torch.nn.Module):
                         ),
                     )
                 ]
-                # pre_channels = pre_channels // 2
+                pre_channels = pre_channels // 2
             else:
                 self.upsamples += [
                     torch.nn.Sequential(
@@ -289,8 +288,8 @@ class UHiFiGANGenerator(torch.nn.Module):
                         ),
                         # torch.nn.MaxUnpool1d(upsample_scales[i]),
                         CausalConvTranspose1d(
-                            pre_channels * 2, # channels // (2**i)
-                            pre_channels // 2,  # channels // (2**(i+1))
+                            pre_channels * 2,
+                            pre_channels,
                             upsample_kernel_sizes[i],
                             upsample_scales[i],
                             bias=bias,
@@ -320,24 +319,7 @@ class UHiFiGANGenerator(torch.nn.Module):
                         ),
                     )
                 ]
-                
-            # hidden_channel for MRF module
-            for j in range(len(resblock_kernel_sizes)):
-                self.blocks += [
-                    ResidualBlock(
-                        kernel_size=resblock_kernel_sizes[j],
-                        in_channels=pre_channels // 2,
-                        out_channels=pre_channels // 2,
-                        dilations=resblock_dilations[j],
-                        bias=bias,
-                        use_additional_convs=use_additional_convs,
-                        nonlinear_activation=nonlinear_activation,
-                        nonlinear_activation_params=nonlinear_activation_params,
-                        use_causal_conv=use_causal_conv,
-                    )
-                ]
-
-            pre_channels = pre_channels // 2
+                pre_channels = pre_channels // 2
 
             # hidden_channel for MRF module
             # for j in range(len(resblock_kernel_sizes)):
@@ -474,24 +456,12 @@ class UHiFiGANGenerator(torch.nn.Module):
         #     hidden_mel = self.upsamples[i](hidden_mel)
         #     i += 1
 
-        for i in range(len(self.upsamples) // 2):
+        for i in range(len(self.upsamples)):
             # logging.warn(f'bef {i}-th upsampe:{hidden_mel.shape}')
-            # logging.warn(f'bef {i}-th upsampe:{residual_results[i * 2].shape}')
-            hidden_mel = torch.cat((hidden_mel, residual_results[i * 2]), dim=1)
-            hidden_mel = self.upsamples[i * 2](hidden_mel)
-            # logging.warn(f'bef {i}-th MRF:{hidden_mel.shape}')
-            # logging.warn(f'bef {i}-th MRF:{residual_results[i * 2 +1].shape}')
-
-            hidden_mel = torch.cat((hidden_mel, residual_results[i * 2 + 1]), dim=1)
-            hidden_mel = self.upsamples[i * 2 + 1](hidden_mel)
-            # logging.warn(f'bef {i}-th MRF merged feats 2 :{hidden_mel.shape}')
-            cs = 0.0  # initialize
-            for j in range(self.num_blocks):
-                tc = self.blocks[i * self.num_blocks + j](hidden_mel)
-                # logging.info(f'{j}-th tc.shape:{tc.shape}')
-                cs += tc
-            hidden_mel = cs / self.num_blocks
-            # logging.warn(f'aft {i}-th MRF:{hidden_mel.shape}')
+            # logging.warn(f'bef {i}-th upsampe:{residual_results[i].shape}')
+            hidden_mel = torch.cat((hidden_mel, residual_results[i]), dim=1)
+            hidden_mel = self.upsamples[i](hidden_mel)
+            # logging.warn(f'aft {i}-th upsampe:{hidden_mel.shape}')
 
         # logging.warn(f'bef output conv mel : {hidden_mel.shape}')
         mel = self.output_conv(hidden_mel)
