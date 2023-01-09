@@ -7,7 +7,7 @@
 . ./path.sh || exit 1;
 
 # basic settings
-stage=0        # stage to start
+stage=0         # stage to start
 stop_stage=100 # stage to stop
 verbose=1      # verbosity level (lower is less info)
 n_gpus=1       # number of gpus in training
@@ -17,7 +17,7 @@ n_jobs=4       # number of parallel jobs in feature extraction
 conf=conf/hifigan.v1.yaml
 
 # directory path setting
-db_root=/path/to/database # direcotry including wavfiles (MODIFY BY YOURSELF)
+db_root=/usr0/home/jiatongs/data/cvss/es_en-c # direcotry including wavfiles (MODIFY BY YOURSELF)
                           # each wav filename in the directory should be unique
                           # e.g.
                           # /path/to/database
