@@ -1,0 +1,1 @@
+kaldi/get_utt2dur.sh

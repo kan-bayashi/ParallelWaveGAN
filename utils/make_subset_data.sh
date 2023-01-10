@@ -28,6 +28,30 @@ if [ -e "${src_dir}/segments" ]; then
 else
     has_segments=false
 fi
+if [ -e "${src_dir}/utt2spk" ]; then
+    has_utt2spk=true
+    src_utt2spk=${src_dir}/utt2spk
+else
+    has_utt2spk=false
+fi
+src_scp=${src_dir}/wav.scp
+num_src_utts=$(wc -l < "${src_scp}")
+
+# NOTE: We assume that wav.scp and segments has the same number of lines
+if ${has_segments}; then
+    num_src_segments=$(wc -l < "${src_segments}")
+    if [ "${num_src_segments}" -ne "${num_src_utts}" ]; then
+        echo "ERROR: wav.scp and segments has different #lines (${num_src_utts} vs ${num_src_segments})." >&2
+        exit 1;
+    fi
+fi
+if ${has_utt2spk}; then
+    num_src_utt2spk=$(wc -l < "${src_utt2spk}")
+    if [ "${num_src_utt2spk}" -ne "${num_src_utts}" ]; then
+        echo "ERROR: wav.scp and utt2spk has different #lines (${num_src_utts} vs ${num_src_utt2spk})." >&2
+        exit 1;
+    fi
+fi
 
 if ! ${has_segments}; then
     split_scps=""
@@ -48,5 +72,13 @@ else
             grep "^${wav_id} " < "${src_scp}" >> "${dst_dir}/wav.${i}.scp"
         done
     done
+fi
+if ${has_utt2spk}; then
+    split_utt2spks=""
+    for i in $(seq 1 "${num_split}"); do
+        split_utt2spks+=" ${dst_dir}/utt2spk.${i}"
+    done
+    # shellcheck disable=SC2086
+    utils/split_scp.pl "${src_utt2spk}" ${split_utt2spks}
 fi
 echo "Successfully make subsets."
