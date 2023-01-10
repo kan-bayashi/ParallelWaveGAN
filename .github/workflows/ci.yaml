@@ -44,7 +44,7 @@ jobs:
         run: |
           export PATH=shellcheck-stable:$PATH
           # not to check the script copied from kaldi
-          find egs -name "*.sh" | grep -v wsj_data_prep.sh | grep -v path.sh | while read line; do shellcheck -x --shell=bash -P $(dirname $line) ${line}; done
+          find egs -name "*.sh" | grep -v path.sh | while read line; do shellcheck -x --shell=bash -P $(dirname $line) ${line}; done
       - name: Black & Flake8
         run: |
           source tools/venv/bin/activate
