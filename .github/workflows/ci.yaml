@@ -43,6 +43,7 @@ jobs:
       - name: ShellCheck
         run: |
           export PATH=shellcheck-stable:$PATH
+          # not to check the script copied from kaldi
           find egs -name "*.sh" | grep -v path.sh | while read line; do shellcheck -x --shell=bash -P $(dirname $line) ${line}; done
       - name: Black & Flake8
         run: |
@@ -91,6 +92,45 @@ jobs:
       - name: Integration
         run: |
           cd egs/yesno/voc1 && ./run.sh --conf conf/${{ matrix.config }}
+      - uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: artifacts-${{ matrix.config }}
+          path: egs/yesno/voc1
+
+  integration_vq:
+    runs-on: ubuntu-20.04
+    strategy:
+      max-parallel: 10
+      matrix:
+        python-version: [3.7]
+        pytorch-version: [1.9]
+        config:
+          - "melgan_vae.v3.debug.yaml"
+          - "conditioned_melgan_vae.v3.debug.yaml"
+          - "local_conditioned_melgan_vae.v3.debug.yaml"
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: 'x64'
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-${{ hashFiles('**/setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-
+      - name: Install dependencies
+        run: |
+          sudo apt-get install libsndfile-dev jq
+          # make python env
+          cd tools; make CUDA_VERSION="" PYTHON=python${{ matrix.python-version }} PYTORCH_VERSION=${{ matrix.pytorch-version }}
+          source venv/bin/activate
+          pip install pyreaper
+      - name: Integration
+        run: |
+          cd egs/yesno/vq1 && ./run.sh --conf conf/${{ matrix.config }}
       - uses: actions/upload-artifact@v1
         if: failure()
         with:

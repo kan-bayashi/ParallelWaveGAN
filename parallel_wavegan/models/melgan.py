@@ -360,6 +360,9 @@ class MelGANDiscriminator(torch.nn.Module):
             ),
         ]
 
+        # reset parameters
+        self.reset_parameters()
+
     def forward(self, x):
         """Calculate forward propagation.
 
@@ -376,6 +379,23 @@ class MelGANDiscriminator(torch.nn.Module):
             outs += [x]
 
         return outs
+
+    def reset_parameters(self):
+        """Reset parameters.
+
+        This initialization follows official implementation manner.
+        https://github.com/descriptinc/melgan-neurips/blob/master/mel2wav/modules.py
+
+        """
+
+        def _reset_parameters(m):
+            if isinstance(m, torch.nn.Conv1d) or isinstance(
+                m, torch.nn.ConvTranspose1d
+            ):
+                m.weight.data.normal_(0.0, 0.02)
+                logging.debug(f"Reset parameters in {m}.")
+
+        self.apply(_reset_parameters)
 
 
 class MelGANMultiScaleDiscriminator(torch.nn.Module):

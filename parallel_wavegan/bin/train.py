@@ -27,8 +27,10 @@ import parallel_wavegan
 import parallel_wavegan.models
 import parallel_wavegan.optimizers
 
+from parallel_wavegan.datasets import AudioDataset
 from parallel_wavegan.datasets import AudioMelDataset
 from parallel_wavegan.datasets import AudioMelSCPDataset
+from parallel_wavegan.datasets import AudioSCPDataset
 from parallel_wavegan.layers import PQMF
 from parallel_wavegan.losses import DiscriminatorAdversarialLoss
 from parallel_wavegan.losses import FeatureMatchLoss
@@ -85,6 +87,7 @@ class Trainer(object):
         self.finish_train = False
         self.total_train_loss = defaultdict(float)
         self.total_eval_loss = defaultdict(float)
+        self.is_vq = "VQVAE" in config.get("generator_type", "ParallelWaveGANGenerator")
 
     def run(self):
         """Run training."""
@@ -175,24 +178,35 @@ class Trainer(object):
 
     def _train_step(self, batch):
         """Train model one step."""
-        # parse batch
-        x, y = batch
-        x = tuple([x_.to(self.device) for x_ in x])
-        y = y.to(self.device)
+        # parse batch and send to device
+        x, y = self._parse_batch(batch)
 
         #######################
         #      Generator      #
         #######################
         if self.steps > self.config.get("generator_train_start_steps", 0):
-            y_ = self.model["generator"](*x)
+            # initialize
+            gen_loss = 0.0
+
+            if self.is_vq:
+                # vq case
+                if self.config["generator_params"]["in_channels"] == 1:
+                    y_, z_e, z_q = self.model["generator"](y, *x)
+                else:
+                    y_mb = self.criterion["pqmf"].analysis(y)
+                    y_, z_e, z_q = self.model["generator"](y_mb, *x)
+                quantize_loss = self.criterion["mse"](z_q, z_e.detach())
+                commit_loss = self.criterion["mse"](z_e, z_q.detach())
+                self.total_train_loss["train/quantization_loss"] += quantize_loss.item()
+                self.total_train_loss["train/commitment_loss"] += commit_loss.item()
+                gen_loss += quantize_loss + self.config["lambda_commit"] * commit_loss
+            else:
+                y_ = self.model["generator"](*x)
 
             # reconstruct the signal from multi-band signal
             if self.config["generator_params"]["out_channels"] > 1:
                 y_mb_ = y_
                 y_ = self.criterion["pqmf"].synthesis(y_mb_)
-
-            # initialize
-            gen_loss = 0.0
 
             # multi-resolution sfft loss
             if self.config["use_stft_loss"]:
@@ -208,7 +222,8 @@ class Trainer(object):
             # subband multi-resolution stft loss
             if self.config["use_subband_stft_loss"]:
                 gen_loss *= 0.5  # for balancing with subband stft loss
-                y_mb = self.criterion["pqmf"].analysis(y)
+                if not self.is_vq:
+                    y_mb = self.criterion["pqmf"].analysis(y)
                 sub_sc_loss, sub_mag_loss = self.criterion["sub_stft"](y_mb_, y_mb)
                 gen_loss += 0.5 * (sub_sc_loss + sub_mag_loss)
                 self.total_train_loss[
@@ -264,11 +279,18 @@ class Trainer(object):
         #    Discriminator    #
         #######################
         if self.steps > self.config["discriminator_train_start_steps"]:
-            # re-compute y_ which leads better quality
-            with torch.no_grad():
-                y_ = self.model["generator"](*x)
-            if self.config["generator_params"]["out_channels"] > 1:
-                y_ = self.criterion["pqmf"].synthesis(y_)
+            if self.config.get("update_prediction_after_generator_update", True):
+                # re-compute y_ which leads better quality
+                with torch.no_grad():
+                    if self.is_vq:
+                        if self.config["generator_params"]["in_channels"] == 1:
+                            y_, _, _ = self.model["generator"](y, *x)
+                        else:
+                            y_, _, _ = self.model["generator"](y_mb, *x)
+                    else:
+                        y_ = self.model["generator"](*x)
+                if self.config["generator_params"]["out_channels"] > 1:
+                    y_ = self.criterion["pqmf"].synthesis(y_)
 
             # discriminator loss
             p = self.model["discriminator"](y)
@@ -326,15 +348,22 @@ class Trainer(object):
     @torch.no_grad()
     def _eval_step(self, batch):
         """Evaluate model one step."""
-        # parse batch
-        x, y = batch
-        x = tuple([x_.to(self.device) for x_ in x])
-        y = y.to(self.device)
+        # parse batch and send to device
+        x, y = self._parse_batch(batch)
 
         #######################
         #      Generator      #
         #######################
-        y_ = self.model["generator"](*x)
+        if self.is_vq:
+            if self.config["generator_params"]["in_channels"] == 1:
+                y_, z_e, z_q = self.model["generator"](y, *x)
+            else:
+                y_mb = self.criterion["pqmf"].analysis(y)
+                y_, z_e, z_q = self.model["generator"](y_mb, *x)
+            quantize_loss = self.criterion["mse"](z_q, z_e.detach())
+            commit_loss = self.criterion["mse"](z_e, z_q.detach())
+        else:
+            y_ = self.model["generator"](*x)
         if self.config["generator_params"]["out_channels"] > 1:
             y_mb_ = y_
             y_ = self.criterion["pqmf"].synthesis(y_mb_)
@@ -352,7 +381,8 @@ class Trainer(object):
         # subband multi-resolution stft loss
         if self.config.get("use_subband_stft_loss", False):
             aux_loss *= 0.5  # for balancing with subband stft loss
-            y_mb = self.criterion["pqmf"].analysis(y)
+            if not self.is_vq:
+                y_mb = self.criterion["pqmf"].analysis(y)
             sub_sc_loss, sub_mag_loss = self.criterion["sub_stft"](y_mb_, y_mb)
             self.total_eval_loss[
                 "eval/sub_spectral_convergence_loss"
@@ -401,6 +431,9 @@ class Trainer(object):
         self.total_eval_loss["eval/real_loss"] += real_loss.item()
         self.total_eval_loss["eval/fake_loss"] += fake_loss.item()
         self.total_eval_loss["eval/discriminator_loss"] += dis_loss.item()
+        if self.is_vq:
+            self.total_eval_loss["eval/quantization_loss"] += quantize_loss.item()
+            self.total_eval_loss["eval/commitment_loss"] += commit_loss.item()
 
     def _eval_epoch(self):
         """Evaluate model one epoch."""
@@ -448,11 +481,19 @@ class Trainer(object):
         # delayed import to avoid error related backend error
         import matplotlib.pyplot as plt
 
+        # parse batch and send to device
+        x_batch, y_batch = self._parse_batch(batch)
+
         # generate
-        x_batch, y_batch = batch
-        x_batch = tuple([x.to(self.device) for x in x_batch])
-        y_batch = y_batch.to(self.device)
-        y_batch_ = self.model["generator"](*x_batch)
+        if self.is_vq:
+            if self.config["generator_params"]["in_channels"] == 1:
+                y_batch_, _, _ = self.model["generator"](y_batch, *x_batch)
+            else:
+                y_batch_, _, _ = self.model["generator"](
+                    self.criterion["pqmf"].analysis(y_batch), *x_batch
+                )
+        else:
+            y_batch_ = self.model["generator"](*x_batch)
         if self.config["generator_params"]["out_channels"] > 1:
             y_batch_ = self.criterion["pqmf"].synthesis(y_batch_)
 
@@ -496,6 +537,29 @@ class Trainer(object):
             if idx >= self.config["num_save_intermediate_results"]:
                 break
 
+    def _parse_batch(self, batch):
+        """Parse batch and send to the device."""
+        # parse batch
+        inputs, targets = batch
+
+        # send inputs to device
+        if isinstance(inputs, torch.Tensor):
+            x = inputs.to(self.device)
+        elif isinstance(inputs, (tuple, list)):
+            x = [None if x is None else x.to(self.device) for x in inputs]
+        else:
+            raise ValueError(f"Not supported type ({type(inputs)}).")
+
+        # send targets to device
+        if isinstance(targets, torch.Tensor):
+            y = targets.to(self.device)
+        elif isinstance(targets, (tuple, list)):
+            y = [None if y is None else y.to(self.device) for y in targets]
+        else:
+            raise ValueError(f"Not supported type ({type(targets)}).")
+
+        return x, y
+
     def _write_to_tensorboard(self, loss):
         """Write to tensorboard."""
         for key, value in loss.items():
@@ -538,6 +602,9 @@ class Collater(object):
         hop_size=256,
         aux_context_window=2,
         use_noise_input=False,
+        use_aux_input=True,
+        use_global_condition=False,
+        use_local_condition=False,
     ):
         """Initialize customized collater for PyTorch DataLoader.
 
@@ -546,21 +613,39 @@ class Collater(object):
             hop_size (int): Hop size of auxiliary features.
             aux_context_window (int): Context window size for auxiliary feature conv.
             use_noise_input (bool): Whether to use noise input.
+            use_aux_input (bool): Whether to use auxiliary input.
+            use_global_condition (bool): Whether to use global conditioning.
+            use_local_condition (bool): Whether to use local conditioning.
 
         """
-        if batch_max_steps % hop_size != 0:
-            batch_max_steps += -(batch_max_steps % hop_size)
-        assert batch_max_steps % hop_size == 0
+        if hop_size is not None:
+            if batch_max_steps % hop_size != 0:
+                batch_max_steps += -(batch_max_steps % hop_size)
+            assert batch_max_steps % hop_size == 0
+            self.hop_size = hop_size
+            self.batch_max_frames = batch_max_steps // hop_size
         self.batch_max_steps = batch_max_steps
-        self.batch_max_frames = batch_max_steps // hop_size
-        self.hop_size = hop_size
         self.aux_context_window = aux_context_window
         self.use_noise_input = use_noise_input
+        self.use_aux_input = use_aux_input
+        self.use_global_condition = use_global_condition
+        self.use_local_condition = use_local_condition
+        if not self.use_aux_input:
+            assert not self.use_noise_input, "Not supported."
+        if self.use_local_condition:
+            assert not self.use_aux_input, "Not supported."
+        if self.use_global_condition:
+            assert not self.use_aux_input, "Not supported."
 
         # set useful values in random cutting
-        self.start_offset = aux_context_window
-        self.end_offset = -(self.batch_max_frames + aux_context_window)
-        self.mel_threshold = self.batch_max_frames + 2 * aux_context_window
+        if self.use_aux_input or self.use_local_condition:
+            self.start_offset = aux_context_window
+            self.end_offset = -(self.batch_max_frames + aux_context_window)
+            self.mel_threshold = self.batch_max_frames + 2 * aux_context_window
+        else:
+            self.start_offset = 0
+            self.end_offset = -self.batch_max_steps
+            self.audio_threshold = self.batch_max_steps
 
     def __call__(self, batch):
         """Convert into batch tensors.
@@ -569,44 +654,131 @@ class Collater(object):
             batch (list): list of tuple of the pair of audio and features.
 
         Returns:
-            Tensor: Gaussian noise batch (B, 1, T).
-            Tensor: Auxiliary feature batch (B, C, T'), where
-                T = (T' - 2 * aux_context_window) * hop_size.
+            Tuple: Tuple of Gaussian noise batch (B, 1, T) and auxiliary feature
+                batch (B, C, T'), where T = (T' - 2 * aux_context_window) * hop_size.
+                If use_noise_input = False, Gaussian noise batch is not included.
+                If use_aux_input = False, auxiliary feature batch is not included.
+                If both use_noise_input and use_aux_input to False, this tuple is
+                not returned.
             Tensor: Target signal batch (B, 1, T).
 
         """
-        # check length
-        batch = [
-            self._adjust_length(*b) for b in batch if len(b[1]) > self.mel_threshold
-        ]
-        xs, cs = [b[0] for b in batch], [b[1] for b in batch]
-
-        # make batch with random cut
-        c_lengths = [len(c) for c in cs]
-        start_frames = np.array(
-            [
-                np.random.randint(self.start_offset, cl + self.end_offset)
-                for cl in c_lengths
+        if self.use_aux_input:
+            #################################
+            #          MEL2WAV CASE         #
+            #################################
+            # check length
+            batch = [
+                self._adjust_length(*b) for b in batch if len(b[1]) > self.mel_threshold
             ]
-        )
-        x_starts = start_frames * self.hop_size
-        x_ends = x_starts + self.batch_max_steps
-        c_starts = start_frames - self.aux_context_window
-        c_ends = start_frames + self.batch_max_frames + self.aux_context_window
-        y_batch = [x[start:end] for x, start, end in zip(xs, x_starts, x_ends)]
-        c_batch = [c[start:end] for c, start, end in zip(cs, c_starts, c_ends)]
+            xs, cs = [b[0] for b in batch], [b[1] for b in batch]
 
-        # convert each batch to tensor, asuume that each item in batch has the same length
-        y_batch, c_batch = np.array(y_batch), np.array(c_batch)
-        y_batch = torch.tensor(y_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T)
-        c_batch = torch.tensor(c_batch, dtype=torch.float).transpose(2, 1)  # (B, C, T')
+            # make batch with random cut
+            c_lengths = [len(c) for c in cs]
+            start_frames = np.array(
+                [
+                    np.random.randint(self.start_offset, cl + self.end_offset)
+                    for cl in c_lengths
+                ]
+            )
+            x_starts = start_frames * self.hop_size
+            x_ends = x_starts + self.batch_max_steps
+            c_starts = start_frames - self.aux_context_window
+            c_ends = start_frames + self.batch_max_frames + self.aux_context_window
+            y_batch = [x[start:end] for x, start, end in zip(xs, x_starts, x_ends)]
+            c_batch = [c[start:end] for c, start, end in zip(cs, c_starts, c_ends)]
 
-        # make input noise signal batch tensor
-        if self.use_noise_input:
-            z_batch = torch.randn(y_batch.size())  # (B, 1, T)
-            return (z_batch, c_batch), y_batch
+            # convert each batch to tensor, asuume that each item in batch has the same length
+            y_batch, c_batch = np.array(y_batch), np.array(c_batch)
+            y_batch = torch.tensor(y_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T)
+            c_batch = torch.tensor(c_batch, dtype=torch.float).transpose(
+                2, 1
+            )  # (B, C, T')
+
+            # make input noise signal batch tensor
+            if self.use_noise_input:
+                z_batch = torch.randn(y_batch.size())  # (B, 1, T)
+                return (z_batch, c_batch), y_batch
+            else:
+                return (c_batch,), y_batch
         else:
-            return (c_batch,), y_batch
+            #################################
+            #        VQ-WAV2WAV CASE        #
+            #################################
+            if self.use_local_condition:
+                # check length
+                batch_idx = [
+                    idx
+                    for idx, b in enumerate(batch)
+                    if len(b[1]) >= self.mel_threshold
+                ]
+
+                # fix length
+                batch_ = [
+                    self._adjust_length(batch[idx][0], batch[idx][1])
+                    for idx in batch_idx
+                ]
+
+                # decide random index
+                l_lengths = [len(b[1]) for b in batch_]
+                l_starts = np.array(
+                    [
+                        np.random.randint(self.start_offset, ll + self.end_offset)
+                        for ll in l_lengths
+                    ]
+                )
+                l_ends = l_starts + self.batch_max_frames
+                y_starts = l_starts * self.hop_size
+                y_ends = y_starts + self.batch_max_steps
+
+                # make random batch
+                y_batch = [
+                    b[0][start:end] for b, start, end in zip(batch_, y_starts, y_ends)
+                ]
+                l_batch = [
+                    b[1][start:end] for b, start, end in zip(batch_, l_starts, l_ends)
+                ]
+                if self.use_global_condition:
+                    g_batch = [batch[idx][2].reshape(1) for idx in batch_idx]
+            else:
+                # check length
+                if self.use_global_condition:
+                    batch = [b for b in batch if len(b[0]) >= self.audio_threshold]
+                else:
+                    batch = [(b,) for b in batch if len(b) >= self.audio_threshold]
+
+                # decide random index
+                y_lengths = [len(b[0]) for b in batch]
+                y_starts = np.array(
+                    [
+                        np.random.randint(self.start_offset, yl + self.end_offset)
+                        for yl in y_lengths
+                    ]
+                )
+                y_ends = y_starts + self.batch_max_steps
+
+                # make random batch
+                y_batch = [
+                    b[0][start:end] for b, start, end in zip(batch, y_starts, y_ends)
+                ]
+                if self.use_global_condition:
+                    g_batch = [b[1].reshape(1) for b in batch]
+
+            # convert each batch to tensor, asuume that each item in batch has the same length
+            y_batch = torch.tensor(y_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T)
+            if self.use_local_condition:
+                l_batch = torch.tensor(l_batch, dtype=torch.float).transpose(
+                    2, 1
+                )  # (B, C' T')
+            else:
+                l_batch = None
+            if self.use_global_condition:
+                g_batch = torch.tensor(g_batch, dtype=torch.long).view(-1)  # (B,)
+            else:
+                g_batch = None
+
+            # NOTE(kan-bayashi): Always return "l" and "g" since VQ-VAE can accept None
+            return (l_batch, g_batch), y_batch
 
     def _adjust_length(self, x, c):
         """Adjust the audio and feature lengths.
@@ -806,76 +978,169 @@ def main():
     for key, value in config.items():
         logging.info(f"{key} = {value}")
 
-    # get dataset
+    # get configuration
+    generator_type = config.get("generator_type", "ParallelWaveGANGenerator")
+    use_aux_input = "VQVAE" not in generator_type
+    use_noise_input = (
+        "ParallelWaveGAN" in generator_type and "VQVAE" not in generator_type
+    )
+    use_local_condition = config.get("use_local_condition", False)
+    use_global_condition = config.get("use_global_condition", False)
+
+    # setup query and load function
+    if args.train_wav_scp is None or args.dev_wav_scp is None:
+        local_query = None
+        local_load_fn = None
+        global_query = None
+        global_load_fn = None
+        if config["format"] == "hdf5":
+            audio_query, mel_query = "*.h5", "*.h5"
+            audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
+            mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+            if use_local_condition:
+                local_query = "*.h5"
+                local_load_fn = lambda x: read_hdf5(x, "local")  # NOQA
+            if use_global_condition:
+                global_query = "*.h5"
+                global_load_fn = lambda x: read_hdf5(x, "global")  # NOQA
+        elif config["format"] == "npy":
+            audio_query, mel_query = "*-wave.npy", "*-feats.npy"
+            audio_load_fn = np.load
+            mel_load_fn = np.load
+            if use_local_condition:
+                local_query = "*-local.npy"
+                local_load_fn = np.load
+            if use_global_condition:
+                global_query = "*-global.npy"
+                global_load_fn = np.load
+        else:
+            raise ValueError("support only hdf5 or npy format.")
+
+    # setup length threshold
     if config["remove_short_samples"]:
+        audio_length_threshold = config["batch_max_steps"]
         mel_length_threshold = config["batch_max_steps"] // config[
             "hop_size"
         ] + 2 * config["generator_params"].get("aux_context_window", 0)
     else:
         mel_length_threshold = None
-    if args.train_wav_scp is None or args.dev_wav_scp is None:
-        if config["format"] == "hdf5":
-            audio_query, mel_query = "*.h5", "*.h5"
-            audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
-            mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
-        elif config["format"] == "npy":
-            audio_query, mel_query = "*-wave.npy", "*-feats.npy"
-            audio_load_fn = np.load
-            mel_load_fn = np.load
-        else:
-            raise ValueError("support only hdf5 or npy format.")
+        audio_length_threshold = None
+
+    # define dataset for training data
     if args.train_dumpdir is not None:
-        train_dataset = AudioMelDataset(
-            root_dir=args.train_dumpdir,
-            audio_query=audio_query,
-            mel_query=mel_query,
-            audio_load_fn=audio_load_fn,
-            mel_load_fn=mel_load_fn,
-            mel_length_threshold=mel_length_threshold,
-            allow_cache=config.get("allow_cache", False),  # keep compatibility
-        )
+        if use_aux_input:
+            train_dataset = AudioMelDataset(
+                root_dir=args.train_dumpdir,
+                audio_query=audio_query,
+                audio_load_fn=audio_load_fn,
+                mel_query=mel_query,
+                mel_load_fn=mel_load_fn,
+                local_query=local_query,
+                local_load_fn=local_load_fn,
+                global_query=global_query,
+                global_load_fn=global_load_fn,
+                mel_length_threshold=mel_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
+        else:
+            train_dataset = AudioDataset(
+                root_dir=args.train_dumpdir,
+                audio_query=audio_query,
+                audio_load_fn=audio_load_fn,
+                local_query=local_query,
+                local_load_fn=local_load_fn,
+                global_query=global_query,
+                global_load_fn=global_load_fn,
+                audio_length_threshold=audio_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
     else:
-        train_dataset = AudioMelSCPDataset(
-            wav_scp=args.train_wav_scp,
-            feats_scp=args.train_feats_scp,
-            segments=args.train_segments,
-            mel_length_threshold=mel_length_threshold,
-            allow_cache=config.get("allow_cache", False),  # keep compatibility
-        )
-    logging.info(f"The number of training files = {len(train_dataset)}.")
+        if use_local_condition:
+            raise NotImplementedError("Not supported.")
+        if use_global_condition:
+            raise NotImplementedError("Not supported.")
+        if use_aux_input:
+            train_dataset = AudioMelSCPDataset(
+                wav_scp=args.train_wav_scp,
+                feats_scp=args.train_feats_scp,
+                segments=args.train_segments,
+                mel_length_threshold=mel_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
+        else:
+            train_dataset = AudioSCPDataset(
+                wav_scp=args.train_wav_scp,
+                segments=args.train_segments,
+                audio_length_threshold=audio_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
+
+    # define dataset for validation
     if args.dev_dumpdir is not None:
-        dev_dataset = AudioMelDataset(
-            root_dir=args.dev_dumpdir,
-            audio_query=audio_query,
-            mel_query=mel_query,
-            audio_load_fn=audio_load_fn,
-            mel_load_fn=mel_load_fn,
-            mel_length_threshold=mel_length_threshold,
-            allow_cache=config.get("allow_cache", False),  # keep compatibility
-        )
+        if use_aux_input:
+            dev_dataset = AudioMelDataset(
+                root_dir=args.dev_dumpdir,
+                audio_query=audio_query,
+                audio_load_fn=audio_load_fn,
+                mel_query=mel_query,
+                mel_load_fn=mel_load_fn,
+                local_query=local_query,
+                local_load_fn=local_load_fn,
+                global_query=global_query,
+                global_load_fn=global_load_fn,
+                mel_length_threshold=mel_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
+        else:
+            dev_dataset = AudioDataset(
+                root_dir=args.dev_dumpdir,
+                audio_query=audio_query,
+                audio_load_fn=audio_load_fn,
+                local_query=local_query,
+                local_load_fn=local_load_fn,
+                global_query=global_query,
+                global_load_fn=global_load_fn,
+                audio_length_threshold=audio_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
     else:
-        dev_dataset = AudioMelSCPDataset(
-            wav_scp=args.dev_wav_scp,
-            feats_scp=args.dev_feats_scp,
-            segments=args.dev_segments,
-            mel_length_threshold=mel_length_threshold,
-            allow_cache=config.get("allow_cache", False),  # keep compatibility
-        )
-    logging.info(f"The number of development files = {len(dev_dataset)}.")
+        if use_local_condition:
+            raise NotImplementedError("Not supported.")
+        if use_global_condition:
+            raise NotImplementedError("Not supported.")
+        if use_aux_input:
+            dev_dataset = AudioMelSCPDataset(
+                wav_scp=args.dev_wav_scp,
+                feats_scp=args.dev_feats_scp,
+                segments=args.dev_segments,
+                mel_length_threshold=mel_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
+        else:
+            dev_dataset = AudioSCPDataset(
+                wav_scp=args.dev_wav_scp,
+                segments=args.dev_segments,
+                audio_length_threshold=audio_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
+
+    # store into dataset dict
     dataset = {
         "train": train_dataset,
         "dev": dev_dataset,
     }
+    logging.info(f"The number of training files = {len(train_dataset)}.")
+    logging.info(f"The number of development files = {len(dev_dataset)}.")
 
     # get data loader
     collater = Collater(
         batch_max_steps=config["batch_max_steps"],
-        hop_size=config["hop_size"],
-        # keep compatibility
+        hop_size=config.get("hop_size", None),
         aux_context_window=config["generator_params"].get("aux_context_window", 0),
-        # keep compatibility
-        use_noise_input=config.get("generator_type", "ParallelWaveGANGenerator")
-        in ["ParallelWaveGANGenerator"],
+        use_noise_input=use_noise_input,
+        use_aux_input=use_aux_input,
+        use_global_condition=use_global_condition,
+        use_local_condition=use_local_condition,
     )
     sampler = {"train": None, "dev": None}
     if args.distributed:
@@ -945,6 +1210,7 @@ def main():
             # keep compatibility
             **config.get("discriminator_adv_loss_params", {})
         ).to(device),
+        "mse": torch.nn.MSELoss().to(device),
     }
     if config.get("use_stft_loss", True):  # keep compatibility
         config["use_stft_loss"] = True
