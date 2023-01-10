@@ -363,7 +363,7 @@ class StyleMelGANDiscriminator(torch.nn.Module):
 
 
 class DiscreteSymbolStyleMelGANGenerator(torch.nn.Module):
-    """Style MelGAN generator module."""
+    """Discrete Symbol Style MelGAN generator module."""
 
     def __init__(
         self,

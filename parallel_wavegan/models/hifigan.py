@@ -778,7 +778,7 @@ class HiFiGANMultiScaleMultiPeriodDiscriminator(torch.nn.Module):
 
 
 class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
-    """HiFiGAN generator module."""
+    """Discrete Symbol HiFiGAN generator module."""
 
     def __init__(
         self,
