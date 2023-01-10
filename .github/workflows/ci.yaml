@@ -3,10 +3,12 @@ name: CI
 on:
   push:
     branches:
-      - dev
+      - master
   pull_request:
     branches:
-      - dev
+      - master
+  schedule:
+    - cron: 0 0 * * 1
 
 jobs:
   linter_and_test:
