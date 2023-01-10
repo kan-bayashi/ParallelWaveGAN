@@ -19,15 +19,19 @@ from parallel_wavegan.utils import read_hdf5
 
 
 class AudioMelDataset(Dataset):
-    """PyTorch compatible audio and mel dataset."""
+    """PyTorch compatible audio and mel (+global conditioning feature) dataset."""
 
     def __init__(
         self,
         root_dir,
         audio_query="*.h5",
-        mel_query="*.h5",
         audio_load_fn=lambda x: read_hdf5(x, "wave"),
+        mel_query="*.h5",
         mel_load_fn=lambda x: read_hdf5(x, "feats"),
+        local_query=None,
+        local_load_fn=None,
+        global_query=None,
+        global_load_fn=None,
         audio_length_threshold=None,
         mel_length_threshold=None,
         return_utt_id=False,
@@ -38,9 +42,13 @@ class AudioMelDataset(Dataset):
         Args:
             root_dir (str): Root directory including dumped files.
             audio_query (str): Query to find audio files in root_dir.
-            mel_query (str): Query to find feature files in root_dir.
             audio_load_fn (func): Function to load audio file.
+            mel_query (str): Query to find feature files in root_dir.
             mel_load_fn (func): Function to load feature file.
+            local_query (str): Query to find local conditioning feature files in root_dir.
+            local_load_fn (func): Function to load local conditioning feature file.
+            global_query (str): Query to find global conditioning feature files in root_dir.
+            global_load_fn (func): Function to load global conditioning feature file.
             audio_length_threshold (int): Threshold to remove short audio files.
             mel_length_threshold (int): Threshold to remove short feature files.
             return_utt_id (bool): Whether to return the utterance id with arrays.
@@ -50,6 +58,12 @@ class AudioMelDataset(Dataset):
         # find all of audio and mel files
         audio_files = sorted(find_files(root_dir, audio_query))
         mel_files = sorted(find_files(root_dir, mel_query))
+        self.use_local = local_query is not None
+        if self.use_local:
+            local_files = sorted(find_files(root_dir, local_query))
+        self.use_global = global_query is not None
+        if self.use_global:
+            global_files = sorted(find_files(root_dir, global_query))
 
         # filter by threshold
         if audio_length_threshold is not None:
@@ -66,6 +80,10 @@ class AudioMelDataset(Dataset):
                 )
             audio_files = [audio_files[idx] for idx in idxs]
             mel_files = [mel_files[idx] for idx in idxs]
+            if self.use_local:
+                local_files = [local_files[idx] for idx in idxs]
+            if self.use_global:
+                global_files = [global_files[idx] for idx in idxs]
         if mel_length_threshold is not None:
             mel_lengths = [mel_load_fn(f).shape[0] for f in mel_files]
             idxs = [
@@ -80,6 +98,10 @@ class AudioMelDataset(Dataset):
                 )
             audio_files = [audio_files[idx] for idx in idxs]
             mel_files = [mel_files[idx] for idx in idxs]
+            if self.use_local:
+                local_files = [local_files[idx] for idx in idxs]
+            if self.use_global:
+                global_files = [global_files[idx] for idx in idxs]
 
         # assert the number of files
         assert len(audio_files) != 0, f"Not found any audio files in ${root_dir}."
@@ -87,11 +109,27 @@ class AudioMelDataset(Dataset):
             f"Number of audio and mel files are different ({len(audio_files)} vs"
             f" {len(mel_files)})."
         )
+        if self.use_local:
+            assert len(audio_files) == len(local_files), (
+                f"Number of audio and local files are different ({len(audio_files)} vs"
+                f" {len(local_files)})."
+            )
+        if self.use_global:
+            assert len(audio_files) == len(global_files), (
+                f"Number of audio and global files are different ({len(audio_files)} vs"
+                f" {len(global_files)})."
+            )
 
         self.audio_files = audio_files
         self.audio_load_fn = audio_load_fn
-        self.mel_load_fn = mel_load_fn
         self.mel_files = mel_files
+        self.mel_load_fn = mel_load_fn
+        if self.use_local:
+            self.local_files = local_files
+            self.local_load_fn = local_load_fn
+        if self.use_global:
+            self.global_files = global_files
+            self.global_load_fn = global_load_fn
         if ".npy" in audio_query:
             self.utt_ids = [
                 os.path.basename(f).replace("-wave.npy", "") for f in audio_files
@@ -102,6 +140,7 @@ class AudioMelDataset(Dataset):
             ]
         self.return_utt_id = return_utt_id
         self.allow_cache = allow_cache
+
         if allow_cache:
             # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
             self.manager = Manager()
@@ -118,6 +157,8 @@ class AudioMelDataset(Dataset):
             str: Utterance id (only in return_utt_id = True).
             ndarray: Audio signal (T,).
             ndarray: Feature (T', C).
+            ndarray: Local feature (T' C').
+            ndarray: Global feature (1,).
 
         """
         if self.allow_cache and len(self.caches[idx]) != 0:
@@ -126,11 +167,18 @@ class AudioMelDataset(Dataset):
         utt_id = self.utt_ids[idx]
         audio = self.audio_load_fn(self.audio_files[idx])
         mel = self.mel_load_fn(self.mel_files[idx])
+        items = (audio, mel)
+
+        if self.use_local:
+            l_ = self.local_load_fn(self.local_files[idx])
+            items = items + (l_,)
+
+        if self.use_global:
+            g = self.global_load_fn(self.global_files[idx]).reshape(-1)
+            items = items + (g,)
 
         if self.return_utt_id:
-            items = utt_id, audio, mel
-        else:
-            items = audio, mel
+            items = (utt_id,) + items
 
         if self.allow_cache:
             self.caches[idx] = items
@@ -156,6 +204,10 @@ class AudioDataset(Dataset):
         audio_query="*-wave.npy",
         audio_length_threshold=None,
         audio_load_fn=np.load,
+        local_query=None,
+        local_load_fn=None,
+        global_query=None,
+        global_load_fn=None,
         return_utt_id=False,
         allow_cache=False,
     ):
@@ -166,12 +218,22 @@ class AudioDataset(Dataset):
             audio_query (str): Query to find audio files in root_dir.
             audio_load_fn (func): Function to load audio file.
             audio_length_threshold (int): Threshold to remove short audio files.
+            local_query (str): Query to find local conditioning feature files in root_dir.
+            local_load_fn (func): Function to load local conditioning feature file.
+            global_query (str): Query to find global conditioning feature files in root_dir.
+            global_load_fn (func): Function to load global conditioning feature file.
             return_utt_id (bool): Whether to return the utterance id with arrays.
             allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
         # find all of audio and mel files
         audio_files = sorted(find_files(root_dir, audio_query))
+        self.use_local = local_query is not None
+        self.use_global = global_query is not None
+        if self.use_local:
+            local_files = sorted(find_files(root_dir, local_query))
+        if self.use_global:
+            global_files = sorted(find_files(root_dir, global_query))
 
         # filter by threshold
         if audio_length_threshold is not None:
@@ -182,18 +244,37 @@ class AudioDataset(Dataset):
                 if audio_lengths[idx] > audio_length_threshold
             ]
             if len(audio_files) != len(idxs):
-                logging.waning(
+                logging.warning(
                     "some files are filtered by audio length threshold "
                     f"({len(audio_files)} -> {len(idxs)})."
                 )
             audio_files = [audio_files[idx] for idx in idxs]
+            if self.use_local:
+                local_files = [local_files[idx] for idx in idxs]
+            if self.use_global:
+                global_files = [global_files[idx] for idx in idxs]
 
         # assert the number of files
         assert len(audio_files) != 0, f"Not found any audio files in ${root_dir}."
+        if self.use_local:
+            assert len(audio_files) == len(local_files), (
+                f"Number of audio and local files are different ({len(audio_files)} vs"
+                f" {len(local_files)})."
+            )
+        if self.use_global:
+            assert len(audio_files) == len(global_files), (
+                f"Number of audio and global files are different ({len(audio_files)} vs"
+                f" {len(global_files)})."
+            )
 
         self.audio_files = audio_files
         self.audio_load_fn = audio_load_fn
-        self.return_utt_id = return_utt_id
+        if self.use_local:
+            self.local_files = local_files
+            self.local_load_fn = local_load_fn
+        if self.use_global:
+            self.global_files = global_files
+            self.global_load_fn = global_load_fn
         if ".npy" in audio_query:
             self.utt_ids = [
                 os.path.basename(f).replace("-wave.npy", "") for f in audio_files
@@ -202,6 +283,7 @@ class AudioDataset(Dataset):
             self.utt_ids = [
                 os.path.splitext(os.path.basename(f))[0] for f in audio_files
             ]
+        self.return_utt_id = return_utt_id
         self.allow_cache = allow_cache
         if allow_cache:
             # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
@@ -218,6 +300,7 @@ class AudioDataset(Dataset):
         Returns:
             str: Utterance id (only in return_utt_id = True).
             ndarray: Audio (T,).
+            ndarray: Feature (1,).
 
         """
         if self.allow_cache and len(self.caches[idx]) != 0:
@@ -225,11 +308,20 @@ class AudioDataset(Dataset):
 
         utt_id = self.utt_ids[idx]
         audio = self.audio_load_fn(self.audio_files[idx])
+        items = (audio,)
+        if self.use_local:
+            l_ = self.local_load_fn(self.local_files[idx])
+            items = items + (l_,)
+        if self.use_global:
+            g = self.global_load_fn(self.global_files[idx]).reshape(-1)
+            items = items + (g,)
 
         if self.return_utt_id:
-            items = utt_id, audio
-        else:
-            items = audio
+            items = (utt_id,) + items
+
+        # NOTE(kan-bayashi): if the return item is one, do not return as tuple
+        if len(items) == 1:
+            items = items[0]
 
         if self.allow_cache:
             self.caches[idx] = items
@@ -247,14 +339,18 @@ class AudioDataset(Dataset):
 
 
 class MelDataset(Dataset):
-    """PyTorch compatible mel dataset."""
+    """PyTorch compatible mel (+global conditioning feature) dataset."""
 
     def __init__(
         self,
         root_dir,
-        mel_query="*-feats.npy",
+        mel_query="*.h5",
+        mel_load_fn=lambda x: read_hdf5(x, "feats"),
+        local_query=None,
+        local_load_fn=None,
+        global_query=None,
+        global_load_fn=None,
         mel_length_threshold=None,
-        mel_load_fn=np.load,
         return_utt_id=False,
         allow_cache=False,
     ):
@@ -264,13 +360,23 @@ class MelDataset(Dataset):
             root_dir (str): Root directory including dumped files.
             mel_query (str): Query to find feature files in root_dir.
             mel_load_fn (func): Function to load feature file.
+            local_query (str): Query to find local conditioning feature files in root_dir.
+            local_load_fn (func): Function to load local conditioning feature file.
+            global_query (str): Query to find global conditioning feature files in root_dir.
+            global_load_fn (func): Function to load global conditioning feature file.
             mel_length_threshold (int): Threshold to remove short feature files.
             return_utt_id (bool): Whether to return the utterance id with arrays.
             allow_cache (bool): Whether to allow cache of the loaded files.
 
         """
-        # find all of the mel files
+        # find all of audio and mel files
         mel_files = sorted(find_files(root_dir, mel_query))
+        self.use_local = local_query is not None
+        self.use_global = global_query is not None
+        if self.use_local:
+            local_files = sorted(find_files(root_dir, local_query))
+        if self.use_global:
+            global_files = sorted(find_files(root_dir, global_query))
 
         # filter by threshold
         if mel_length_threshold is not None:
@@ -286,13 +392,31 @@ class MelDataset(Dataset):
                     f"({len(mel_files)} -> {len(idxs)})."
                 )
             mel_files = [mel_files[idx] for idx in idxs]
+            if self.use_local:
+                local_files = [local_files[idx] for idx in idxs]
+            if self.use_global:
+                global_files = [global_files[idx] for idx in idxs]
 
         # assert the number of files
-        assert len(mel_files) != 0, f"Not found any mel files in ${root_dir}."
+        if self.use_local:
+            assert len(mel_files) == len(local_files), (
+                f"Number of audio and local files are different ({len(mel_files)} vs"
+                f" {len(local_files)})."
+            )
+        if self.use_global:
+            assert len(mel_files) == len(global_files), (
+                f"Number of audio and global files are different ({len(mel_files)} vs"
+                f" {len(global_files)})."
+            )
 
         self.mel_files = mel_files
         self.mel_load_fn = mel_load_fn
-        self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in mel_files]
+        if self.use_local:
+            self.local_files = local_files
+            self.local_load_fn = local_load_fn
+        if self.use_global:
+            self.global_files = global_files
+            self.global_load_fn = global_load_fn
         if ".npy" in mel_query:
             self.utt_ids = [
                 os.path.basename(f).replace("-feats.npy", "") for f in mel_files
@@ -301,6 +425,7 @@ class MelDataset(Dataset):
             self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in mel_files]
         self.return_utt_id = return_utt_id
         self.allow_cache = allow_cache
+
         if allow_cache:
             # NOTE(kan-bayashi): Manager is need to share memory in dataloader with num_workers > 0
             self.manager = Manager()
@@ -316,6 +441,7 @@ class MelDataset(Dataset):
         Returns:
             str: Utterance id (only in return_utt_id = True).
             ndarray: Feature (T', C).
+            ndarray: Feature (1,).
 
         """
         if self.allow_cache and len(self.caches[idx]) != 0:
@@ -323,11 +449,22 @@ class MelDataset(Dataset):
 
         utt_id = self.utt_ids[idx]
         mel = self.mel_load_fn(self.mel_files[idx])
+        items = (mel,)
+
+        if self.use_local:
+            l_ = self.local_load_fn(self.local_files[idx])
+            items = items + (l_,)
+
+        if self.use_global:
+            g = self.global_load_fn(self.global_files[idx]).reshape(-1)
+            items = items + (g,)
 
         if self.return_utt_id:
-            items = utt_id, mel
-        else:
-            items = mel
+            items = (utt_id,) + items
+
+        # NOTE(kan-bayashi): if the return item is one, do not return as tuple
+        if len(items) == 1:
+            items = items[0]
 
         if self.allow_cache:
             self.caches[idx] = items
