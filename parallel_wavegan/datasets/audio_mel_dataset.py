@@ -7,15 +7,12 @@
 
 import logging
 import os
-
 from multiprocessing import Manager
 
 import numpy as np
-
 from torch.utils.data import Dataset
 
-from parallel_wavegan.utils import find_files
-from parallel_wavegan.utils import read_hdf5
+from parallel_wavegan.utils import find_files, read_hdf5
 
 
 class AudioMelDataset(Dataset):

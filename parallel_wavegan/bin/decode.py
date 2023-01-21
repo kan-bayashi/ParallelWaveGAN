@@ -15,15 +15,11 @@ import numpy as np
 import soundfile as sf
 import torch
 import yaml
-
 from tqdm import tqdm
 
-from parallel_wavegan.datasets import AudioDataset
-from parallel_wavegan.datasets import AudioSCPDataset
-from parallel_wavegan.datasets import MelDataset
-from parallel_wavegan.datasets import MelSCPDataset
-from parallel_wavegan.utils import load_model
-from parallel_wavegan.utils import read_hdf5
+from parallel_wavegan.datasets import (AudioDataset, AudioSCPDataset,
+                                       MelDataset, MelSCPDataset)
+from parallel_wavegan.utils import load_model, read_hdf5
 
 
 def main():

@@ -10,7 +10,6 @@ import logging
 import torch
 
 import parallel_wavegan.models
-
 from parallel_wavegan.layers import VQCodebook
 
 

@@ -10,7 +10,6 @@ import argparse
 import logging
 import os
 import sys
-
 from collections import defaultdict
 
 import matplotlib
@@ -18,7 +17,6 @@ import numpy as np
 import soundfile as sf
 import torch
 import yaml
-
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -26,17 +24,14 @@ from tqdm import tqdm
 import parallel_wavegan
 import parallel_wavegan.models
 import parallel_wavegan.optimizers
-
-from parallel_wavegan.datasets import AudioDataset
-from parallel_wavegan.datasets import AudioMelDataset
-from parallel_wavegan.datasets import AudioMelSCPDataset
-from parallel_wavegan.datasets import AudioSCPDataset
+from parallel_wavegan.datasets import (AudioDataset, AudioMelDataset,
+                                       AudioMelSCPDataset, AudioSCPDataset)
 from parallel_wavegan.layers import PQMF
-from parallel_wavegan.losses import DiscriminatorAdversarialLoss
-from parallel_wavegan.losses import FeatureMatchLoss
-from parallel_wavegan.losses import GeneratorAdversarialLoss
-from parallel_wavegan.losses import MelSpectrogramLoss
-from parallel_wavegan.losses import MultiResolutionSTFTLoss
+from parallel_wavegan.losses import (DiscriminatorAdversarialLoss,
+                                     DurationPredictorLoss, FeatureMatchLoss,
+                                     GeneratorAdversarialLoss,
+                                     MelSpectrogramLoss,
+                                     MultiResolutionSTFTLoss)
 from parallel_wavegan.utils import read_hdf5
 
 # set to avoid matplotlib error in CLI environment
@@ -88,6 +83,9 @@ class Trainer(object):
         self.total_train_loss = defaultdict(float)
         self.total_eval_loss = defaultdict(float)
         self.is_vq = "VQVAE" in config.get("generator_type", "ParallelWaveGANGenerator")
+        self.use_duration_prediction = "Duration" in config.get(
+            "generator_type", "ParallelWaveGANGenerator"
+        )
 
     def run(self):
         """Run training."""
@@ -179,7 +177,10 @@ class Trainer(object):
     def _train_step(self, batch):
         """Train model one step."""
         # parse batch and send to device
-        x, y = self._parse_batch(batch)
+        if self.use_duration_prediction:
+            x, y, ds = self._parse_batch(batch)
+        else:
+            x, y = self._parse_batch(batch)
 
         #######################
         #      Generator      #
@@ -200,6 +201,12 @@ class Trainer(object):
                 self.total_train_loss["train/quantization_loss"] += quantize_loss.item()
                 self.total_train_loss["train/commitment_loss"] += commit_loss.item()
                 gen_loss += quantize_loss + self.config["lambda_commit"] * commit_loss
+            elif self.use_duration_prediction:
+                assert ds is not None
+                y_, ds_ = self.model["generator"](*x)
+                duration_loss = self.criterion["duration_loss"](ds_, ds)
+                self.total_train_loss["train/duration_loss"] += duration_loss.item()
+                gen_loss += duration_loss
             else:
                 y_ = self.model["generator"](*x)
 
@@ -287,6 +294,8 @@ class Trainer(object):
                             y_, _, _ = self.model["generator"](y, *x)
                         else:
                             y_, _, _ = self.model["generator"](y_mb, *x)
+                    elif self.use_duration_prediction:
+                        y_, _ = self.model["generator"](*x)
                     else:
                         y_ = self.model["generator"](*x)
                 if self.config["generator_params"]["out_channels"] > 1:
@@ -349,7 +358,10 @@ class Trainer(object):
     def _eval_step(self, batch):
         """Evaluate model one step."""
         # parse batch and send to device
-        x, y = self._parse_batch(batch)
+        if self.use_duration_prediction:
+            x, y, ds = self._parse_batch(batch)
+        else:
+            x, y = self._parse_batch(batch)
 
         #######################
         #      Generator      #
@@ -362,6 +374,10 @@ class Trainer(object):
                 y_, z_e, z_q = self.model["generator"](y_mb, *x)
             quantize_loss = self.criterion["mse"](z_q, z_e.detach())
             commit_loss = self.criterion["mse"](z_e, z_q.detach())
+        elif self.use_duration_prediction:
+            assert ds is not None
+            y_, ds_ = self.model["generator"](*x)
+            duration_loss = self.criterion["duration_loss"](ds_, ds)
         else:
             y_ = self.model["generator"](*x)
         if self.config["generator_params"]["out_channels"] > 1:
@@ -434,6 +450,8 @@ class Trainer(object):
         if self.is_vq:
             self.total_eval_loss["eval/quantization_loss"] += quantize_loss.item()
             self.total_eval_loss["eval/commitment_loss"] += commit_loss.item()
+        if self.use_duration_prediction:
+            self.total_eval_loss["eval/duration_loss"] += duration_loss.item()
 
     def _eval_epoch(self):
         """Evaluate model one epoch."""
@@ -482,7 +500,10 @@ class Trainer(object):
         import matplotlib.pyplot as plt
 
         # parse batch and send to device
-        x_batch, y_batch = self._parse_batch(batch)
+        if self.use_duration_prediction:
+            x_batch, y_batch, ds_batch = self._parse_batch(batch)
+        else:
+            x_batch, y_batch = self._parse_batch(batch)
 
         # generate
         if self.is_vq:
@@ -492,6 +513,8 @@ class Trainer(object):
                 y_batch_, _, _ = self.model["generator"](
                     self.criterion["pqmf"].analysis(y_batch), *x_batch
                 )
+        elif self.use_duration_prediction:
+            y_batch_ = self.model["generator"].synthesis(x_batch)
         else:
             y_batch_ = self.model["generator"](*x_batch)
         if self.config["generator_params"]["out_channels"] > 1:
@@ -540,7 +563,10 @@ class Trainer(object):
     def _parse_batch(self, batch):
         """Parse batch and send to the device."""
         # parse batch
-        inputs, targets = batch
+        if self.use_duration_prediction:
+            inputs, targets, durations = batch
+        else:
+            inputs, targets = batch
 
         # send inputs to device
         if isinstance(inputs, torch.Tensor):
@@ -557,6 +583,17 @@ class Trainer(object):
             y = [None if y is None else y.to(self.device) for y in targets]
         else:
             raise ValueError(f"Not supported type ({type(targets)}).")
+
+        if self.use_duration_prediction:
+            # send durations to device (for model with duration prediction only)
+            if isinstance(durations, torch.Tensor):
+                ds = durations.to(self.device)
+            elif isinstance(durations, (tuple, list)):
+                ds = [None if d is None else d.to(self.device) for d in durations]
+            else:
+                raise ValueError(f"Not supported type ({type(durations)}).")
+
+            return x, y, ds
 
         return x, y
 
@@ -603,6 +640,7 @@ class Collater(object):
         aux_context_window=2,
         use_noise_input=False,
         use_aux_input=True,
+        use_duration=False,
         use_global_condition=False,
         use_local_condition=False,
     ):
@@ -614,6 +652,7 @@ class Collater(object):
             aux_context_window (int): Context window size for auxiliary feature conv.
             use_noise_input (bool): Whether to use noise input.
             use_aux_input (bool): Whether to use auxiliary input.
+            use_duration (bool): Whether to use duration for duration prediction.
             use_global_condition (bool): Whether to use global conditioning.
             use_local_condition (bool): Whether to use local conditioning.
 
@@ -628,14 +667,18 @@ class Collater(object):
         self.aux_context_window = aux_context_window
         self.use_noise_input = use_noise_input
         self.use_aux_input = use_aux_input
+        self.use_duration = use_duration
         self.use_global_condition = use_global_condition
         self.use_local_condition = use_local_condition
         if not self.use_aux_input:
             assert not self.use_noise_input, "Not supported."
+            assert not self.use_duration, "Not supported."
+        if self.use_noise_input:
+            assert not self.use_duration, "Not supported."
         if self.use_local_condition:
-            assert not self.use_aux_input, "Not supported."
+            assert not self.use_aux_input and not self.use_duration, "Not supported."
         if self.use_global_condition:
-            assert not self.use_aux_input, "Not supported."
+            assert not self.use_aux_input and not self.use_duration, "Not supported."
 
         # set useful values in random cutting
         if self.use_aux_input or self.use_local_condition:
@@ -691,6 +734,18 @@ class Collater(object):
             # convert each batch to tensor, asuume that each item in batch has the same length
             y_batch, c_batch = np.array(y_batch), np.array(c_batch)
             y_batch = torch.tensor(y_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T)
+
+            # duration calculation and return with duration information
+            if self.use_duration:
+                updated_c_batch, d_batch = [], []
+                for c in c_batch:
+                    code, d = np.unique(c, return_counts=True, dim=-1)
+                    updated_c_batch.append(code)
+                    d_batch.append(d)
+                c_batch, d_batch = self._pad_list(updated_c_batch, d_batch)
+                return c_batch, y_batch, d_batch
+
+            # process data without duration prediction
             c_batch = torch.tensor(c_batch, dtype=torch.float).transpose(
                 2, 1
             )  # (B, C, T')
@@ -984,6 +1039,7 @@ def main():
     use_noise_input = (
         "ParallelWaveGAN" in generator_type and "VQVAE" not in generator_type
     )
+    use_duration = "Duration" in generator_type
     use_local_condition = config.get("use_local_condition", False)
     use_global_condition = config.get("use_global_condition", False)
 
@@ -1139,6 +1195,7 @@ def main():
         aux_context_window=config["generator_params"].get("aux_context_window", 0),
         use_noise_input=use_noise_input,
         use_aux_input=use_aux_input,
+        use_duration=use_duration,
         use_global_condition=use_global_condition,
         use_local_condition=use_local_condition,
     )
@@ -1249,6 +1306,18 @@ def main():
             ).to(device)
     else:
         config["use_mel_loss"] = False
+    if config.get("use_duration_loss", False):  # keep compatibility
+        if config.get("duration_loss_params", None) is None:
+            criterion["duration"] = DurationPredictorLoss(
+                offset=config["offset"],
+                reduction=config["reduction"],
+            ).to(device)
+        else:
+            criterion["duration"] = DurationPredictorLoss(
+                **config["duration_loss_params"],
+            ).to(device)
+    else:
+        config["use_duration_loss"] = False
 
     # define special module for subband processing
     if config["generator_params"]["out_channels"] > 1:

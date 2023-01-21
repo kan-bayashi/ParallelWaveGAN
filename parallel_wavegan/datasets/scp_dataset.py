@@ -6,16 +6,13 @@
 """Dataset modules based on kaldi-style scp files."""
 
 import logging
-
 from multiprocessing import Manager
 
 import kaldiio
 import numpy as np
-
 from torch.utils.data import Dataset
 
-from parallel_wavegan.utils import HDF5ScpLoader
-from parallel_wavegan.utils import NpyScpLoader
+from parallel_wavegan.utils import HDF5ScpLoader, NpyScpLoader
 
 
 def _get_feats_scp_loader(feats_scp):
