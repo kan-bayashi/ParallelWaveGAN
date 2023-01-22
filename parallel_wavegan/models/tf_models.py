@@ -8,9 +8,11 @@
 import numpy as np
 import tensorflow as tf
 
-from parallel_wavegan.layers.tf_layers import (TFConvTranspose1d,
-                                               TFReflectionPad1d,
-                                               TFResidualStack)
+from parallel_wavegan.layers.tf_layers import (
+    TFConvTranspose1d,
+    TFReflectionPad1d,
+    TFResidualStack,
+)
 
 
 class TFMelGANGenerator(tf.keras.layers.Layer):

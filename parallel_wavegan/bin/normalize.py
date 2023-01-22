@@ -15,8 +15,12 @@ import yaml
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
-from parallel_wavegan.datasets import (AudioMelDataset, AudioMelSCPDataset,
-                                       MelDataset, MelSCPDataset)
+from parallel_wavegan.datasets import (
+    AudioMelDataset,
+    AudioMelSCPDataset,
+    MelDataset,
+    MelSCPDataset,
+)
 from parallel_wavegan.utils import read_hdf5, write_hdf5
 
 

@@ -17,8 +17,12 @@ import torch
 import yaml
 from tqdm import tqdm
 
-from parallel_wavegan.datasets import (AudioDataset, AudioSCPDataset,
-                                       MelDataset, MelSCPDataset)
+from parallel_wavegan.datasets import (
+    AudioDataset,
+    AudioSCPDataset,
+    MelDataset,
+    MelSCPDataset,
+)
 from parallel_wavegan.utils import load_model, read_hdf5
 
 

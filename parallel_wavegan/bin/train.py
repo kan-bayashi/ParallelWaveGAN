@@ -24,14 +24,21 @@ from tqdm import tqdm
 import parallel_wavegan
 import parallel_wavegan.models
 import parallel_wavegan.optimizers
-from parallel_wavegan.datasets import (AudioDataset, AudioMelDataset,
-                                       AudioMelSCPDataset, AudioSCPDataset)
+from parallel_wavegan.datasets import (
+    AudioDataset,
+    AudioMelDataset,
+    AudioMelSCPDataset,
+    AudioSCPDataset,
+)
 from parallel_wavegan.layers import PQMF
-from parallel_wavegan.losses import (DiscriminatorAdversarialLoss,
-                                     DurationPredictorLoss, FeatureMatchLoss,
-                                     GeneratorAdversarialLoss,
-                                     MelSpectrogramLoss,
-                                     MultiResolutionSTFTLoss)
+from parallel_wavegan.losses import (
+    DiscriminatorAdversarialLoss,
+    DurationPredictorLoss,
+    FeatureMatchLoss,
+    GeneratorAdversarialLoss,
+    MelSpectrogramLoss,
+    MultiResolutionSTFTLoss,
+)
 from parallel_wavegan.utils import read_hdf5
 
 # set to avoid matplotlib error in CLI environment
