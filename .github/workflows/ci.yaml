@@ -63,7 +63,7 @@ jobs:
       max-parallel: 10
       matrix:
         python-version: [3.9]
-        pytorch-version: [1.11.0]
+        pytorch-version: [1.13.1]
         config:
           - "parallel_wavegan.v1.debug.yaml"
           - "melgan.v1.debug.yaml"
@@ -104,7 +104,7 @@ jobs:
     strategy:
       max-parallel: 10
       matrix:
-        python-version: [3.7]
+        python-version: [3.8]
         pytorch-version: [1.13.1]
         config:
           - "melgan_vae.v3.debug.yaml"
