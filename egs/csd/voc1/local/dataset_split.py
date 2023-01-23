@@ -2,7 +2,6 @@ import argparse
 import os
 import shutil
 
-
 UTT_PREFIX = "csd"
 DEV_LIST = ["046"]
 TEST_LIST = ["047", "048", "049", "050"]

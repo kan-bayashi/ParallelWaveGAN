@@ -10,9 +10,7 @@ import logging
 import numpy as np
 import torch
 
-from parallel_wavegan.layers import CausalConv1d
-from parallel_wavegan.layers import CausalConvTranspose1d
-from parallel_wavegan.layers import ResidualStack
+from parallel_wavegan.layers import CausalConv1d, CausalConvTranspose1d, ResidualStack
 from parallel_wavegan.utils import read_hdf5
 
 

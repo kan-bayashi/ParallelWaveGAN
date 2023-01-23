@@ -10,7 +10,6 @@ import argparse
 import logging
 import os
 import sys
-
 from collections import defaultdict
 
 import matplotlib
@@ -18,7 +17,6 @@ import numpy as np
 import soundfile as sf
 import torch
 import yaml
-
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -26,17 +24,20 @@ from tqdm import tqdm
 import parallel_wavegan
 import parallel_wavegan.models
 import parallel_wavegan.optimizers
-
-from parallel_wavegan.datasets import AudioDataset
-from parallel_wavegan.datasets import AudioMelDataset
-from parallel_wavegan.datasets import AudioMelSCPDataset
-from parallel_wavegan.datasets import AudioSCPDataset
+from parallel_wavegan.datasets import (
+    AudioDataset,
+    AudioMelDataset,
+    AudioMelSCPDataset,
+    AudioSCPDataset,
+)
 from parallel_wavegan.layers import PQMF
-from parallel_wavegan.losses import DiscriminatorAdversarialLoss
-from parallel_wavegan.losses import FeatureMatchLoss
-from parallel_wavegan.losses import GeneratorAdversarialLoss
-from parallel_wavegan.losses import MelSpectrogramLoss
-from parallel_wavegan.losses import MultiResolutionSTFTLoss
+from parallel_wavegan.losses import (
+    DiscriminatorAdversarialLoss,
+    FeatureMatchLoss,
+    GeneratorAdversarialLoss,
+    MelSpectrogramLoss,
+    MultiResolutionSTFTLoss,
+)
 from parallel_wavegan.utils import read_hdf5
 
 # set to avoid matplotlib error in CLI environment

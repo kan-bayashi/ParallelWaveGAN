@@ -10,7 +10,6 @@ These codes are modified from https://github.com/ritheshkumar95/pytorch-vqvae.
 """
 
 import torch
-
 from torch.autograd import Function
 
 

@@ -9,7 +9,6 @@ import librosa
 import torch
 import torch.nn.functional as F
 
-
 is_pytorch_17plus = LooseVersion(torch.__version__) >= LooseVersion("1.7")
 
 

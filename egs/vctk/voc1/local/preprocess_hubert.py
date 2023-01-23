@@ -12,14 +12,12 @@ import os
 
 import librosa
 import numpy as np
-import soundfile as sf
 import resampy
+import soundfile as sf
 import yaml
-
 from tqdm import tqdm
 
-from parallel_wavegan.datasets import AudioDataset
-from parallel_wavegan.datasets import AudioSCPDataset
+from parallel_wavegan.datasets import AudioDataset, AudioSCPDataset
 from parallel_wavegan.utils import write_hdf5
 
 
