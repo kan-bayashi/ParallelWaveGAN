@@ -11,11 +11,10 @@ import math
 import numpy as np
 import torch
 
-from parallel_wavegan.layers import Conv1d
-from parallel_wavegan.layers import Conv1d1x1
-from parallel_wavegan.layers import upsample
-from parallel_wavegan.layers import WaveNetResidualBlock as ResidualBlock
 from parallel_wavegan import models
+from parallel_wavegan.layers import Conv1d, Conv1d1x1
+from parallel_wavegan.layers import WaveNetResidualBlock as ResidualBlock
+from parallel_wavegan.layers import upsample
 from parallel_wavegan.utils import read_hdf5
 
 

@@ -10,12 +10,16 @@ import numpy as np
 import pytest
 import torch
 
-from parallel_wavegan.losses import DiscriminatorAdversarialLoss
-from parallel_wavegan.losses import GeneratorAdversarialLoss
-from parallel_wavegan.losses import MultiResolutionSTFTLoss
-from parallel_wavegan.models import ParallelWaveGANDiscriminator
-from parallel_wavegan.models import ParallelWaveGANGenerator
-from parallel_wavegan.models import ResidualParallelWaveGANDiscriminator
+from parallel_wavegan.losses import (
+    DiscriminatorAdversarialLoss,
+    GeneratorAdversarialLoss,
+    MultiResolutionSTFTLoss,
+)
+from parallel_wavegan.models import (
+    ParallelWaveGANDiscriminator,
+    ParallelWaveGANGenerator,
+    ResidualParallelWaveGANDiscriminator,
+)
 from parallel_wavegan.optimizers import RAdam
 
 logging.basicConfig(

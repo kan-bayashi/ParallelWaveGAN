@@ -45,10 +45,11 @@ jobs:
           export PATH=shellcheck-stable:$PATH
           # not to check the script copied from kaldi
           find egs -name "*.sh" | grep -v path.sh | while read line; do shellcheck -x --shell=bash -P $(dirname $line) ${line}; done
-      - name: Black & Flake8
+      - name: Black & isort & Flake8
         run: |
           source tools/venv/bin/activate
           black --diff --check parallel_wavegan
+          isort --diff --check parallel_wavegan
           flake8 parallel_wavegan
           flake8 --extend-ignore=D test
       - name: Pytest

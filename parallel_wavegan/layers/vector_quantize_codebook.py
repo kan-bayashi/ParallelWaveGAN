@@ -11,8 +11,7 @@ This code is modified from https://github.com/ritheshkumar95/pytorch-vqvae.
 
 import torch
 
-from parallel_wavegan.functions import vector_quantize
-from parallel_wavegan.functions import vector_quantize_straight_through
+from parallel_wavegan.functions import vector_quantize, vector_quantize_straight_through
 
 
 class VQCodebook(torch.nn.Module):

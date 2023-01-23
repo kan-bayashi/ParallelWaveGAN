@@ -5,10 +5,10 @@
 
 """STFT-based Loss modules."""
 
+from distutils.version import LooseVersion
+
 import torch
 import torch.nn.functional as F
-
-from distutils.version import LooseVersion
 
 is_pytorch_17plus = LooseVersion(torch.__version__) >= LooseVersion("1.7")
 

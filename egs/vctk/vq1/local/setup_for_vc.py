@@ -12,12 +12,10 @@ import os
 
 import numpy as np
 import yaml
-
 from tqdm import tqdm
 
 from parallel_wavegan.datasets import AudioDataset
-from parallel_wavegan.utils import read_hdf5
-from parallel_wavegan.utils import write_hdf5
+from parallel_wavegan.utils import read_hdf5, write_hdf5
 
 
 def main():
