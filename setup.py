@@ -49,6 +49,7 @@ requirements = {
         "hacking>=4.1.0",
         "flake8-docstrings>=1.3.1",
         "black",
+        "isort",
     ],
 }
 entry_points = {

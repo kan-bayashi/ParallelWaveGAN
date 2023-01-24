@@ -2,7 +2,6 @@ import argparse
 import os
 import shutil
 
-
 UTT_PREFIX = "oniku"
 DEV_LIST = ["chatsumi", "goin_home", "aoimeno_ningyou", "momiji", "tetsudou_shouka"]
 TEST_LIST = ["usagito_kame", "sousyunfu", "romance_anonimo", "momotarou", "furusato"]

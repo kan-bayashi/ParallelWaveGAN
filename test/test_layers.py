@@ -10,14 +10,16 @@ import numpy as np
 import pytest
 import torch
 
-from parallel_wavegan.layers import CausalConv1d
-from parallel_wavegan.layers import CausalConvTranspose1d
-from parallel_wavegan.layers import Conv1d
-from parallel_wavegan.layers import Conv1d1x1
-from parallel_wavegan.layers import Conv2d
-from parallel_wavegan.layers import ConvInUpsampleNetwork
-from parallel_wavegan.layers import PQMF
-from parallel_wavegan.layers import UpsampleNetwork
+from parallel_wavegan.layers import (
+    PQMF,
+    CausalConv1d,
+    CausalConvTranspose1d,
+    Conv1d,
+    Conv1d1x1,
+    Conv2d,
+    ConvInUpsampleNetwork,
+    UpsampleNetwork,
+)
 
 logging.basicConfig(
     level=logging.WARN,

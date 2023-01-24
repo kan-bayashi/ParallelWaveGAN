@@ -19,7 +19,7 @@ jobs:
         python-version: [3.7]
         # 1.6 is failed on cpu: https://github.com/kan-bayashi/ParallelWaveGAN/issues/198
         # 1.10 does not support python 3.6
-        pytorch-version: [1.4, 1.5.1, 1.7.1, 1.8.1, 1.9, 1.10.2, 1.11.0]
+        pytorch-version: [1.4, 1.5.1, 1.7.1, 1.8.1, 1.9, 1.10.2, 1.11.0, 1.12.1, 1.13.1]
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v2
@@ -45,10 +45,11 @@ jobs:
           export PATH=shellcheck-stable:$PATH
           # not to check the script copied from kaldi
           find egs -name "*.sh" | grep -v path.sh | while read line; do shellcheck -x --shell=bash -P $(dirname $line) ${line}; done
-      - name: Black & Flake8
+      - name: Black & isort & Flake8
         run: |
           source tools/venv/bin/activate
           black --diff --check parallel_wavegan
+          isort --diff --check parallel_wavegan
           flake8 parallel_wavegan
           flake8 --extend-ignore=D test
       - name: Pytest
@@ -62,7 +63,7 @@ jobs:
       max-parallel: 10
       matrix:
         python-version: [3.9]
-        pytorch-version: [1.11.0]
+        pytorch-version: [1.13.1]
         config:
           - "parallel_wavegan.v1.debug.yaml"
           - "melgan.v1.debug.yaml"
@@ -103,8 +104,8 @@ jobs:
     strategy:
       max-parallel: 10
       matrix:
-        python-version: [3.7]
-        pytorch-version: [1.9]
+        python-version: [3.8]
+        pytorch-version: [1.13.1]
         config:
           - "melgan_vae.v3.debug.yaml"
           - "conditioned_melgan_vae.v3.debug.yaml"
