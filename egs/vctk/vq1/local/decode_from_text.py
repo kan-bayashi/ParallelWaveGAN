@@ -14,11 +14,9 @@ import time
 import soundfile as sf
 import torch
 import yaml
-
 from tqdm import tqdm
 
 import parallel_wavegan.models
-
 from parallel_wavegan.utils import load_model
 
 
