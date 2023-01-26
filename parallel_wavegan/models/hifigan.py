@@ -1006,7 +1006,7 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
 
 
 class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
-    """ "Discrete Symbol HiFiGAN generator with duration predictor module"""
+    """Discrete Symbol HiFiGAN generator with duration predictor module."""
 
     def __init__(
         self,
