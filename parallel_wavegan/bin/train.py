@@ -210,8 +210,8 @@ class Trainer(object):
                 gen_loss += quantize_loss + self.config["lambda_commit"] * commit_loss
             elif self.use_duration_prediction:
                 assert ds is not None
-                y_, ds_ = self.model["generator"](*x)
-                duration_loss = self.criterion["duration_loss"](ds_, ds)
+                y_, ds_ = self.model["generator"](x, ds)
+                duration_loss = self.criterion["duration"](ds_, ds)
                 self.total_train_loss["train/duration_loss"] += duration_loss.item()
                 gen_loss += duration_loss
             else:
@@ -302,7 +302,8 @@ class Trainer(object):
                         else:
                             y_, _, _ = self.model["generator"](y_mb, *x)
                     elif self.use_duration_prediction:
-                        y_, _ = self.model["generator"](*x)
+                        assert ds is not None
+                        y_, _ = self.model["generator"](x, ds)
                     else:
                         y_ = self.model["generator"](*x)
                 if self.config["generator_params"]["out_channels"] > 1:
@@ -384,7 +385,7 @@ class Trainer(object):
         elif self.use_duration_prediction:
             assert ds is not None
             y_, ds_ = self.model["generator"](*x)
-            duration_loss = self.criterion["duration_loss"](ds_, ds)
+            duration_loss = self.criterion["duration"](ds_, ds)
         else:
             y_ = self.model["generator"](*x)
         if self.config["generator_params"]["out_channels"] > 1:
@@ -650,6 +651,7 @@ class Collater(object):
         use_duration=False,
         use_global_condition=False,
         use_local_condition=False,
+        pad_value=0,
     ):
         """Initialize customized collater for PyTorch DataLoader.
 
@@ -677,6 +679,7 @@ class Collater(object):
         self.use_duration = use_duration
         self.use_global_condition = use_global_condition
         self.use_local_condition = use_local_condition
+        self.pad_value = pad_value
         if not self.use_aux_input:
             assert not self.use_noise_input, "Not supported."
             assert not self.use_duration, "Not supported."
@@ -746,10 +749,13 @@ class Collater(object):
             if self.use_duration:
                 updated_c_batch, d_batch = [], []
                 for c in c_batch:
-                    code, d = np.unique(c, return_counts=True, dim=-1)
-                    updated_c_batch.append(code)
-                    d_batch.append(d)
-                c_batch, d_batch = self._pad_list(updated_c_batch, d_batch)
+                    code, d = np.unique(c, return_counts=True, axis=-1)
+                    updated_c_batch.append(torch.tensor(code, dtype=torch.long))
+                    d_batch.append(torch.tensor(d, dtype=torch.long))
+                c_batch = self._pad_list(updated_c_batch, self.pad_value).transpose(
+                    2, 1
+                )  # (B, C, T')
+                d_batch = self._pad_list(d_batch, 0)
                 return c_batch, y_batch, d_batch
 
             # process data without duration prediction
@@ -1234,6 +1240,9 @@ def main():
         use_duration=use_duration,
         use_global_condition=use_global_condition,
         use_local_condition=use_local_condition,
+        pad_value=config["generator_params"].get(
+            "num_embs", 0
+        ),  # assume 0-based discrete symbol
     )
     sampler = {"train": None, "dev": None}
     if args.distributed:

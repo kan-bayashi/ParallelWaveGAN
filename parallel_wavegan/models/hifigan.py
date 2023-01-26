@@ -1123,7 +1123,7 @@ class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
             assert c.size(1) == 1
             c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
 
-        ds_out = self.duration_predictor(c)
+        ds_out = self.duration_predictor(c.transpose(1, 2))
         c = self.length_regulator(c, ds)
 
         c = self.input_conv(c)
