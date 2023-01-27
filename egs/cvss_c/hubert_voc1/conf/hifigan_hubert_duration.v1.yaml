@@ -29,7 +29,6 @@ generator_params:
     out_channels: 1                       # Number of output channels.
     channels: 512                         # Number of initial channels.
     num_embs: 500
-    concat_spk_emb: false
     kernel_size: 7                        # Kernel size of initial and final conv layers.
     upsample_scales: [10, 8, 2, 2]        # Upsampling scales.
     upsample_kernal_sizes: [20, 16, 4, 4] # Kernel size for upsampling layers.
@@ -94,11 +93,11 @@ discriminator_params:
 #                   STFT LOSS SETTING                     #
 ###########################################################
 use_stft_loss: false # Whether to use multi-resolution STFT loss.
-use_mel_loss: true   # Whether to use Mel-spectrogram loss.
 use_duration_loss: true # Whether to use duration prediction loss (need for duration predictor)
 duration_loss_params:
     offset: 1.0
     reduction: mean
+use_mel_loss: true   # Whether to use Mel-spectrogram loss.
 mel_loss_params:     # Mel-spectrogram loss parameters.
     fs: 16000
     fft_size: 1024
@@ -132,7 +131,7 @@ lambda_feat_match: 2.0 # Loss balancing coefficient for feat match loss..
 batch_size: 16              # Batch size.
 batch_max_steps: 10240      # Length of each audio in batch. Make sure dividable by hop_size.
 pin_memory: true            # Whether to pin memory in Pytorch DataLoader.
-num_workers: 2              # Number of workers in Pytorch DataLoader.
+num_workers: 0              # Number of workers in Pytorch DataLoader.
 remove_short_samples: false # Whether to remove samples the length of which are less than batch_max_steps.
 allow_cache: true           # Whether to allow cache in dataset. If true, it requires cpu memory.
 

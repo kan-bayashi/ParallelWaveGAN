@@ -384,7 +384,7 @@ class Trainer(object):
             commit_loss = self.criterion["mse"](z_e, z_q.detach())
         elif self.use_duration_prediction:
             assert ds is not None
-            y_, ds_ = self.model["generator"](*x)
+            y_, ds_ = self.model["generator"](x, ds)
             duration_loss = self.criterion["duration"](ds_, ds)
         else:
             y_ = self.model["generator"](*x)
@@ -749,8 +749,11 @@ class Collater(object):
             if self.use_duration:
                 updated_c_batch, d_batch = [], []
                 for c in c_batch:
-                    code, d = np.unique(c, return_counts=True, axis=-1)
-                    updated_c_batch.append(torch.tensor(code, dtype=torch.long))
+                    # NOTE(jiatong): assume 0 is the discrete symbol 
+                    # (refer to cvss_c/local/preprocess_hubert.py)
+                    code, d = torch.unique_consecutive(torch.tensor(c, dtype=torch.long), return_counts=True, dim=0)
+                    # logging.info("code: {}, d: {}, c:{}".format(code.size(), d.size(), c.shape))
+                    updated_c_batch.append(code)
                     d_batch.append(torch.tensor(d, dtype=torch.long))
                 c_batch = self._pad_list(updated_c_batch, self.pad_value).transpose(
                     2, 1
