@@ -213,6 +213,7 @@ class Trainer(object):
                 y_, ds_ = self.model["generator"](x, ds)
                 duration_loss = self.criterion["duration"](ds_, ds)
                 self.total_train_loss["train/duration_loss"] += duration_loss.item()
+                # logging.info("duration_loss: {}".format(duration_loss))
                 gen_loss += duration_loss
             else:
                 y_ = self.model["generator"](*x)
@@ -278,6 +279,8 @@ class Trainer(object):
 
             self.total_train_loss["train/generator_loss"] += gen_loss.item()
 
+            # logging.info("gen_loss: {}".format(gen_loss))
+
             # update generator
             self.optimizer["generator"].zero_grad()
             gen_loss.backward()
@@ -317,6 +320,8 @@ class Trainer(object):
             self.total_train_loss["train/real_loss"] += real_loss.item()
             self.total_train_loss["train/fake_loss"] += fake_loss.item()
             self.total_train_loss["train/discriminator_loss"] += dis_loss.item()
+
+            # logging.info("dis_loss: {}".format(dis_loss))
 
             # update discriminator
             self.optimizer["discriminator"].zero_grad()
@@ -385,7 +390,7 @@ class Trainer(object):
         elif self.use_duration_prediction:
             assert ds is not None
             y_, ds_ = self.model["generator"](x, ds)
-            duration_loss = self.criterion["duration"](ds_, ds)
+            duration_loss = self.criterion["duration"](ds_, torch.log(ds))
         else:
             y_ = self.model["generator"](*x)
         if self.config["generator_params"]["out_channels"] > 1:
@@ -509,7 +514,7 @@ class Trainer(object):
 
         # parse batch and send to device
         if self.use_duration_prediction:
-            x_batch, y_batch, ds_batch = self._parse_batch(batch)
+            x_batch, y_batch, _ = self._parse_batch(batch)
         else:
             x_batch, y_batch = self._parse_batch(batch)
 
@@ -522,7 +527,7 @@ class Trainer(object):
                     self.criterion["pqmf"].analysis(y_batch), *x_batch
                 )
         elif self.use_duration_prediction:
-            y_batch_ = self.model["generator"].synthesis(x_batch)
+            y_batch_, _ = self.model["generator"].synthesis(x_batch)
         else:
             y_batch_ = self.model["generator"](*x_batch)
         if self.config["generator_params"]["out_channels"] > 1:
@@ -536,6 +541,9 @@ class Trainer(object):
         for idx, (y, y_) in enumerate(zip(y_batch, y_batch_), 1):
             # convert to ndarray
             y, y_ = y.view(-1).cpu().numpy(), y_.view(-1).cpu().numpy()
+
+            logging.info("y: {}, y_: {}".format(y.shape, y_.shape))
+            logging.info("y:{}, y_:{}".format(y[:10], y_[:10]))
 
             # plot figure and save it
             figname = os.path.join(dirname, f"{idx}.png")
@@ -754,7 +762,7 @@ class Collater(object):
                     code, d = torch.unique_consecutive(torch.tensor(c, dtype=torch.long), return_counts=True, dim=0)
                     # logging.info("code: {}, d: {}, c:{}".format(code.size(), d.size(), c.shape))
                     updated_c_batch.append(code)
-                    d_batch.append(torch.tensor(d, dtype=torch.long))
+                    d_batch.append(d)
                 c_batch = self._pad_list(updated_c_batch, self.pad_value).transpose(
                     2, 1
                 )  # (B, C, T')

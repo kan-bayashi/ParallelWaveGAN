@@ -1106,6 +1106,8 @@ class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
             Tensor: Output tensor (B, out_channels, T').
 
         """
+
+        # logging.info("c from start: {}, ds from start: {}".format(c.size(), ds.size()))
         # convert idx to embedding
         if self.num_spk_embs > 0:
             assert c.size(1) == 2
@@ -1122,9 +1124,13 @@ class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
         else:
             assert c.size(1) == 1
             c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
+        
+        # logging.info("c after embedding: {}".format(c.size()))
 
         ds_out = self.duration_predictor(c.transpose(1, 2))
         c = self.length_regulator(c.transpose(1, 2), ds).transpose(1, 2)
+
+        # logging.info("c after length regulator: {}, ds_out: {}".format(c.size(), ds_out.size()))
 
         c = self.input_conv(c)
         for i in range(self.num_upsamples):
@@ -1134,6 +1140,8 @@ class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
                 cs += self.blocks[i * self.num_blocks + j](c)
             c = cs / self.num_blocks
         c = self.output_conv(c)
+        # logging.info("c after generator: {}".format(c.size()))
+        # logging.info("finish one generator foward")
 
         return c, ds_out
 
