@@ -145,7 +145,7 @@ def main():
     # get text
     with open(args.text) as f:
         lines = [line.strip() for line in f.readlines()]
-    text = {line.split("\t")[0]: line.split("\t")[1].split() for line in lines}
+    text = {line.split(maxsplit=1)[0]: line.split(maxsplit=1)[1].split() for line in lines}
 
     # load spk2utt file
     if args.utt2spk is not None:
@@ -199,7 +199,8 @@ def main():
 
         # make sure the audio length and feature length are matched
         logging.info(f"Mod: {len(audio) - len(mel) * config['hop_size']}")
-        assert len(mel) * config["hop_size"] <= len(audio)
+        # assert len(mel) * config["hop_size"] <= len(audio)
+        mel = mel[: len(audio) // config["hop_size"]]
         audio = audio[: len(mel) * config["hop_size"]]
         assert len(mel) * config["hop_size"] == len(audio)
 
