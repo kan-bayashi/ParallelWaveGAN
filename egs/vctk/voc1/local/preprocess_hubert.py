@@ -199,6 +199,9 @@ def main():
 
         # make sure the audio length and feature length are matched
         logging.info(f"Mod: {len(audio) - len(mel) * config['hop_size']}")
+
+        if len(mel) * config["hop_size"] <= len(audio):
+            logging.warning("len(mel) * config['hop_size'] <= len(audio), may be errors")
         # assert len(mel) * config["hop_size"] <= len(audio)
         mel = mel[: len(audio) // config["hop_size"]]
         audio = audio[: len(mel) * config["hop_size"]]
