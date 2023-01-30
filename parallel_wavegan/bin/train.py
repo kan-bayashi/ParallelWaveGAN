@@ -213,7 +213,6 @@ class Trainer(object):
                 y_, ds_ = self.model["generator"](x, ds)
                 duration_loss = self.criterion["duration"](ds_, ds)
                 self.total_train_loss["train/duration_loss"] += duration_loss.item()
-                # logging.info("duration_loss: {}".format(duration_loss))
                 gen_loss += duration_loss
             else:
                 y_ = self.model["generator"](*x)
@@ -279,8 +278,6 @@ class Trainer(object):
 
             self.total_train_loss["train/generator_loss"] += gen_loss.item()
 
-            # logging.info("gen_loss: {}".format(gen_loss))
-
             # update generator
             self.optimizer["generator"].zero_grad()
             gen_loss.backward()
@@ -320,8 +317,6 @@ class Trainer(object):
             self.total_train_loss["train/real_loss"] += real_loss.item()
             self.total_train_loss["train/fake_loss"] += fake_loss.item()
             self.total_train_loss["train/discriminator_loss"] += dis_loss.item()
-
-            # logging.info("dis_loss: {}".format(dis_loss))
 
             # update discriminator
             self.optimizer["discriminator"].zero_grad()
@@ -757,9 +752,11 @@ class Collater(object):
             if self.use_duration:
                 updated_c_batch, d_batch = [], []
                 for c in c_batch:
-                    # NOTE(jiatong): assume 0 is the discrete symbol 
+                    # NOTE(jiatong): assume 0 is the discrete symbol
                     # (refer to cvss_c/local/preprocess_hubert.py)
-                    code, d = torch.unique_consecutive(torch.tensor(c, dtype=torch.long), return_counts=True, dim=0)
+                    code, d = torch.unique_consecutive(
+                        torch.tensor(c, dtype=torch.long), return_counts=True, dim=0
+                    )
                     # logging.info("code: {}, d: {}, c:{}".format(code.size(), d.size(), c.shape))
                     updated_c_batch.append(code)
                     d_batch.append(d)

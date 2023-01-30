@@ -1065,7 +1065,7 @@ class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
             in_channels=in_channels,
             out_channels=out_channels,
             channels=channels,
-            num_embs=num_embs + 1, # for padding case
+            num_embs=num_embs + 1,  # for padding case
             num_spk_embs=num_spk_embs,
             spk_emb_dim=spk_emb_dim,
             concat_spk_emb=concat_spk_emb,
@@ -1124,7 +1124,7 @@ class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
         else:
             assert c.size(1) == 1
             c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
-        
+
         # logging.info("c after embedding: {}".format(c.size()))
 
         ds_out = self.duration_predictor(c.transpose(1, 2))
@@ -1163,13 +1163,12 @@ class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
             c = torch.cat([c, c.new_zeros(*c.size()).fill_(g).to(c.device)], dim=1)
         if self.num_spk_embs <= 0:
             c = c[:, 0:1]
-        
+
         if ds is None:
             c = self.synthesis(c.transpose(1, 0).unsqueeze(0))
         else:
             c = self.synthesis(c.transpose(1, 0).unsqueeze(0), ds.unsqueeze(0))
         return c.squeeze(0).transpose(1, 0)
-
 
     def synthesis(self, c):
         """Synthesis with duration prediction.
@@ -1198,7 +1197,6 @@ class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
             c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
 
         ds_out = self.duration_predictor.inference(c.transpose(1, 2))
-        # logging.info("ds_out: {}, c: {}".format(ds_out.size(), c.size()))
         c = self.length_regulator(c.transpose(1, 2), ds_out).transpose(1, 2)
 
         c = self.input_conv(c)
