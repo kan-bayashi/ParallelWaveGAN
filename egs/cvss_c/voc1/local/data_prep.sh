@@ -26,7 +26,7 @@ for subset in "train" "dev" "test"; do
     mkdir -p "${data_dir}/${subset}"
     scp="${data_dir}/${subset}/wav.scp"
     [ -e "${scp}" ] && rm "${scp}"
-    find "${db_root}" -follow -name "*.wav" | sort | while read -r filename; do
+    find "${db_root}/${subset}" -follow -name "*.wav" | sort | while read -r filename; do
         id=$(basename "${filename}" | sed -e "s/\.[^\.]*$//g")
         echo "${id} cat ${filename} | sox -t wav - -c 1 -b 16 -t wav - rate ${fs} |" >> "${scp}"
     done
