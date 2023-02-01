@@ -169,7 +169,8 @@ class HiFiGANGenerator(torch.nn.Module):
         # reset parameters
         self.reset_parameters()
 
-    def forward(self, excitation=None, f0=None, c=None):
+    # def forward(self, c=None, **kwargs ):
+    def forward(self, c=None, f0=None, excitation=None):
         """Calculate forward propagation.
 
         Args:
@@ -181,20 +182,6 @@ class HiFiGANGenerator(torch.nn.Module):
             Tensor: Output tensor (B, out_channels, T).
 
         """
-        logging.info(f'c:{c.shape}')
-        logging.info(f'f0:{f0.shape}')
-        logging.info(f'excitation:{excitation.shape}')
-        logging.info(f'c:{c.shape}')
-        # if f0 is not None:
-        #     c = torch.cat( (c,f0), 1)
-        # if excitation is not None:
-        #     c = torch.cat( (c,excitation), 1)
-        if f0 is not None and excitation is not None:
-            c = torch.cat( (c, f0, excitation) ,1)
-        # elif f0 is not None:
-        #     c = torch.cat( (c,f0), 1)
-        # elif excitation is not None:
-        #     c = torch.cat( (c,excitation), 1)
             
         c = self.input_conv(c)
         for i in range(self.num_upsamples):
@@ -264,7 +251,7 @@ class HiFiGANGenerator(torch.nn.Module):
         self.register_buffer("scale", torch.from_numpy(scale).float())
         logging.info("Successfully registered stats as buffer.")
 
-    def inference(self, excitation, f0, c, normalize_before=False):
+    def inference(self, c, f0=None, excitation=None,normalize_before=False):
         """Perform inference.
 
         Args:
@@ -275,23 +262,29 @@ class HiFiGANGenerator(torch.nn.Module):
             Tensor: Output tensor (T ** prod(upsample_scales), out_channels).
 
         """
-        # print(len(c))
-        # logging.info(f'len(c):{len(c)}')
-        # excitation, f0, c = c
+        
         if c is not None and not isinstance(c, torch.Tensor):
             c = torch.tensor(c, dtype=torch.float).to(next(self.parameters()).device)
-        if excitation is not None and not isinstance(excitation, torch.Tensor):
-            excitation = torch.tensor(excitation, dtype=torch.float).to(next(self.parameters()).device)
         if f0 is not None and not isinstance(f0, torch.Tensor):
             f0 = torch.tensor(f0, dtype=torch.float).to(next(self.parameters()).device)
+        if excitation is not None and not isinstance(excitation, torch.Tensor):
+            excitation = torch.tensor(excitation, dtype=torch.float).to(next(self.parameters()).device)
 
         if normalize_before:
             c = (c - self.mean) / self.scale
-        # logging.info(f'excitation.shape:{excitation.shape}')
-        # logging.info(f'f0.shape:{f0.shape}')
-        # logging.info(f'c.shape:{c.shape}')
-        # c = self.forward(None, None, c.transpose(1, 0).unsqueeze(0))
-        c = self.forward(excitation.transpose(1, 0).unsqueeze(0), f0.unsqueeze(1).transpose(1, 0).unsqueeze(0), c.transpose(1, 0).unsqueeze(0))
+        
+        batch = dict()
+        if c is not None:
+            c=c.transpose(1, 0).unsqueeze(0)
+            batch.update(c=c)
+        if f0 is not None:
+            f0=f0.unsqueeze(1).transpose(1, 0).unsqueeze(0)
+            batch.update(f0=f0)
+        if excitation is not None:
+            excitation=excitation.transpose(1, 0).unsqueeze(0)
+            batch.update(excitation=excitation)
+
+        c = self.forward(**batch)
         return c.squeeze(0).transpose(1, 0)
 
 

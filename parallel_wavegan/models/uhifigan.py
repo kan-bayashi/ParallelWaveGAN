@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""HiFi-GAN Modules.
+"""Unet-baed HiFi-GAN Modules.
 
 This code is based on https://github.com/jik876/hifi-gan.
 
@@ -74,260 +74,54 @@ class UHiFiGANGenerator(torch.nn.Module):
         self.num_blocks = len(resblock_kernel_sizes)
         self.use_causal_conv = use_causal_conv
 
-        self.downsamples = torch.nn.ModuleList()
+        self.input_conv = None
 
-        self.hidden = torch.nn.ModuleList()
+        self.downsamples = torch.nn.ModuleList()
+        self.downsamples_mrf = torch.nn.ModuleList()
+
+        self.hidden_conv = None
 
         self.upsamples = torch.nn.ModuleList()
-        self.blocks = torch.nn.ModuleList()
+        self.upsamples_mrf = torch.nn.ModuleList()
 
-        if not use_causal_conv:
-            pre_channels = 1
-            nxt_channels = 32
-            for i in range(len(downsample_scales)):
-                self.downsamples += [ 
-                    torch.nn.Sequential(
-                        torch.nn.Conv1d(
-                            pre_channels,
-                            nxt_channels,
-                            kernel_size=kernel_size,
-                            bias=bias,
-                            padding=(kernel_size - 1 ) // 2 ,
-                        ),
-                        torch.nn.Dropout(dropout),
-                        getattr(torch.nn, nonlinear_activation)(
-                            **nonlinear_activation_params
-                        ),
-                    )
-                ]
-                self.downsamples += [ 
-                    torch.nn.Sequential(
-                        torch.nn.Conv1d(
-                            nxt_channels,
-                            nxt_channels,
-                            kernel_size=downsample_kernel_sizes[i],
-                            stride=downsample_scales[i],
-                            bias=bias,
-                            padding=downsample_scales[i] // 2 + downsample_scales[i] % 2,
-                        ),
-                        torch.nn.Dropout(dropout),
-                        getattr(torch.nn, nonlinear_activation)(
-                            **nonlinear_activation_params
-                        ),
-                        # torch.nn.MaxPool1d(downsample_scales[i], return_indices=False, padding=(downsample_scales[i] - 1) // 2),
-                    )
-                ]
-                pre_channels = nxt_channels
-                nxt_channels = nxt_channels * 2
-            self.hidden += [
-                            torch.nn.Sequential(
-                                torch.nn.Conv1d(
-                                    pre_channels,
-                                    pre_channels-in_channels,
-                                    kernel_size=kernel_size,
-                                    bias=bias,
-                                    padding=(kernel_size - 1) // 2,
-                                ),
-                                torch.nn.Dropout(dropout),
-                                getattr(torch.nn, nonlinear_activation)(
-                                    **nonlinear_activation_params
-                                ),
-                            )
-                        ]
-            self.hidden += [
-                            torch.nn.Sequential(
-                                torch.nn.Conv1d(
-                                    pre_channels * 2,
-                                    pre_channels,
-                                    kernel_size=kernel_size,
-                                    bias=bias,
-                                    padding=(kernel_size - 1) // 2,
-                                ),
-                                torch.nn.Dropout(dropout),
-                                getattr(torch.nn, nonlinear_activation)(
-                                    **nonlinear_activation_params
-                                ),
-                            )
-                        ]
-
-            # self.input_conv = torch.nn.Conv1d(
-            #     in_channels,
-            #     channels,
-            #     kernel_size,
-            #     bias=bias,
-            #     padding=(kernel_size - 1) // 2,
-            # )
-        else:
-            pre_channels = 1
-            nxt_channels = 32
-            for i in range(len(downsample_scales)):
-                self.downsamples += [ 
-                    torch.nn.Sequential(
-                        CausalConv1d(
-                            pre_channels,
-                            nxt_channels,
-                            kernel_size=kernel_size,
-                            bias=bias,
-                            padding=(kernel_size - 1 ) // 2 ,
-                        ),
-                        torch.nn.Dropout(dropout),
-                        getattr(torch.nn, nonlinear_activation)(
-                            **nonlinear_activation_params
-                        ),
-                    )
-                ]
-
-                self.downsamples += [ 
-                    torch.nn.Sequential(
-                        CausalConv1d(
-                            nxt_channels,
-                            nxt_channels,
-                            kernel_size=downsample_kernel_sizes[i],
-                            stride=downsample_scales[i],
-                            bias=bias,
-                            padding=downsample_scales[i] // 2 + downsample_scales[i] % 2,
-                        ),
-                        torch.nn.Dropout(dropout),
-                        getattr(torch.nn, nonlinear_activation)(
-                            **nonlinear_activation_params
-                        ),
-                        # torch.nn.MaxPool1d(downsample_scales[i], return_indices=False, padding=(downsample_scales[i] - 1) // 2),
-                    )
-                ]
-                pre_channels = nxt_channels
-                nxt_channels = nxt_channels * 2
-                self.hidden += [
-                            torch.nn.Sequential(
-                                CausalConv1d(
-                                    pre_channels,
-                                    pre_channels-in_channels,
-                                    kernel_size=kernel_size,
-                                    bias=bias,
-                                    padding=(kernel_size - 1) // 2,
-                                ),
-                                torch.nn.Dropout(dropout),
-                                getattr(torch.nn, nonlinear_activation)(
-                                    **nonlinear_activation_params
-                                ),
-                            )
-                        ]
-                self.hidden += [
-                            torch.nn.Sequential(
-                                CausalConv1d(
-                                    pre_channels * 2,
-                                    pre_channels,
-                                    kernel_size=kernel_size,
-                                    bias=bias,
-                                    padding=(kernel_size - 1) // 2,
-                                ),
-                                torch.nn.Dropout(dropout),
-                            )
-                        ]
-            # self.input_conv = CausalConv1d(
-            #     in_channels,
-            #     channels,
-            #     kernel_size,
-            #     bias=bias,
-            # )
-            
+        self.output_conv = None
         
-
-        hidden_channel = pre_channels
-        # pre_channels = pre_channels * 2
-
-        for i in range(len(upsample_kernel_sizes)):
-            # assert upsample_kernel_sizes[i] == 2 * upsample_scales[i]
-            if not use_causal_conv:
-                self.upsamples += [
-                    torch.nn.Sequential(
-                        getattr(torch.nn, nonlinear_activation)(
+        if not use_causal_conv:
+            self.input_conv = torch.nn.Sequential(
+                            torch.nn.Conv1d(
+                                out_channels,
+                                channels,
+                                kernel_size=kernel_size,
+                                bias=bias,
+                                padding=(kernel_size - 1 ) // 2 ,
+                            ),
+                            getattr(torch.nn, nonlinear_activation)(
                             **nonlinear_activation_params
-                        ),
-                        # torch.nn.MaxUnpool1d(upsample_scales[i]),
-                        torch.nn.ConvTranspose1d(
-                            pre_channels * 2,
-                            pre_channels,
-                            upsample_kernel_sizes[i],
-                            upsample_scales[i],
-                            padding=upsample_scales[i] // 2 + upsample_scales[i] % 2,
-                            output_padding=upsample_scales[i] % 2,
-                            bias=bias,
-                        ),
-                    )
-                ]
-                self.upsamples += [
-                    torch.nn.Sequential(
-                        getattr(torch.nn, nonlinear_activation)(
-                            **nonlinear_activation_params
-                        ),
-                        # torch.nn.MaxUnpool1d(upsample_scales[i]),
-                        # torch.nn.ConvTranspose1d(
-                        #     pre_channels,
-                        #     pre_channels // 2,
-                        #     upsample_kernel_sizes[i],
-                        #     upsample_scales[i],
-                        #     padding=upsample_scales[i] // 2 + upsample_scales[i] % 2,
-                        #     output_padding=upsample_scales[i] % 2,
-                        #     bias=bias,
-                        # ),
-
-                        torch.nn.Conv1d(
-                            pre_channels * 2,
-                            pre_channels // 2,
-                            kernel_size=kernel_size,
-                            padding=(kernel_size - 1 ) // 2,
-                            bias=bias,
-                        ),
-                    )
-                ]
-                # pre_channels = pre_channels // 2
-            else:
-                self.upsamples += [
-                    torch.nn.Sequential(
-                        getattr(torch.nn, nonlinear_activation)(
-                            **nonlinear_activation_params
-                        ),
-                        # torch.nn.MaxUnpool1d(upsample_scales[i]),
-                        CausalConvTranspose1d(
-                            pre_channels * 2, # channels // (2**i)
-                            pre_channels // 2,  # channels // (2**(i+1))
-                            upsample_kernel_sizes[i],
-                            upsample_scales[i],
-                            bias=bias,
-                        ),
-                    )
-                ]
-
-                self.upsamples += [
-                    torch.nn.Sequential(
-                        getattr(torch.nn, nonlinear_activation)(
-                            **nonlinear_activation_params
-                        ),
-                        # torch.nn.MaxUnpool1d(upsample_scales[i]),
-                        # CausalConvTranspose1d(
-                        #     pre_channels ,
-                        #     pre_channels // 2,
-                        #     upsample_kernel_sizes[i],
-                        #     upsample_scales[i],
-                        #     bias=bias,
-                        # ),
+                            ),
+                            torch.nn.Dropout(dropout),
+                            )
+        else:
+            self.input_conv = torch.nn.Sequential(
                         CausalConv1d(
-                            pre_channels * 2,
-                            pre_channels // 2,
-                            kernel_size=kernel_size ,
-                            padding=(kernel_size - 1) // 2,
+                            out_channels,
+                            channels,
+                            kernel_size=kernel_size,
                             bias=bias,
+                            padding=(kernel_size - 1 ) // 2 ,
                         ),
-                    )
-                ]
-                
-            # hidden_channel for MRF module
+                        getattr(torch.nn, nonlinear_activation)(
+                            **nonlinear_activation_params
+                        ),
+                        torch.nn.Dropout(dropout),
+                        )
+                        
+        for i in range(len(downsample_scales)):
+
             for j in range(len(resblock_kernel_sizes)):
-                self.blocks += [
+                    self.downsamples_mrf += [
                     ResidualBlock(
                         kernel_size=resblock_kernel_sizes[j],
-                        in_channels=pre_channels // 2,
-                        out_channels=pre_channels // 2,
+                        channels=channels,
                         dilations=resblock_dilations[j],
                         bias=bias,
                         use_additional_convs=use_additional_convs,
@@ -337,7 +131,111 @@ class UHiFiGANGenerator(torch.nn.Module):
                     )
                 ]
 
-            pre_channels = pre_channels // 2
+            if not use_causal_conv:
+                self.downsamples += [ 
+                    torch.nn.Sequential(
+                        torch.nn.Conv1d(
+                            channels,
+                            channels * 2,
+                            kernel_size=downsample_kernel_sizes[i],
+                            stride=downsample_scales[i],
+                            bias=bias,
+                            padding=downsample_scales[i] // 2 + downsample_scales[i] % 2,
+                        ),
+                        getattr(torch.nn, nonlinear_activation)(
+                            **nonlinear_activation_params
+                        ),
+                        torch.nn.Dropout(dropout),
+                    )
+                ]
+            else:
+                self.downsamples += [ 
+                    torch.nn.Sequential(
+                        CausalConv1d(
+                            channels,
+                            channels * 2,
+                            kernel_size=downsample_kernel_sizes[i],
+                            stride=downsample_scales[i],
+                            bias=bias,
+                            padding=downsample_scales[i] // 2 + downsample_scales[i] % 2,
+                        ),
+                        getattr(torch.nn, nonlinear_activation)(
+                            **nonlinear_activation_params
+                        ),
+                        torch.nn.Dropout(dropout),
+                    )
+                ]
+
+            channels = channels * 2
+
+        if not use_causal_conv:
+            self.hidden_conv = torch.nn.Conv1d(
+                                in_channels,
+                                channels,
+                                kernel_size=kernel_size,
+                                bias=bias,
+                                padding=(kernel_size - 1 ) // 2 ,
+                            )
+        else:
+            self.hidden_conv = CausalConv1d(
+                            in_channels,
+                            channels,
+                            kernel_size=kernel_size,
+                            bias=bias,
+                            padding=(kernel_size - 1 ) // 2 ,
+                        )
+
+        for i in range(len(upsample_kernel_sizes)):
+            # assert upsample_kernel_sizes[i] == 2 * upsample_scales[i]
+            if not use_causal_conv:
+                self.upsamples += [
+                    torch.nn.Sequential(
+                        getattr(torch.nn, nonlinear_activation)(
+                            **nonlinear_activation_params
+                        ),
+                        torch.nn.ConvTranspose1d(
+                            channels * 2,
+                            channels // 2,
+                            upsample_kernel_sizes[i],
+                            upsample_scales[i],
+                            padding=upsample_scales[i] // 2 + upsample_scales[i] % 2,
+                            output_padding=upsample_scales[i] % 2,
+                            bias=bias,
+                        ),
+                    )
+                ]
+            else:
+                self.upsamples += [
+                    torch.nn.Sequential(
+                        getattr(torch.nn, nonlinear_activation)(
+                            **nonlinear_activation_params
+                        ),
+                        CausalConvTranspose1d(
+                            channels * 2,
+                            channels // 2,
+                            upsample_kernel_sizes[i],
+                            upsample_scales[i],
+                            bias=bias,
+                        ),
+                    )
+                ]
+                
+            # hidden_channel for MRF module
+            for j in range(len(resblock_kernel_sizes)):
+                self.upsamples_mrf += [
+                    ResidualBlock(
+                        kernel_size=resblock_kernel_sizes[j],
+                        channels=channels // 2,
+                        dilations=resblock_dilations[j],
+                        bias=bias,
+                        use_additional_convs=use_additional_convs,
+                        nonlinear_activation=nonlinear_activation,
+                        nonlinear_activation_params=nonlinear_activation_params,
+                        use_causal_conv=use_causal_conv,
+                    )
+                ]
+
+            channels = channels // 2
 
             # hidden_channel for MRF module
             # for j in range(len(resblock_kernel_sizes)):
@@ -360,7 +258,7 @@ class UHiFiGANGenerator(torch.nn.Module):
                 #   using different slope parameter here? (0.1 vs. 0.01)
                 torch.nn.LeakyReLU(),
                 torch.nn.Conv1d(
-                    pre_channels,
+                    channels,
                     out_channels,
                     kernel_size,
                     bias=bias,
@@ -374,7 +272,7 @@ class UHiFiGANGenerator(torch.nn.Module):
                 #   using different slope parameter here? (0.1 vs. 0.01)
                 torch.nn.LeakyReLU(),
                 CausalConv1d(
-                    pre_channels,
+                    channels,
                     out_channels,
                     kernel_size,
                     bias=bias,
@@ -416,78 +314,39 @@ class UHiFiGANGenerator(torch.nn.Module):
         #     c = torch.cat( (c,f0), 1)
         # elif excitation is not None:
         #     c = torch.cat( (c,excitation), 1)
-            
-        # c = self.input_conv(c)
-        # for i in range(self.num_upsamples):
-        #     c = self.upsamples[i](c)
-        #     cs = 0.0  # initialize
-        #     for j in range(self.num_blocks):
-        #         cs += self.blocks[i * self.num_blocks + j](c)
-        #     c = cs / self.num_blocks
-        # c = self.output_conv(c)
 
-        residual_results = [ excitation ]
-        # residual_results = [ (excitation, None) ]
-        hidden = excitation
+        residual_results = []
+        hidden = self.input_conv( excitation )
         
-        # i = 0
-        # # for i in range(len(self.downsamples)):
-        # while i < len(self.downsamples):
-        #     hidden = self.downsamples[i](hidden)
-        #     residual_results.append( (hidden, None) )
-        #     i += 1
-
-        #     hidden, index = self.downsamples[i](hidden)
-        #     residual_results.append( (hidden, index) )
-        #     i += 1
-
         for i in range(len(self.downsamples)):
-            # logging.warn(f'bef {i}-th downsample:{hidden.shape}')
+            cs = 0.0  # initialize
+            for j in range(self.num_blocks):
+                tc = self.downsamples_mrf[i * self.num_blocks + j](hidden)
+                cs += tc
+            hidden = cs / self.num_blocks
             hidden = self.downsamples[i](hidden)
-            # logging.warn(f'aft {i}-th downsampe:{hidden.shape}')
             residual_results.append(hidden)
         
 
         # logging.warn(f'hidden:{hidden.shape}')
-        
-        hidden_mel = self.hidden[0](hidden)
-
-        # residual_results.append(hidden_mel)
         residual_results.reverse()
         # logging.warn(f'residual_results:{ [r.shape for r in residual_results] }')
 
-        # logging.info(f'hidden_mel:{hidden_mel.shape}')
-        # logging.info(f'c:{c.shape}')
-        # logging.info(f'hidden:{hidden.shape}')
-        hidden_mel = torch.cat( (hidden_mel, c, hidden ), dim=1)
-        # logging.info(f'merged hidden:{hidden_mel.shape}')
-        hidden_mel = self.hidden[1](hidden_mel)
+        hidden_mel = self.hidden_conv(c)
 
-        # i = 0
-        # # for i in range(len(self.upsamples)):
-        # while i < len(self.downsamples):
-        #     hidden_mel = hidden_mel + residual_results[i][0]
-        #     hidden_mel = self.upsamples[i](hidden_mel, residual_results[i][1])
-        #     i += 1
-
-        #     hidden_mel = hidden_mel + residual_results[i][0]
-        #     hidden_mel = self.upsamples[i](hidden_mel)
-        #     i += 1
-
-        for i in range(len(self.upsamples) // 2):
+        for i in range(len(self.upsamples)):
             # logging.warn(f'bef {i}-th upsampe:{hidden_mel.shape}')
-            # logging.warn(f'bef {i}-th upsampe:{residual_results[i * 2].shape}')
-            hidden_mel = torch.cat((hidden_mel, residual_results[i * 2]), dim=1)
-            hidden_mel = self.upsamples[i * 2](hidden_mel)
-            # logging.warn(f'bef {i}-th MRF:{hidden_mel.shape}')
-            # logging.warn(f'bef {i}-th MRF:{residual_results[i * 2 +1].shape}')
+            # logging.warn(f'bef {i}-th upsampe:{residual_results[i].shape}')
+            hidden_mel = torch.cat( ( hidden_mel, residual_results[i] ), dim=1)
+            # logging.warn(f'aft {i}-th upsample :{hidden_mel.shape}')
+            hidden_mel = self.upsamples[i](hidden_mel)
 
-            hidden_mel = torch.cat((hidden_mel, residual_results[i * 2 + 1]), dim=1)
-            hidden_mel = self.upsamples[i * 2 + 1](hidden_mel)
-            # logging.warn(f'bef {i}-th MRF merged feats 2 :{hidden_mel.shape}')
+            # logging.warn(f'bef {i}-th MRF:{hidden_mel.shape}')
+            # logging.warn(f'self.upsamples_mrf:{self.upsamples_mrf}')
             cs = 0.0  # initialize
             for j in range(self.num_blocks):
-                tc = self.blocks[i * self.num_blocks + j](hidden_mel)
+                # logging.warn(f'upsamples_mrf[{i * self.num_blocks + j}]:{self.upsamples_mrf[i * self.num_blocks + j]}')
+                tc = self.upsamples_mrf[i * self.num_blocks + j](hidden_mel)
                 # logging.info(f'{j}-th tc.shape:{tc.shape}')
                 cs += tc
             hidden_mel = cs / self.num_blocks

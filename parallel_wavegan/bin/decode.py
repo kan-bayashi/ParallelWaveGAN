@@ -186,12 +186,27 @@ def main():
         for idx, (utt_id, c, f0, excitation) in enumerate(pbar, 1):
         # for idx, (utt_id, c) in enumerate(pbar, 1):
             # generate
-            c = torch.tensor(c, dtype=torch.float).to(device)
-            f0 = torch.tensor(f0, dtype=torch.float).to(device)
-            excitation = torch.tensor(excitation, dtype=torch.float).to(device)
+            batch = dict(
+                normalize_before=args.normalize_before
+            )
+            if c is not None:
+                c = torch.tensor(c, dtype=torch.float).to(device)
+                batch.update(
+                    c=c
+                )
+            if f0 is not None: 
+                f0 = torch.tensor(f0, dtype=torch.float).to(device)
+                batch.update(
+                    f0=f0
+                )
+            if excitation is not None: 
+                excitation = torch.tensor(excitation, dtype=torch.float).to(device)
+                batch.update(
+                    excitation=excitation
+                )
             start = time.time()
-            # y = model.inference(None, None, c, normalize_before=args.normalize_before).view(-1)
-            y = model.inference(excitation, f0, c, normalize_before=args.normalize_before).view(-1)
+            # y = model.inference( c, normalize_before=args.normalize_before).view(-1)
+            y = model.inference( **batch ).view(-1)
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf

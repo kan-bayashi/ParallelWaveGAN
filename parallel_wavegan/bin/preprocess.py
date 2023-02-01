@@ -16,6 +16,7 @@ import numpy as np
 import soundfile as sf
 import yaml
 import torch
+import torch.fft
 import torchyin
 
 from tqdm import tqdm
@@ -464,9 +465,9 @@ def main():
         
         # excitation = excitation.transpose(1,0)
 
-        logging.warn(f'excitation.shape:{excitation.shape}')
-        logging.warn(f'f0.shape:{f0.shape}')
-        logging.warn(f'mel.shape:{mel.shape}')
+        # logging.warn(f'excitation.shape:{excitation.shape}')
+        # logging.warn(f'f0.shape:{f0.shape}')
+        # logging.warn(f'mel.shape:{mel.shape}')
         # make sure the audio length and feature length are matched
         audio = audio[: len(mel) * config["hop_size"]]
         assert len(mel) * config["hop_size"] == len(audio)
