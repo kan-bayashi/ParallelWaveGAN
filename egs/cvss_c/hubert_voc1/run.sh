@@ -41,7 +41,7 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
-hubert_text=
+hubert_text=""
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
@@ -50,6 +50,10 @@ set -euo pipefail
 
 if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"
+    if [ ! -e "${db_root}" ]; then
+        echo "CVSS-C dataset does not exist. Please download it by yourself and modify db_root."
+        exit 1
+    fi
     local/data_prep.sh \
         --fs "$(yq ".sampling_rate" "${conf}")" \
         "${db_root}" data
@@ -57,6 +61,16 @@ fi
 
 if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     echo "Stage 1: Feature extraction"
+    if [ ! -e "${hubert_text}" ]; then
+        echo "Valid --hubert_text is not provided. Please prepare it by yourself."
+        echo "hubert_text should be like kaldi-style text as follows:"
+        cat << EOF
+utt_id_1 0 0 0 0 1 1 1 1 2 2 2 2
+utt_id_2 0 0 0 0 0 0 3 3 3 3 3 3 5 5 5 5
+...
+EOF
+        exit 1
+    fi
     # extract raw features
     pids=()
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
