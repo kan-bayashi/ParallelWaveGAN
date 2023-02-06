@@ -319,12 +319,12 @@ def load_model(checkpoint, config=None, stats=None):
         parallel_wavegan.models,
         generator_type,
     )
-    # # workaround for typo #295
-    # generator_params = {
-    #     k.replace("upsample_kernal_sizes", "upsample_kernel_sizes"): v
-    #     for k, v in config["generator_params"].items()
-    # }
-    model = model_class(**config["generator_params"])
+    # workaround for typo #295
+    generator_params = {
+        k.replace("upsample_kernal_sizes", "upsample_kernel_sizes"): v
+        for k, v in config["generator_params"].items()
+    }
+    model = model_class(**generator_params)
     model.load_state_dict(
         torch.load(checkpoint, map_location="cpu")["model"]["generator"]
     )
