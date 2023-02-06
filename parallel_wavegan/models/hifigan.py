@@ -1165,10 +1165,11 @@ class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
         """Synthesis with duration prediction.
 
         Args:
-            c (Tensor): Input tensor (B, 2, T) or (B, 1, T)
+            c (Tensor): Input tensor (B, 2, T) or (B, 1, T).
 
         Returns:
-            Tensor: Output tensor (B, out_channels, T')
+            Tensor: Output tensor (B, out_channels, T').
+
         """
         # convert idx to embedding
         if self.num_spk_embs > 0:
