@@ -47,7 +47,6 @@ def make_segment(file_id, labels):
     segment = SegInfo()
     running_end = 0
     for label in labels:
-
         if float(running_end) + 1 < float(label.start):
             if len(segment.segs) > 0:
                 segments.append(segment.segs)
