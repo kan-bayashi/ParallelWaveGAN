@@ -463,7 +463,8 @@ $ parallel-wavegan-decode \
 
 ## Notes
 
-The terms of use of the pretrained model follow that of each corpus used for the training. Please carefully check by yourself.  
+- The terms of use of the pretrained model follow that of each corpus used for the training. Please carefully check by yourself.  
+- Some codes are derived from ESPnet or Kaldi, which are based on Apache-2.0 licenese.
 
 ## References
 

@@ -15,6 +15,8 @@ import torch.nn.functional as F
 
 from parallel_wavegan.layers import CausalConv1d, CausalConvTranspose1d
 from parallel_wavegan.layers import HiFiGANResidualBlock as ResidualBlock
+from parallel_wavegan.layers.duration_predictor import DurationPredictor
+from parallel_wavegan.layers.length_regulator import LengthRegulator
 from parallel_wavegan.utils import read_hdf5
 
 
@@ -805,6 +807,10 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
             in_channels (int): Number of input channels.
             out_channels (int): Number of output channels.
             channels (int): Number of hidden representation channels.
+            num_embs (int): Discrete symbol size
+            num_spk_embs (int): Speaker numbers for sPkeaer ID-based embedding
+            spk_emb_dim (int): Dimension of speaker embedding
+            concat_spk_emb (bool): whether to concat speaker embedding to the input
             kernel_size (int): Kernel size of initial and final conv layer.
             upsample_scales (list): List of upsampling scales.
             upsample_kernal_sizes (list): List of kernal sizes for upsampling layers.
@@ -997,3 +1003,201 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
             c = c[:, 0:1]
         c = self.forward(c.transpose(1, 0).unsqueeze(0))
         return c.squeeze(0).transpose(1, 0)
+
+
+class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
+    """Discrete Symbol HiFiGAN generator with duration predictor module."""
+
+    def __init__(
+        self,
+        in_channels=512,
+        out_channels=1,
+        channels=512,
+        num_embs=100,
+        num_spk_embs=128,
+        spk_emb_dim=128,
+        concat_spk_emb=False,
+        duration_layers=2,
+        duration_chans=384,
+        duration_kernel_size=3,
+        duration_offset=1.0,
+        duration_dropout_rate=0.5,
+        kernel_size=7,
+        upsample_scales=(8, 8, 2, 2),
+        upsample_kernal_sizes=(16, 16, 4, 4),
+        resblock_kernel_sizes=(3, 7, 11),
+        resblock_dilations=[(1, 3, 5), (1, 3, 5), (1, 3, 5)],
+        use_additional_convs=True,
+        bias=True,
+        nonlinear_activation="LeakyReLU",
+        nonlinear_activation_params={"negative_slope": 0.1},
+        use_weight_norm=True,
+    ):
+        """Initialize DiscreteSymbolDurationGenerator module.
+
+        Args:
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of output channels.
+            channels (int): Number of hidden representation channels.
+            num_embs (int): Discrete symbol size
+            num_spk_embs (int): Speaker numbers for sPkeaer ID-based embedding
+            spk_emb_dim (int): Dimension of speaker embedding
+            concat_spk_emb (bool): whether to concat speaker embedding to the input
+            duration_layers (int): number of duration predictor layers
+            duration_chans (int): number of duration predictor channels
+            duration_kernel_size (int): kernel size for the duration predictor
+            duration_offset (float): duration predictor offset
+            duration_dropout_rate (float): duration predictor dropout rate
+            kernel_size (int): Kernel size of initial and final conv layer.
+            upsample_scales (list): List of upsampling scales.
+            upsample_kernal_sizes (list): List of kernal sizes for upsampling layers.
+            resblock_kernal_sizes (list): List of kernal sizes for residual blocks.
+            resblock_dilations (list): List of dilation list for residual blocks.
+            use_additional_convs (bool): Whether to use additional conv layers in residual blocks.
+            bias (bool): Whether to add bias parameter in convolution layers.
+            nonlinear_activation (str): Activation function module name.
+            nonlinear_activation_params (dict): Hyperparameters for activation function.
+            use_weight_norm (bool): Whether to use weight norm.
+                If set to true, it will be applied to all of the conv layers.
+
+        """
+        super().__init__(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            channels=channels,
+            num_embs=num_embs + 1,  # for padding case
+            num_spk_embs=num_spk_embs,
+            spk_emb_dim=spk_emb_dim,
+            concat_spk_emb=concat_spk_emb,
+            kernel_size=kernel_size,
+            upsample_scales=upsample_scales,
+            upsample_kernal_sizes=upsample_kernal_sizes,
+            resblock_kernel_sizes=resblock_kernel_sizes,
+            resblock_dilations=resblock_dilations,
+            use_additional_convs=use_additional_convs,
+            bias=bias,
+            nonlinear_activation=nonlinear_activation,
+            nonlinear_activation_params=nonlinear_activation_params,
+            use_weight_norm=use_weight_norm,
+        )
+
+        if self.num_spk_embs > 0:
+            in_channels = in_channels + spk_emb_dim
+
+        self.duration_predictor = DurationPredictor(
+            in_channels,
+            n_layers=duration_layers,
+            n_chans=duration_chans,
+            kernel_size=duration_kernel_size,
+            dropout_rate=duration_dropout_rate,
+            offset=duration_offset,
+        )
+
+        self.length_regulator = LengthRegulator()
+
+    def forward(self, c, ds):
+        """Calculate forward propagation.
+
+        Args:
+            c (Tensor): Input tensor (B, 2, T). or (B, 1, T)
+            ds (Tensor): Input tensor (B, T)
+
+        Returns:
+            Tensor: Output tensor (B, out_channels, T').
+        """
+        # convert idx to embedding
+        if self.num_spk_embs > 0:
+            assert c.size(1) == 2
+            c_idx, g_idx = c.long().split(1, dim=1)
+            c = self.emb(c_idx.squeeze(1)).transpose(1, 2)  # (B, C, T)
+            g = self.spk_emb(g_idx[:, 0, 0])
+
+            # integrate global embedding
+            if not self.concat_spk_emb:
+                c = c + g.unsqueeze(2)
+            else:
+                g = g.unsqueeze(1).expand(-1, c.size(1), -1)
+                c = torch.cat([c, g], dim=-1)
+        else:
+            assert c.size(1) == 1
+            c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
+
+        ds_out = self.duration_predictor(c.transpose(1, 2))
+        c = self.length_regulator(c.transpose(1, 2), ds).transpose(1, 2)
+
+        c = self.input_conv(c)
+        for i in range(self.num_upsamples):
+            c = self.upsamples[i](c)
+            cs = 0.0  # initialize
+            for j in range(self.num_blocks):
+                cs += self.blocks[i * self.num_blocks + j](c)
+            c = cs / self.num_blocks
+        c = self.output_conv(c)
+
+        return c, ds_out
+
+    def inference(self, c, g=None, ds=None, normalize_before=False):
+        """Perform inference.
+
+        Args:
+            c (Union[Tensor, ndarray]): Input tensor (T, 2).
+
+        Returns:
+            Tensor: Output tensor (T ** prod(upsample_scales), out_channels).
+
+        """
+        assert not normalize_before, "No statistics are used."
+        if not isinstance(c, torch.Tensor):
+            c = torch.tensor(c, dtype=torch.long).to(next(self.parameters()).device)
+        if g is not None:
+            c = c[:, 0:1]
+            c = torch.cat([c, c.new_zeros(*c.size()).fill_(g).to(c.device)], dim=1)
+        if self.num_spk_embs <= 0:
+            c = c[:, 0:1]
+
+        if ds is None:
+            c = self.synthesis(c.transpose(1, 0).unsqueeze(0))
+        else:
+            c, _ = self.forward(c.transpose(1, 0).unsqueeze(0), ds.unsqueeze(0))
+        return c.squeeze(0).transpose(1, 0)
+
+    def synthesis(self, c):
+        """Synthesis with duration prediction.
+
+        Args:
+            c (Tensor): Input tensor (B, 2, T) or (B, 1, T).
+
+        Returns:
+            Tensor: Output tensor (B, out_channels, T').
+
+        """
+        # convert idx to embedding
+        if self.num_spk_embs > 0:
+            assert c.size(1) == 2
+            c_idx, g_idx = c.long().split(1, dim=1)
+            c = self.emb(c_idx.squeeze(1)).transpose(1, 2)  # (B, C, T)
+            g = self.spk_emb(g_idx[:, 0, 0])
+
+            # integrate global embedding
+            if not self.concat_spk_emb:
+                c = c + g.unsqueeze(2)
+            else:
+                g = g.unsqueeze(1).expand(-1, c.size(1), -1)
+                c = torch.cat([c, g], dim=-1)
+        else:
+            assert c.size(1) == 1
+            c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
+
+        ds_out = self.duration_predictor.inference(c.transpose(1, 2))
+        c = self.length_regulator(c.transpose(1, 2), ds_out).transpose(1, 2)
+
+        c = self.input_conv(c)
+        for i in range(self.num_upsamples):
+            c = self.upsamples[i](c)
+            cs = 0.0  # initialize
+            for j in range(self.num_blocks):
+                cs += self.blocks[i * self.num_blocks + j](c)
+            c = cs / self.num_blocks
+        c = self.output_conv(c)
+
+        return c, ds_out

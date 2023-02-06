@@ -14,9 +14,17 @@ n_gpus=1       # number of gpus in training
 n_jobs=16      # number of parallel jobs in feature extraction
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
-conf=conf/parallel_wavegan_hubert.v1.yaml
+conf=conf/hifigan_hubert.v1.yaml
 
 # directory path setting
+db_root=/usr0/home/jiatongs/data/cvss/es_en-c # direcotry including wavfiles (MODIFY BY YOURSELF)
+                          # each wav filename in the directory should be unique
+                          # e.g.
+                          # /path/to/database
+                          # ├── utt_1.wav
+                          # ├── utt_2.wav
+                          # │   ...
+                          # └── utt_N.wav
 dumpdir=dump           # directory to dump features
 
 # training related setting
@@ -29,11 +37,11 @@ checkpoint="" # checkpoint path to be used for decoding
               # if not provided, the latest one will be used
               # (e.g. <path>/<to>/checkpoint-400000steps.pkl)
 
-train_set=tr_2mix_trim
-dev_set=cv_2mix
-eval_set=tt_2mix
+train_set="train"       # name of training data directory
+dev_set="dev"           # name of development data direcotry
+eval_set="test"         # name of evaluation data direcotry
 
-hubert_text=downloads/dump_feature_hubert9/label_km100_vctk_16k_tr_2mix_trim/all.txt
+hubert_text=""
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
@@ -42,20 +50,13 @@ set -euo pipefail
 
 if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"
-    echo "Data preparation is not prepared."
-    echo "Please manually locate kaldi-style directories as follows:"
-    cat << EOF
-$ ls data/${train_set}
-wav.scp  utt2spk
-$ ls data/${dev_set}
-wav.scp  utt2spk
-$ ls data/${eval_set}
-wav.scp  utt2spk
-EOF
-    # shellcheck disable=SC2016
-    echo 'Please make sure "${hubert_text}" is correctly set.'
-    echo "Then, please run from stage 1 via --stage 1."
-    exit 1;
+    if [ ! -e "${db_root}" ]; then
+        echo "CVSS-C dataset does not exist. Please download it by yourself and modify db_root."
+        exit 1
+    fi
+    local/data_prep.sh \
+        --fs "$(yq ".sampling_rate" "${conf}")" \
+        "${db_root}" data
 fi
 
 if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
@@ -82,8 +83,6 @@ EOF
                 --config "${conf}" \
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
                 --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
-                --utt2spk "data/${name}/utt2spk" \
-                --spk2idx "data/${train_set}/spk2idx" \
                 --text "${hubert_text}" \
                 --verbose "${verbose}"
         echo "Successfully finished feature extraction of ${name} set."
@@ -97,9 +96,9 @@ EOF
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp/${train_set}_vctk_$(basename "${conf}" .yaml)"
+    expdir="exp/${train_set}_cvss_c_$(basename "${conf}" .yaml)"
 else
-    expdir="exp/${train_set}_vctk_${tag}"
+    expdir="exp/${train_set}_cvss_c_${tag}"
 fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"

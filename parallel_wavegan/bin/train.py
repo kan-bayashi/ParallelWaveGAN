@@ -33,6 +33,7 @@ from parallel_wavegan.datasets import (
 from parallel_wavegan.layers import PQMF
 from parallel_wavegan.losses import (
     DiscriminatorAdversarialLoss,
+    DurationPredictorLoss,
     FeatureMatchLoss,
     GeneratorAdversarialLoss,
     MelSpectrogramLoss,
@@ -89,6 +90,9 @@ class Trainer(object):
         self.total_train_loss = defaultdict(float)
         self.total_eval_loss = defaultdict(float)
         self.is_vq = "VQVAE" in config.get("generator_type", "ParallelWaveGANGenerator")
+        self.use_duration_prediction = "Duration" in config.get(
+            "generator_type", "ParallelWaveGANGenerator"
+        )
 
     def run(self):
         """Run training."""
@@ -180,7 +184,10 @@ class Trainer(object):
     def _train_step(self, batch):
         """Train model one step."""
         # parse batch and send to device
-        x, y = self._parse_batch(batch)
+        if self.use_duration_prediction:
+            x, y, ds = self._parse_batch(batch)
+        else:
+            x, y = self._parse_batch(batch)
 
         #######################
         #      Generator      #
@@ -201,6 +208,12 @@ class Trainer(object):
                 self.total_train_loss["train/quantization_loss"] += quantize_loss.item()
                 self.total_train_loss["train/commitment_loss"] += commit_loss.item()
                 gen_loss += quantize_loss + self.config["lambda_commit"] * commit_loss
+            elif self.use_duration_prediction:
+                assert ds is not None
+                y_, ds_ = self.model["generator"](x, ds)
+                duration_loss = self.criterion["duration"](ds_, ds)
+                self.total_train_loss["train/duration_loss"] += duration_loss.item()
+                gen_loss += duration_loss
             else:
                 y_ = self.model["generator"](*x)
 
@@ -288,6 +301,9 @@ class Trainer(object):
                             y_, _, _ = self.model["generator"](y, *x)
                         else:
                             y_, _, _ = self.model["generator"](y_mb, *x)
+                    elif self.use_duration_prediction:
+                        assert ds is not None
+                        y_, _ = self.model["generator"](x, ds)
                     else:
                         y_ = self.model["generator"](*x)
                 if self.config["generator_params"]["out_channels"] > 1:
@@ -350,7 +366,10 @@ class Trainer(object):
     def _eval_step(self, batch):
         """Evaluate model one step."""
         # parse batch and send to device
-        x, y = self._parse_batch(batch)
+        if self.use_duration_prediction:
+            x, y, ds = self._parse_batch(batch)
+        else:
+            x, y = self._parse_batch(batch)
 
         #######################
         #      Generator      #
@@ -363,6 +382,10 @@ class Trainer(object):
                 y_, z_e, z_q = self.model["generator"](y_mb, *x)
             quantize_loss = self.criterion["mse"](z_q, z_e.detach())
             commit_loss = self.criterion["mse"](z_e, z_q.detach())
+        elif self.use_duration_prediction:
+            assert ds is not None
+            y_, ds_ = self.model["generator"](x, ds)
+            duration_loss = self.criterion["duration"](ds_, torch.log(ds))
         else:
             y_ = self.model["generator"](*x)
         if self.config["generator_params"]["out_channels"] > 1:
@@ -435,6 +458,8 @@ class Trainer(object):
         if self.is_vq:
             self.total_eval_loss["eval/quantization_loss"] += quantize_loss.item()
             self.total_eval_loss["eval/commitment_loss"] += commit_loss.item()
+        if self.use_duration_prediction:
+            self.total_eval_loss["eval/duration_loss"] += duration_loss.item()
 
     def _eval_epoch(self):
         """Evaluate model one epoch."""
@@ -483,7 +508,10 @@ class Trainer(object):
         import matplotlib.pyplot as plt
 
         # parse batch and send to device
-        x_batch, y_batch = self._parse_batch(batch)
+        if self.use_duration_prediction:
+            x_batch, y_batch, _ = self._parse_batch(batch)
+        else:
+            x_batch, y_batch = self._parse_batch(batch)
 
         # generate
         if self.is_vq:
@@ -493,6 +521,8 @@ class Trainer(object):
                 y_batch_, _, _ = self.model["generator"](
                     self.criterion["pqmf"].analysis(y_batch), *x_batch
                 )
+        elif self.use_duration_prediction:
+            y_batch_, _ = self.model["generator"].synthesis(x_batch)
         else:
             y_batch_ = self.model["generator"](*x_batch)
         if self.config["generator_params"]["out_channels"] > 1:
@@ -506,6 +536,9 @@ class Trainer(object):
         for idx, (y, y_) in enumerate(zip(y_batch, y_batch_), 1):
             # convert to ndarray
             y, y_ = y.view(-1).cpu().numpy(), y_.view(-1).cpu().numpy()
+
+            logging.info("y: {}, y_: {}".format(y.shape, y_.shape))
+            logging.info("y:{}, y_:{}".format(y[:10], y_[:10]))
 
             # plot figure and save it
             figname = os.path.join(dirname, f"{idx}.png")
@@ -541,7 +574,10 @@ class Trainer(object):
     def _parse_batch(self, batch):
         """Parse batch and send to the device."""
         # parse batch
-        inputs, targets = batch
+        if self.use_duration_prediction:
+            inputs, targets, durations = batch
+        else:
+            inputs, targets = batch
 
         # send inputs to device
         if isinstance(inputs, torch.Tensor):
@@ -558,6 +594,17 @@ class Trainer(object):
             y = [None if y is None else y.to(self.device) for y in targets]
         else:
             raise ValueError(f"Not supported type ({type(targets)}).")
+
+        if self.use_duration_prediction:
+            # send durations to device (for model with duration prediction only)
+            if isinstance(durations, torch.Tensor):
+                ds = durations.to(self.device)
+            elif isinstance(durations, (tuple, list)):
+                ds = [None if d is None else d.to(self.device) for d in durations]
+            else:
+                raise ValueError(f"Not supported type ({type(durations)}).")
+
+            return x, y, ds
 
         return x, y
 
@@ -604,8 +651,10 @@ class Collater(object):
         aux_context_window=2,
         use_noise_input=False,
         use_aux_input=True,
+        use_duration=False,
         use_global_condition=False,
         use_local_condition=False,
+        pad_value=0,
     ):
         """Initialize customized collater for PyTorch DataLoader.
 
@@ -615,6 +664,7 @@ class Collater(object):
             aux_context_window (int): Context window size for auxiliary feature conv.
             use_noise_input (bool): Whether to use noise input.
             use_aux_input (bool): Whether to use auxiliary input.
+            use_duration (bool): Whether to use duration for duration prediction.
             use_global_condition (bool): Whether to use global conditioning.
             use_local_condition (bool): Whether to use local conditioning.
 
@@ -629,14 +679,19 @@ class Collater(object):
         self.aux_context_window = aux_context_window
         self.use_noise_input = use_noise_input
         self.use_aux_input = use_aux_input
+        self.use_duration = use_duration
         self.use_global_condition = use_global_condition
         self.use_local_condition = use_local_condition
+        self.pad_value = pad_value
         if not self.use_aux_input:
             assert not self.use_noise_input, "Not supported."
+            assert not self.use_duration, "Not supported."
+        if self.use_noise_input:
+            assert not self.use_duration, "Not supported."
         if self.use_local_condition:
-            assert not self.use_aux_input, "Not supported."
+            assert not self.use_aux_input and not self.use_duration, "Not supported."
         if self.use_global_condition:
-            assert not self.use_aux_input, "Not supported."
+            assert not self.use_aux_input and not self.use_duration, "Not supported."
 
         # set useful values in random cutting
         if self.use_aux_input or self.use_local_condition:
@@ -692,6 +747,26 @@ class Collater(object):
             # convert each batch to tensor, asuume that each item in batch has the same length
             y_batch, c_batch = np.array(y_batch), np.array(c_batch)
             y_batch = torch.tensor(y_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T)
+
+            # duration calculation and return with duration information
+            if self.use_duration:
+                updated_c_batch, d_batch = [], []
+                for c in c_batch:
+                    # NOTE(jiatong): assume 0 is the discrete symbol
+                    # (refer to cvss_c/local/preprocess_hubert.py)
+                    code, d = torch.unique_consecutive(
+                        torch.tensor(c, dtype=torch.long), return_counts=True, dim=0
+                    )
+                    # logging.info("code: {}, d: {}, c:{}".format(code.size(), d.size(), c.shape))
+                    updated_c_batch.append(code)
+                    d_batch.append(d)
+                c_batch = self._pad_list(updated_c_batch, self.pad_value).transpose(
+                    2, 1
+                )  # (B, C, T')
+                d_batch = self._pad_list(d_batch, 0)
+                return c_batch, y_batch, d_batch
+
+            # process data without duration prediction
             c_batch = torch.tensor(c_batch, dtype=torch.float).transpose(
                 2, 1
             )  # (B, C, T')
@@ -797,6 +872,35 @@ class Collater(object):
         assert len(x) == len(c) * self.hop_size
 
         return x, c
+
+    def _pad_list(self, xs, pad_value):
+        """Perform padding for the list of tensors.
+
+        Args:
+            xs (List): List of Tensors [(T_1, `*`), (T_2, `*`), ..., (T_B, `*`)].
+            pad_value (float): Value for padding.
+
+        Returns:
+            Tensor: Padded tensor (B, Tmax, `*`).
+
+        Examples:
+            >>> x = [torch.ones(4), torch.ones(2), torch.ones(1)]
+            >>> x
+            [tensor([1., 1., 1., 1.]), tensor([1., 1.]), tensor([1.])]
+            >>> pad_list(x, 0)
+            tensor([[1., 1., 1., 1.],
+                    [1., 1., 0., 0.],
+                    [1., 0., 0., 0.]])
+
+        """
+        n_batch = len(xs)
+        max_len = max(x.size(0) for x in xs)
+        pad = xs[0].new(n_batch, max_len, *xs[0].size()[1:]).fill_(pad_value)
+
+        for i in range(n_batch):
+            pad[i, : xs[i].size(0)] = xs[i]
+
+        return pad
 
 
 def main():
@@ -985,6 +1089,7 @@ def main():
     use_noise_input = (
         "ParallelWaveGAN" in generator_type and "VQVAE" not in generator_type
     )
+    use_duration = "Duration" in generator_type
     use_local_condition = config.get("use_local_condition", False)
     use_global_condition = config.get("use_global_condition", False)
 
@@ -1140,8 +1245,12 @@ def main():
         aux_context_window=config["generator_params"].get("aux_context_window", 0),
         use_noise_input=use_noise_input,
         use_aux_input=use_aux_input,
+        use_duration=use_duration,
         use_global_condition=use_global_condition,
         use_local_condition=use_local_condition,
+        pad_value=config["generator_params"].get(
+            "num_embs", 0
+        ),  # assume 0-based discrete symbol
     )
     sampler = {"train": None, "dev": None}
     if args.distributed:
@@ -1250,6 +1359,18 @@ def main():
             ).to(device)
     else:
         config["use_mel_loss"] = False
+    if config.get("use_duration_loss", False):  # keep compatibility
+        if config.get("duration_loss_params", None) is None:
+            criterion["duration"] = DurationPredictorLoss(
+                offset=config["offset"],
+                reduction=config["reduction"],
+            ).to(device)
+        else:
+            criterion["duration"] = DurationPredictorLoss(
+                **config["duration_loss_params"],
+            ).to(device)
+    else:
+        config["use_duration_loss"] = False
 
     # define special module for subband processing
     if config["generator_params"]["out_channels"] > 1:
