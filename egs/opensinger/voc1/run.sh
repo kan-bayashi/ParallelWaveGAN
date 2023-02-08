@@ -18,7 +18,7 @@ python=python3
 conf=conf/uhifigan.v1.yaml
 
 # directory path setting
-db_root=/data3/qt/else_data/opensinger # direcotry including spk name directory (MODIFY BY YOURSELF)
+db_root= # direcotry including spk name directory (MODIFY BY YOURSELF)
                           # e.g.
                           # /path/to/database
                           # ├── spk_1
