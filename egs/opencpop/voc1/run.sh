@@ -7,17 +7,17 @@
 . ./path.sh || exit 1;
 
 # basic settings
-stage=3       # stage to start
+stage=0       # stage to start
 stop_stage=100 # stage to stop
 verbose=1      # verbosity level (lower is less info)
 n_gpus=1       # number of gpus in training
 n_jobs=8      # number of parallel jobs in feature extraction
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
-conf=conf/hifigan.v1.yaml
+conf=conf/uhifigan.v1.yaml
 
 # directory path setting
-download_dir=/data3/qt # set the directory to your database
+download_dir= # set the directory to your database
 dumpdir=dump           # directory to dump features
 
 # training related setting

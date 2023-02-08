@@ -46,7 +46,7 @@ generator_params:
         - [1, 3, 5]
         - [1, 3, 5]
         - [1, 3, 5]
-    dropout: 0.3                          # Probability of dropout.
+    dropout: 0.1                          # Probability of dropout.
     use_additional_convs: true            # Whether to use additional conv layer in residual blocks.
     bias: true                            # Whether to use bias parameter in conv.
     nonlinear_activation: "LeakyReLU"     # Nonlinear activation type.
@@ -96,7 +96,15 @@ discriminator_params:
 ###########################################################
 #                   STFT LOSS SETTING                     #
 ###########################################################
-use_stft_loss: false                 # Whether to use multi-resolution STFT loss.
+use_stft_loss: true                 # Whether to use multi-resolution STFT loss.
+stft_loss_params:
+    fft_sizes: [1024, 2048, 512]  # List of FFT size for STFT-based loss.
+    hop_sizes: [120, 240, 50]     # List of hop size for STFT-based loss
+    win_lengths: [600, 1200, 240] # List of window length for STFT-based loss.
+    window: "hann_window"         # Window function for STFT-based loss
+###########################################################
+#                    Mel LOSS SETTING                     #
+###########################################################
 use_mel_loss: true                   # Whether to use Mel-spectrogram loss.
 mel_loss_params:
     fs: 24000
