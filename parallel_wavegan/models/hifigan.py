@@ -1156,7 +1156,7 @@ class DiscreteSymbolDurationGenerator(DiscreteSymbolHiFiGANGenerator):
             c = c[:, 0:1]
 
         if ds is None:
-            c = self.synthesis(c.transpose(1, 0).unsqueeze(0))
+            c, _ = self.synthesis(c.transpose(1, 0).unsqueeze(0))
         else:
             c, _ = self.forward(c.transpose(1, 0).unsqueeze(0), ds.unsqueeze(0))
         return c.squeeze(0).transpose(1, 0)
