@@ -60,6 +60,16 @@ fi
 
 if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     echo "Stage 1: Feature extraction"
+    if [ ! -e "${hubert_text}" ]; then
+        echo "Valid --hubert_text is not provided. Please prepare it by yourself."
+        echo "hubert_text should be like kaldi-style text as follows:"
+        cat << EOF
+utt_id_1 0 0 0 0 1 1 1 1 2 2 2 2
+utt_id_2 0 0 0 0 0 0 3 3 3 3 3 3 5 5 5 5
+...
+EOF
+        exit 1
+    fi
     # extract raw features
     pids=()
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do

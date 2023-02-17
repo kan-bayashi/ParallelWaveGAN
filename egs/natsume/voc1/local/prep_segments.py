@@ -73,7 +73,6 @@ def make_segment(file_id, labels, threshold=13.5, sil=["pau", "br", "sil"]):
     segments = []
     segment = SegInfo()
     for label in labels:
-
         if label.label_id in sil:
             if len(segment.segs) > 0:
                 segments.extend(segment.split(threshold=threshold))
