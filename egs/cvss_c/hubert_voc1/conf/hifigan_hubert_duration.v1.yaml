@@ -31,7 +31,7 @@ generator_params:
     num_embs: 500
     kernel_size: 7                        # Kernel size of initial and final conv layers.
     upsample_scales: [10, 8, 2, 2]        # Upsampling scales.
-    upsample_kernal_sizes: [20, 16, 4, 4] # Kernel size for upsampling layers.
+    upsample_kernel_sizes: [20, 16, 4, 4] # Kernel size for upsampling layers.
     resblock_kernel_sizes: [3, 7, 11]     # Kernel size for residual blocks.
     resblock_dilations:                   # Dilations for residual blocks.
         - [1, 3, 5]
@@ -64,7 +64,7 @@ discriminator_params:
     scale_discriminator_params:
         in_channels: 1                     # Number of input channels.
         out_channels: 1                    # Number of output channels.
-        kernel_sizes: [15, 41, 5, 3]       # List of kernal sizes.
+        kernel_sizes: [15, 41, 5, 3]       # List of kernel sizes.
         channels: 128                      # Initial number of channels.
         max_downsample_channels: 1024      # Maximum number of channels in downsampling conv layers.
         max_groups: 16                     # Maximum number of groups in downsampling conv layers.
@@ -78,7 +78,7 @@ discriminator_params:
     period_discriminator_params:
         in_channels: 1                     # Number of input channels.
         out_channels: 1                    # Number of output channels.
-        kernel_sizes: [5, 3]               # List of kernal sizes.
+        kernel_sizes: [5, 3]               # List of kernel sizes.
         channels: 32                       # Initial number of channels.
         downsample_scales: [3, 3, 3, 3, 1] # Downsampling scales.
         max_downsample_channels: 1024      # Maximum number of channels in downsampling conv layers.

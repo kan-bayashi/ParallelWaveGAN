@@ -7,7 +7,7 @@
 . ./path.sh || exit 1;
 
 # basic settings
-stage=1       # stage to start
+stage=-1       # stage to start
 stop_stage=100 # stage to stop
 verbose=1      # verbosity level (lower is less info)
 n_gpus=1       # number of gpus in training
@@ -25,7 +25,7 @@ db_root=/usr0/home/jiatongs/data/cvss/es_en-c # direcotry including wavfiles (MO
                           # ├── utt_2.wav
                           # │   ...
                           # └── utt_N.wav
-dumpdir=dump_hubert500           # directory to dump features
+dumpdir=dump           # directory to dump features
 
 # training related setting
 tag=""     # tag for directory to save model
@@ -41,7 +41,7 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
-hubert_text=hubert_unit_500.txt
+hubert_text=""
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
