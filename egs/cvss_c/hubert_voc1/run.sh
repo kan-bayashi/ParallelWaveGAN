@@ -14,7 +14,7 @@ n_gpus=1       # number of gpus in training
 n_jobs=16      # number of parallel jobs in feature extraction
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
-conf=conf/hifigan_hubert.v1.yaml
+conf=conf/hifigan_hubert_duration.v1.yaml
 
 # directory path setting
 db_root=/usr0/home/jiatongs/data/cvss/es_en-c # direcotry including wavfiles (MODIFY BY YOURSELF)
