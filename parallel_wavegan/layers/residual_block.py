@@ -188,7 +188,7 @@ class HiFiGANResidualBlock(torch.nn.Module):
                             1,
                             dilation=dilation,
                             bias=bias,
-                            padding=(kernel_size - 1) // 2 * dilation,
+                            padding="same",
                         ),
                     )
                 ]
@@ -220,7 +220,7 @@ class HiFiGANResidualBlock(torch.nn.Module):
                                 kernel_size,
                                 dilation=1,
                                 bias=bias,
-                                padding=(kernel_size - 1) // 2,
+                                padding="same",
                             ),
                         )
                     ]

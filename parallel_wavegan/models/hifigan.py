@@ -77,7 +77,7 @@ class HiFiGANGenerator(torch.nn.Module):
                 channels,
                 kernel_size,
                 bias=bias,
-                padding=(kernel_size - 1) // 2,
+                padding="same",
             )
         else:
             self.input_conv = CausalConv1d(
@@ -145,7 +145,7 @@ class HiFiGANGenerator(torch.nn.Module):
                     out_channels,
                     kernel_size,
                     bias=bias,
-                    padding=(kernel_size - 1) // 2,
+                    padding="same",
                 ),
                 torch.nn.Tanh(),
             )
@@ -507,7 +507,7 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
                     # NOTE(kan-bayashi): Use always the same kernel size
                     kernel_sizes[0],
                     bias=bias,
-                    padding=(kernel_sizes[0] - 1) // 2,
+                    padding="same",
                 ),
                 getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
             )
@@ -550,7 +550,7 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
                     out_chs,
                     kernel_size=kernel_sizes[2],
                     stride=1,
-                    padding=(kernel_sizes[2] - 1) // 2,
+                    padding="same",
                     bias=bias,
                 ),
                 getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
@@ -562,7 +562,7 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
                 out_channels,
                 kernel_size=kernel_sizes[3],
                 stride=1,
-                padding=(kernel_sizes[3] - 1) // 2,
+                padding="same",
                 bias=bias,
             ),
         ]
@@ -854,7 +854,7 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
             channels,
             kernel_size,
             1,
-            padding=(kernel_size - 1) // 2,
+            padding="same",
         )
         self.upsamples = torch.nn.ModuleList()
         self.blocks = torch.nn.ModuleList()
@@ -894,7 +894,7 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
                 out_channels,
                 kernel_size,
                 1,
-                padding=(kernel_size - 1) // 2,
+                padding="same",
             ),
             torch.nn.Tanh(),
         )
