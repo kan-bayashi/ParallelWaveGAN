@@ -314,7 +314,7 @@ def main():
                 # NOTE(kan-bayashi): this procedure enables to train the model with different
                 #   sampling rate for feature and audio, e.g., training with mel extracted
                 #   using 16 kHz audio and 24 kHz audio as a target waveform
-                x = librosa.resample(audio, fs, config["sampling_rate_for_feats"])
+                x = librosa.resample(audio, orig_sr=fs, target_sr=config["sampling_rate_for_feats"])
                 sampling_rate = config["sampling_rate_for_feats"]
                 assert (
                     config["hop_size"] * config["sampling_rate_for_feats"] % fs == 0
