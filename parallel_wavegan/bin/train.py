@@ -1226,7 +1226,6 @@ def main():
                 audio_length_threshold=audio_length_threshold,
                 allow_cache=config.get("allow_cache", False),  # keep compatibility
             )
-    logging.info(f"The number of training files = {len(train_dataset)}.")
 
     # define dataset for validation
     if args.dev_dumpdir is not None:
@@ -1293,7 +1292,6 @@ def main():
                 audio_length_threshold=audio_length_threshold,
                 allow_cache=config.get("allow_cache", False),  # keep compatibility
             )
-    logging.info(f"The number of development files = {len(dev_dataset)}.")
 
     # store into dataset dict
     dataset = {
