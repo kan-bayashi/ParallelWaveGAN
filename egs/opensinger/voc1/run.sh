@@ -12,23 +12,22 @@ stop_stage=100 # stage to stop
 verbose=1      # verbosity level (lower is less info)
 n_gpus=1       # number of gpus in training
 n_jobs=4       # number of parallel jobs in feature extraction
-python=python3
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
 conf=conf/uhifigan.v1.yaml
 
 # directory path setting
 db_root= # direcotry including spk name directory (MODIFY BY YOURSELF)
-                          # e.g.
-                          # /path/to/database
-                          # ├── spk_1
-                          # │   ├── utt1.wav
-                          # ├── spk_2
-                          # │   ├── utt1.wav
-                          # │   ...
-                          # └── spk_N
-                          #     ├── utt1.wav
-                          #     ...
+# e.g.
+# /path/to/database
+# ├── spk_1
+# │   ├── utt1.wav
+# ├── spk_2
+# │   ├── utt1.wav
+# │   ...
+# └── spk_N
+#     ├── utt1.wav
+#     ...
 dumpdir=dump # directory to dump features
 
 # subset setting
@@ -155,13 +154,13 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp_uhifi/${train_set}_$(basename "${conf}" .yaml)"
+    expdir="exp/${train_set}_$(basename "${conf}" .yaml)"
     if [ -n "${pretrain}" ]; then
         pretrain_tag=$(basename "$(dirname "${pretrain}")")
         expdir+="_${pretrain_tag}"
     fi
 else
-    expdir="exp_uhifi/${train_set}_${tag}"
+    expdir="exp/${train_set}_${tag}"
 fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
@@ -221,27 +220,24 @@ if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
         _dir="${expdir}/wav/$(basename "${checkpoint}" .pkl)"
         _gen_wavdir="${_dir}/${dset}"
 
-
         # Objective Evaluation - MCD
         echo "Begin Scoring for MCD metrics on ${dset}, results are written under ${_dir}/${dset}/MCD_res"
-
         mkdir -p "${_dir}/${dset}/MCD_res"
-        ${python} local/evaluate_mcd.py \
-            --gen_wavdir_or_wavscp ${_gen_wavdir} \
-            --gt_wavdir_or_wavscp ${_gt_wavscp} \
+        python -m parallel_wavegan.bin.evaluate_mcd \
+            --gen_wavdir_or_wavscp "${_gen_wavdir}" \
+            --gt_wavdir_or_wavscp "${_gt_wavscp}" \
             --outdir "${_dir}/${dset}/MCD_res"
-        
+
         # Objective Evaluation - log-F0 RMSE & Semitone ACC & VUV Error Rate
         echo "Begin Scoring for F0 related metrics on ${dset}, results are written under ${_dir}/${dset}/F0_res"
-
         mkdir -p "${_dir}/${dset}/F0_res"
-        ${python} local/evaluate_f0.py \
-            --gen_wavdir_or_wavscp ${_gen_wavdir} \
-            --gt_wavdir_or_wavscp ${_gt_wavscp} \
+        python -m parallel_wavegan.bin.evaluate_f0 \
+            --gen_wavdir_or_wavscp "${_gen_wavdir}" \
+            --gt_wavdir_or_wavscp "${_gt_wavscp}" \
             --outdir "${_dir}/${dset}/F0_res"
 
     done
-    echo "Successfully finished scoring."
+    echo "Successfully finished objective evaluation."
 fi
 
 echo "Finished."
