@@ -246,15 +246,16 @@ def main():
     # process each file
     for items in tqdm(dataset):
         if not use_f0_and_excitation:
-            if not args.skip_wav_copy:
-                utt_id, audio, mel = items
+            if config.get("use_global_condition", False):
+                if not args.skip_wav_copy:
+                    utt_id, audio, mel, g = items
+                else:
+                    utt_id, mel, g = items
             else:
-                utt_id, mel = items
-        elif config.get("use_global_condition", False):
-            if not args.skip_wav_copy:
-                utt_id, audio, mel, g = items
-            else:
-                utt_id, mel, g = items
+                if not args.skip_wav_copy:
+                    utt_id, audio, mel = items
+                else:
+                    utt_id, mel = items
         else:
             if not args.skip_wav_copy:
                 utt_id, audio, mel, f0, excitation = items
