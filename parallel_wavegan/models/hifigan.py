@@ -13,8 +13,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from parallel_wavegan.layers import CausalConv1d
-from parallel_wavegan.layers import CausalConvTranspose1d
+from parallel_wavegan.layers import CausalConv1d, CausalConvTranspose1d
 from parallel_wavegan.layers import HiFiGANResidualBlock as ResidualBlock
 from parallel_wavegan.utils import read_hdf5
 
@@ -182,7 +181,7 @@ class HiFiGANGenerator(torch.nn.Module):
             Tensor: Output tensor (B, out_channels, T).
 
         """
-            
+
         c = self.input_conv(c)
         for i in range(self.num_upsamples):
             c = self.upsamples[i](c)
@@ -251,7 +250,7 @@ class HiFiGANGenerator(torch.nn.Module):
         self.register_buffer("scale", torch.from_numpy(scale).float())
         logging.info("Successfully registered stats as buffer.")
 
-    def inference(self, c, f0=None, excitation=None,normalize_before=False):
+    def inference(self, c, f0=None, excitation=None, normalize_before=False):
         """Perform inference.
 
         Args:
@@ -262,26 +261,28 @@ class HiFiGANGenerator(torch.nn.Module):
             Tensor: Output tensor (T ** prod(upsample_scales), out_channels).
 
         """
-        
+
         if c is not None and not isinstance(c, torch.Tensor):
             c = torch.tensor(c, dtype=torch.float).to(next(self.parameters()).device)
         if f0 is not None and not isinstance(f0, torch.Tensor):
             f0 = torch.tensor(f0, dtype=torch.float).to(next(self.parameters()).device)
         if excitation is not None and not isinstance(excitation, torch.Tensor):
-            excitation = torch.tensor(excitation, dtype=torch.float).to(next(self.parameters()).device)
+            excitation = torch.tensor(excitation, dtype=torch.float).to(
+                next(self.parameters()).device
+            )
 
         if normalize_before:
             c = (c - self.mean) / self.scale
-        
+
         batch = dict()
         if c is not None:
-            c=c.transpose(1, 0).unsqueeze(0)
+            c = c.transpose(1, 0).unsqueeze(0)
             batch.update(c=c)
         if f0 is not None:
-            f0=f0.unsqueeze(1).transpose(1, 0).unsqueeze(0)
+            f0 = f0.unsqueeze(1).transpose(1, 0).unsqueeze(0)
             batch.update(f0=f0)
         if excitation is not None:
-            excitation=excitation.transpose(1, 0).unsqueeze(0)
+            excitation = excitation.transpose(1, 0).unsqueeze(0)
             batch.update(excitation=excitation)
 
         c = self.forward(**batch)

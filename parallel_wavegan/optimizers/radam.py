@@ -6,8 +6,8 @@ This code is drived from https://github.com/LiyuanLucasLiu/RAdam.
 """
 
 import math
-import torch
 
+import torch
 from torch.optim.optimizer import Optimizer
 
 
@@ -31,7 +31,6 @@ class RAdam(Optimizer):
             loss = closure()
 
         for group in self.param_groups:
-
             for p in group["params"]:
                 if p.grad is None:
                     continue

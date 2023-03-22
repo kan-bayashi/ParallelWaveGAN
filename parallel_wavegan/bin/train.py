@@ -7,11 +7,10 @@
 """Train Parallel WaveGAN."""
 
 import argparse
-from cmath import log
 import logging
 import os
 import sys
-
+from cmath import log
 from collections import defaultdict
 
 import matplotlib
@@ -19,7 +18,6 @@ import numpy as np
 import soundfile as sf
 import torch
 import yaml
-
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -27,16 +25,19 @@ from tqdm import tqdm
 import parallel_wavegan
 import parallel_wavegan.models
 import parallel_wavegan.optimizers
-
-from parallel_wavegan.datasets import AudioMelDataset
-from parallel_wavegan.datasets import AudioMelSCPDataset
-from parallel_wavegan.datasets import AudioMelF0ExcitationDataset
+from parallel_wavegan.datasets import (
+    AudioMelDataset,
+    AudioMelF0ExcitationDataset,
+    AudioMelSCPDataset,
+)
 from parallel_wavegan.layers import PQMF
-from parallel_wavegan.losses import DiscriminatorAdversarialLoss
-from parallel_wavegan.losses import FeatureMatchLoss
-from parallel_wavegan.losses import GeneratorAdversarialLoss
-from parallel_wavegan.losses import MelSpectrogramLoss
-from parallel_wavegan.losses import MultiResolutionSTFTLoss
+from parallel_wavegan.losses import (
+    DiscriminatorAdversarialLoss,
+    FeatureMatchLoss,
+    GeneratorAdversarialLoss,
+    MelSpectrogramLoss,
+    MultiResolutionSTFTLoss,
+)
 from parallel_wavegan.utils import read_hdf5
 
 # set to avoid matplotlib error in CLI environment
@@ -606,7 +607,6 @@ class Collater(object):
         y_batch, c_batch = np.array(y_batch), np.array(c_batch)
         f_batch, e_batch = np.array(f_batch), np.array(e_batch)
 
-
         # logging.info(f'bef y_batch:{y_batch.shape}')
         # logging.info(f'bef c_batch:{c_batch.shape}')
         # logging.info(f'bef f_batch:{f_batch.shape}')
@@ -623,15 +623,24 @@ class Collater(object):
 
         e_batch = torch.tensor(e_batch, dtype=torch.float)  # (B, 1, T', C')
         bz = e_batch.shape[0]
-        e_batch = e_batch.reshape(bz, 1, -1) # (B, 1, T' * C')
+        e_batch = e_batch.reshape(bz, 1, -1)  # (B, 1, T' * C')
         # logging.info(f'aft e_batch:{e_batch.shape}')
 
         # make input noise signal batch tensor
         if self.use_noise_input:
             z_batch = torch.randn(y_batch.size())  # (B, 1, T)
-            return (z_batch, c_batch, f_batch, e_batch, ), y_batch
+            return (
+                z_batch,
+                c_batch,
+                f_batch,
+                e_batch,
+            ), y_batch
         else:
-            return (c_batch, f_batch, e_batch, ), y_batch
+            return (
+                c_batch,
+                f_batch,
+                e_batch,
+            ), y_batch
 
     def _adjust_length(self, x, c, f0=None, excitatioin=None):
         """Adjust the audio and feature lengths.
@@ -874,8 +883,8 @@ def main():
             excitation_query=excitation_query,
             audio_load_fn=audio_load_fn,
             mel_load_fn=mel_load_fn,
-            f0_load_fn = f0_load_fn,
-            excitation_load_fn = excitation_load_fn,
+            f0_load_fn=f0_load_fn,
+            excitation_load_fn=excitation_load_fn,
             mel_length_threshold=mel_length_threshold,
             allow_cache=config.get("allow_cache", False),  # keep compatibility
         )
@@ -907,8 +916,8 @@ def main():
             excitation_query=excitation_query,
             audio_load_fn=audio_load_fn,
             mel_load_fn=mel_load_fn,
-            f0_load_fn = f0_load_fn,
-            excitation_load_fn = excitation_load_fn,
+            f0_load_fn=f0_load_fn,
+            excitation_load_fn=excitation_load_fn,
             mel_length_threshold=mel_length_threshold,
             allow_cache=config.get("allow_cache", False),  # keep compatibility
         )

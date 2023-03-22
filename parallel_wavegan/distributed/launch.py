@@ -9,9 +9,7 @@ This code is modified from https://github.com/pytorch/pytorch/blob/v1.3.0/torch/
 import os
 import subprocess
 import sys
-
-from argparse import ArgumentParser
-from argparse import REMAINDER
+from argparse import REMAINDER, ArgumentParser
 
 
 def parse_args():

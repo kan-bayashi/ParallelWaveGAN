@@ -11,21 +11,16 @@ import fnmatch
 import logging
 import multiprocessing as mp
 import os
-
-from typing import Dict
-from typing import List
-from typing import Tuple
+from math import log2, pow
+from typing import Dict, List, Tuple
 
 import librosa
 import numpy as np
 import pysptk
 import pyworld as pw
 import soundfile as sf
-
 from fastdtw import fastdtw
 from scipy import spatial
-from math import log2
-from math import pow
 
 
 def _Hz2Semitone(freq):
@@ -42,11 +37,13 @@ def _Hz2Semitone(freq):
         n = h % 12
         return name[n] + "_" + str(octave)
 
+
 def _Hz2Flag(freq):
     if freq == 0:
         return False
     else:
         return True
+
 
 def find_files(
     root_dir: str, query: List[str] = ["*.flac", "*.wav"], include_root_dir: bool = True
@@ -121,7 +118,7 @@ def _get_basename(path: str):
     return os.path.splitext(os.path.split(path)[-1])[0]
 
 
-def _get_best_mcep_params(fs: int):# -> Tuple[int, float]
+def _get_best_mcep_params(fs: int):  # -> Tuple[int, float]
     if fs == 16000:
         return 23, 0.42
     elif fs == 22050:
@@ -350,8 +347,17 @@ def main():
         # for f in file_lists:
         #     calculate(f, gt_files, args, log_f0_rmse_dict)
         for f in file_lists:
-            p = mp.Process(target=calculate, args=(f, gt_files, args,
-                            log_f0_rmse_dict, semitone_acc_dict, vuv_err_dict))
+            p = mp.Process(
+                target=calculate,
+                args=(
+                    f,
+                    gt_files,
+                    args,
+                    log_f0_rmse_dict,
+                    semitone_acc_dict,
+                    vuv_err_dict,
+                ),
+            )
             p.start()
             processes.append(p)
 
@@ -367,14 +373,15 @@ def main():
         # calculate statistics
         mean_log_f0_rmse = np.mean(np.array([v for v in log_f0_rmse_dict.values()]))
         std_log_f0_rmse = np.std(np.array([v for v in log_f0_rmse_dict.values()]))
-        logging.info(f"Average - log_F0-RMSE: {mean_log_f0_rmse:.4f} ± {std_log_f0_rmse:.4f}")
+        logging.info(
+            f"Average - log_F0-RMSE: {mean_log_f0_rmse:.4f} ± {std_log_f0_rmse:.4f}"
+        )
 
         mean_semitone_acc = np.mean(np.array([v for v in semitone_acc_dict.values()]))
         logging.info(f"Average - Semitone_ACC: {mean_semitone_acc*100:.2f}%")
 
         mean_vuv_err = np.mean(np.array([v for v in vuv_err_dict.values()]))
         logging.info(f"Average - VUV_ERROR: {mean_vuv_err*100:.2f}%")
-
 
     # write results
     if args.outdir is None:
@@ -388,10 +395,14 @@ def main():
             log_f0_rmse = log_f0_rmse_dict[utt_id]
             semitone_ACC = semitone_acc_dict[utt_id]
             vuv_ERR = vuv_err_dict[utt_id]
-            f.write(f"{utt_id} log_f0_rmse: {log_f0_rmse:.4f}, Semitone_ACC: {semitone_ACC*100:.2f}%, VUV_ERROR: {vuv_ERR*100:.2f}\n")
+            f.write(
+                f"{utt_id} log_f0_rmse: {log_f0_rmse:.4f}, Semitone_ACC: {semitone_ACC*100:.2f}%, VUV_ERROR: {vuv_ERR*100:.2f}\n"
+            )
     with open(f"{args.outdir}/avg_result.txt", "w") as f:
         f.write(f"#utterances: {len(gen_files)}\n")
-        f.write(f"Average - log_F0-RMSE: {mean_log_f0_rmse:.4f} ± {std_log_f0_rmse:.4f}\n")
+        f.write(
+            f"Average - log_F0-RMSE: {mean_log_f0_rmse:.4f} ± {std_log_f0_rmse:.4f}\n"
+        )
         f.write(f"Average - Semitone_ACC: {mean_semitone_acc*100:.2f}%\n")
         f.write(f"Average - VUV_ERROR: {mean_vuv_err*100:.2f}%\n")
 

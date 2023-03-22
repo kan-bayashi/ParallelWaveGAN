@@ -12,18 +12,18 @@ import os
 
 import numpy as np
 import yaml
-
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
-from parallel_wavegan.datasets import AudioMelDataset
-from parallel_wavegan.datasets import AudioMelSCPDataset
-from parallel_wavegan.datasets import MelDataset
-from parallel_wavegan.datasets import MelSCPDataset
-from parallel_wavegan.datasets import AudioMelF0ExcitationDataset
-from parallel_wavegan.datasets import MelF0ExcitationDataset
-from parallel_wavegan.utils import read_hdf5
-from parallel_wavegan.utils import write_hdf5
+from parallel_wavegan.datasets import (
+    AudioMelDataset,
+    AudioMelF0ExcitationDataset,
+    AudioMelSCPDataset,
+    MelDataset,
+    MelF0ExcitationDataset,
+    MelSCPDataset,
+)
+from parallel_wavegan.utils import read_hdf5, write_hdf5
 
 
 def main():
@@ -125,7 +125,7 @@ def main():
 
     # get dataset
     if args.rootdir is not None:
-        if config["format"] == "hdf5":    
+        if config["format"] == "hdf5":
             audio_query, mel_query = "*.h5", "*.h5"
             f0_query, excitation_query = "*.h5", "*.h5"
             audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
@@ -142,7 +142,7 @@ def main():
         else:
             raise ValueError("support only hdf5 or npy format.")
         if not args.skip_wav_copy:
-            logging.warn(f'use audiomelf0ex')
+            logging.warn(f"use audiomelf0ex")
             dataset = AudioMelF0ExcitationDataset(
                 root_dir=args.rootdir,
                 audio_query=audio_query,
@@ -208,13 +208,13 @@ def main():
             utt_id, audio, mel, f0, excitation = items
         else:
             utt_id, mel, f0, excitation = items
-        
+
         # logging.warn(f'len(items)={len(items)}')
         # logging.warn(f'audio:{audio.shape}')
         # logging.warn(f'mel:{mel.shape}')
         # logging.warn(f'f0:{f0.shape}')
         # logging.warn(f'excitation:{excitation.shape}')
-        
+
         # normalize
         mel = scaler.transform(mel)
 

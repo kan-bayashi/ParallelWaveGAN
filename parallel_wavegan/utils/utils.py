@@ -11,14 +11,13 @@ import os
 import re
 import sys
 import tarfile
-
 from distutils.version import LooseVersion
-from filelock import FileLock
 
 import h5py
 import numpy as np
 import torch
 import yaml
+from filelock import FileLock
 
 PRETRAINED_MODEL_LIST = {
     "ljspeech_parallel_wavegan.v1": "1PdZv37JhAQH6AwNh31QlqruqrvjTBq7U",

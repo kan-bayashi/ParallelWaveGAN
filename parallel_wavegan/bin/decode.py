@@ -15,13 +15,10 @@ import numpy as np
 import soundfile as sf
 import torch
 import yaml
-
 from tqdm import tqdm
 
-from parallel_wavegan.datasets import MelDataset, MelF0ExcitationDataset
-from parallel_wavegan.datasets import MelSCPDataset
-from parallel_wavegan.utils import load_model
-from parallel_wavegan.utils import read_hdf5
+from parallel_wavegan.datasets import MelDataset, MelF0ExcitationDataset, MelSCPDataset
+from parallel_wavegan.utils import load_model, read_hdf5
 
 
 def main():
@@ -184,29 +181,21 @@ def main():
     total_rtf = 0.0
     with torch.no_grad(), tqdm(dataset, desc="[decode]") as pbar:
         for idx, (utt_id, c, f0, excitation) in enumerate(pbar, 1):
-        # for idx, (utt_id, c) in enumerate(pbar, 1):
+            # for idx, (utt_id, c) in enumerate(pbar, 1):
             # generate
-            batch = dict(
-                normalize_before=args.normalize_before
-            )
+            batch = dict(normalize_before=args.normalize_before)
             if c is not None:
                 c = torch.tensor(c, dtype=torch.float).to(device)
-                batch.update(
-                    c=c
-                )
-            if f0 is not None: 
+                batch.update(c=c)
+            if f0 is not None:
                 f0 = torch.tensor(f0, dtype=torch.float).to(device)
-                batch.update(
-                    f0=f0
-                )
-            if excitation is not None: 
+                batch.update(f0=f0)
+            if excitation is not None:
                 excitation = torch.tensor(excitation, dtype=torch.float).to(device)
-                batch.update(
-                    excitation=excitation
-                )
+                batch.update(excitation=excitation)
             start = time.time()
             # y = model.inference( c, normalize_before=args.normalize_before).view(-1)
-            y = model.inference( **batch ).view(-1)
+            y = model.inference(**batch).view(-1)
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
             total_rtf += rtf

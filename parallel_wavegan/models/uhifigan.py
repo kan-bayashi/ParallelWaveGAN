@@ -13,8 +13,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from parallel_wavegan.layers import CausalConv1d
-from parallel_wavegan.layers import CausalConvTranspose1d
+from parallel_wavegan.layers import CausalConv1d, CausalConvTranspose1d
 from parallel_wavegan.layers import HiFiGANResidualBlock as ResidualBlock
 from parallel_wavegan.utils import read_hdf5
 
@@ -85,40 +84,35 @@ class UHiFiGANGenerator(torch.nn.Module):
         self.upsamples_mrf = torch.nn.ModuleList()
 
         self.output_conv = None
-        
+
         if not use_causal_conv:
             self.input_conv = torch.nn.Sequential(
-                            torch.nn.Conv1d(
-                                out_channels,
-                                channels,
-                                kernel_size=kernel_size,
-                                bias=bias,
-                                padding=(kernel_size - 1 ) // 2 ,
-                            ),
-                            getattr(torch.nn, nonlinear_activation)(
-                            **nonlinear_activation_params
-                            ),
-                            torch.nn.Dropout(dropout),
-                            )
+                torch.nn.Conv1d(
+                    out_channels,
+                    channels,
+                    kernel_size=kernel_size,
+                    bias=bias,
+                    padding=(kernel_size - 1) // 2,
+                ),
+                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
+                torch.nn.Dropout(dropout),
+            )
         else:
             self.input_conv = torch.nn.Sequential(
-                        CausalConv1d(
-                            out_channels,
-                            channels,
-                            kernel_size=kernel_size,
-                            bias=bias,
-                            padding=(kernel_size - 1 ) // 2 ,
-                        ),
-                        getattr(torch.nn, nonlinear_activation)(
-                            **nonlinear_activation_params
-                        ),
-                        torch.nn.Dropout(dropout),
-                        )
-                        
-        for i in range(len(downsample_scales)):
+                CausalConv1d(
+                    out_channels,
+                    channels,
+                    kernel_size=kernel_size,
+                    bias=bias,
+                    padding=(kernel_size - 1) // 2,
+                ),
+                getattr(torch.nn, nonlinear_activation)(**nonlinear_activation_params),
+                torch.nn.Dropout(dropout),
+            )
 
+        for i in range(len(downsample_scales)):
             for j in range(len(resblock_kernel_sizes)):
-                    self.downsamples_mrf += [
+                self.downsamples_mrf += [
                     ResidualBlock(
                         kernel_size=resblock_kernel_sizes[j],
                         channels=channels,
@@ -132,7 +126,7 @@ class UHiFiGANGenerator(torch.nn.Module):
                 ]
 
             if not use_causal_conv:
-                self.downsamples += [ 
+                self.downsamples += [
                     torch.nn.Sequential(
                         torch.nn.Conv1d(
                             channels,
@@ -140,7 +134,8 @@ class UHiFiGANGenerator(torch.nn.Module):
                             kernel_size=downsample_kernel_sizes[i],
                             stride=downsample_scales[i],
                             bias=bias,
-                            padding=downsample_scales[i] // 2 + downsample_scales[i] % 2,
+                            padding=downsample_scales[i] // 2
+                            + downsample_scales[i] % 2,
                         ),
                         getattr(torch.nn, nonlinear_activation)(
                             **nonlinear_activation_params
@@ -149,7 +144,7 @@ class UHiFiGANGenerator(torch.nn.Module):
                     )
                 ]
             else:
-                self.downsamples += [ 
+                self.downsamples += [
                     torch.nn.Sequential(
                         CausalConv1d(
                             channels,
@@ -157,7 +152,8 @@ class UHiFiGANGenerator(torch.nn.Module):
                             kernel_size=downsample_kernel_sizes[i],
                             stride=downsample_scales[i],
                             bias=bias,
-                            padding=downsample_scales[i] // 2 + downsample_scales[i] % 2,
+                            padding=downsample_scales[i] // 2
+                            + downsample_scales[i] % 2,
                         ),
                         getattr(torch.nn, nonlinear_activation)(
                             **nonlinear_activation_params
@@ -170,20 +166,20 @@ class UHiFiGANGenerator(torch.nn.Module):
 
         if not use_causal_conv:
             self.hidden_conv = torch.nn.Conv1d(
-                                in_channels,
-                                channels,
-                                kernel_size=kernel_size,
-                                bias=bias,
-                                padding=(kernel_size - 1 ) // 2 ,
-                            )
+                in_channels,
+                channels,
+                kernel_size=kernel_size,
+                bias=bias,
+                padding=(kernel_size - 1) // 2,
+            )
         else:
             self.hidden_conv = CausalConv1d(
-                            in_channels,
-                            channels,
-                            kernel_size=kernel_size,
-                            bias=bias,
-                            padding=(kernel_size - 1 ) // 2 ,
-                        )
+                in_channels,
+                channels,
+                kernel_size=kernel_size,
+                bias=bias,
+                padding=(kernel_size - 1) // 2,
+            )
 
         for i in range(len(upsample_kernel_sizes)):
             # assert upsample_kernel_sizes[i] == 2 * upsample_scales[i]
@@ -219,7 +215,7 @@ class UHiFiGANGenerator(torch.nn.Module):
                         ),
                     )
                 ]
-                
+
             # hidden_channel for MRF module
             for j in range(len(resblock_kernel_sizes)):
                 self.upsamples_mrf += [
@@ -316,8 +312,8 @@ class UHiFiGANGenerator(torch.nn.Module):
         #     c = torch.cat( (c,excitation), 1)
 
         residual_results = []
-        hidden = self.input_conv( excitation )
-        
+        hidden = self.input_conv(excitation)
+
         for i in range(len(self.downsamples)):
             cs = 0.0  # initialize
             for j in range(self.num_blocks):
@@ -326,7 +322,6 @@ class UHiFiGANGenerator(torch.nn.Module):
             hidden = cs / self.num_blocks
             hidden = self.downsamples[i](hidden)
             residual_results.append(hidden)
-        
 
         # logging.warn(f'hidden:{hidden.shape}')
         residual_results.reverse()
@@ -337,7 +332,7 @@ class UHiFiGANGenerator(torch.nn.Module):
         for i in range(len(self.upsamples)):
             # logging.warn(f'bef {i}-th upsampe:{hidden_mel.shape}')
             # logging.warn(f'bef {i}-th upsampe:{residual_results[i].shape}')
-            hidden_mel = torch.cat( ( hidden_mel, residual_results[i] ), dim=1)
+            hidden_mel = torch.cat((hidden_mel, residual_results[i]), dim=1)
             # logging.warn(f'aft {i}-th upsample :{hidden_mel.shape}')
             hidden_mel = self.upsamples[i](hidden_mel)
 
@@ -355,7 +350,6 @@ class UHiFiGANGenerator(torch.nn.Module):
         # logging.warn(f'bef output conv mel : {hidden_mel.shape}')
         mel = self.output_conv(hidden_mel)
         # logging.warn(f'aft output conv mel : {mel.shape}')
-
 
         return mel
 
@@ -433,16 +427,21 @@ class UHiFiGANGenerator(torch.nn.Module):
         if c is not None and not isinstance(c, torch.Tensor):
             c = torch.tensor(c, dtype=torch.float).to(next(self.parameters()).device)
         if excitation is not None and not isinstance(excitation, torch.Tensor):
-            excitation = torch.tensor(excitation, dtype=torch.float).to(next(self.parameters()).device)
+            excitation = torch.tensor(excitation, dtype=torch.float).to(
+                next(self.parameters()).device
+            )
         if f0 is not None and not isinstance(f0, torch.Tensor):
             f0 = torch.tensor(f0, dtype=torch.float).to(next(self.parameters()).device)
-
 
         # logging.info(f'excitation.shape:{excitation.shape}')
         # logging.info(f'f0.shape:{f0.shape}')
         # logging.info(f'c.shape:{c.shape}')
         # c = self.forward(None, None, c.transpose(1, 0).unsqueeze(0))
-        c = self.forward( c.transpose(1, 0).unsqueeze(0), f0.unsqueeze(1).transpose(1, 0).unsqueeze(0), excitation.reshape(1, 1, -1))
+        c = self.forward(
+            c.transpose(1, 0).unsqueeze(0),
+            f0.unsqueeze(1).transpose(1, 0).unsqueeze(0),
+            excitation.reshape(1, 1, -1),
+        )
         return c.squeeze(0).transpose(1, 0)
 
 

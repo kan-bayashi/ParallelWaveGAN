@@ -7,15 +7,12 @@
 
 import logging
 import os
-
 from multiprocessing import Manager
 
 import numpy as np
-
 from torch.utils.data import Dataset
 
-from parallel_wavegan.utils import find_files
-from parallel_wavegan.utils import read_hdf5
+from parallel_wavegan.utils import find_files, read_hdf5
 
 
 class AudioMelDataset(Dataset):
@@ -257,7 +254,7 @@ class AudioMelF0ExcitationDataset(Dataset):
             self.utt_ids = [
                 os.path.splitext(os.path.basename(f))[0] for f in audio_files
             ]
-        
+
         self.return_utt_id = return_utt_id
         self.allow_cache = allow_cache
         if allow_cache:
@@ -506,7 +503,6 @@ class MelDataset(Dataset):
         return len(self.mel_files)
 
 
-
 class MelF0ExcitationDataset(Dataset):
     """PyTorch compatible mel dataset."""
 
@@ -559,7 +555,9 @@ class MelF0ExcitationDataset(Dataset):
         # assert the number of files
         assert len(mel_files) != 0, f"Not found any mel files in ${root_dir}."
         assert len(f0_files) != 0, f"Not found any f0 files in ${root_dir}."
-        assert len(excitation_files) != 0, f"Not found any excitation files in ${root_dir}."
+        assert (
+            len(excitation_files) != 0
+        ), f"Not found any excitation files in ${root_dir}."
 
         self.mel_files = mel_files
         self.mel_load_fn = mel_load_fn
@@ -568,8 +566,6 @@ class MelF0ExcitationDataset(Dataset):
         self.excitation_files = excitation_files
         self.excitation_load_fn = excitation_load_fn
 
-
-        
         self.utt_ids = [os.path.splitext(os.path.basename(f))[0] for f in mel_files]
         if ".npy" in mel_query:
             self.utt_ids = [
