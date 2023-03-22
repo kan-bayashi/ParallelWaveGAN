@@ -213,9 +213,13 @@ def main():
                 )
     else:
         if use_f0_and_excitation:
-            raise NotImplementedError("SCP format is not supported for f0 and excitation.")
+            raise NotImplementedError(
+                "SCP format is not supported for f0 and excitation."
+            )
         if config.get("use_global_condition", False):
-            raise NotImplementedError("SCP format is Not supported for global conditioning.")
+            raise NotImplementedError(
+                "SCP format is Not supported for global conditioning."
+            )
         if not args.skip_wav_copy:
             dataset = AudioMelSCPDataset(
                 wav_scp=args.wav_scp,

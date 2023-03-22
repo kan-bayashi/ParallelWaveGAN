@@ -755,7 +755,9 @@ class Collater(object):
                 f_batch = [f[start:end] for f, start, end in zip(fs, c_starts, c_ends)]
                 e_batch = [e[start:end] for e, start, end in zip(es, c_starts, c_ends)]
                 f_batch, e_batch = np.array(f_batch), np.array(e_batch)
-                f_batch = torch.tensor(f_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T')
+                f_batch = torch.tensor(f_batch, dtype=torch.float).unsqueeze(
+                    1
+                )  # (B, 1, T')
                 e_batch = torch.tensor(e_batch, dtype=torch.float)  # (B, 1, T', C')
                 e_batch = e_batch.reshape(e_batch.shape[0], 1, -1)  # (B, 1, T' * C')
 
@@ -1202,7 +1204,9 @@ def main():
             )
     else:
         if use_f0_and_excitation:
-            raise NotImplementedError("SCP format is not supported for f0 and excitation.")
+            raise NotImplementedError(
+                "SCP format is not supported for f0 and excitation."
+            )
         if use_local_condition:
             raise NotImplementedError("Not supported.")
         if use_global_condition:
@@ -1268,7 +1272,9 @@ def main():
             )
     else:
         if use_f0_and_excitation:
-            raise NotImplementedError("SCP format is not supported for f0 and excitation.")
+            raise NotImplementedError(
+                "SCP format is not supported for f0 and excitation."
+            )
         if use_local_condition:
             raise NotImplementedError("Not supported.")
         if use_global_condition:
