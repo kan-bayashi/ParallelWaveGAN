@@ -80,7 +80,10 @@ def main():
         help="whether to skip the copy of wav files.",
     )
     parser.add_argument(
-        "--config", type=str, required=True, help="yaml format configuration file."
+        "--config",
+        type=str,
+        required=True,
+        help="yaml format configuration file.",
     )
     parser.add_argument(
         "--verbose",
@@ -113,6 +116,10 @@ def main():
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
 
+    # check model architecture
+    generator_type = (config.get("generator_type", "ParallelWaveGANGenerator"),)
+    use_f0_and_excitation = generator_type == "UHiFiGANGenerator"
+
     # check arguments
     if (args.feats_scp is not None and args.rootdir is not None) or (
         args.feats_scp is None and args.rootdir is None
@@ -127,54 +134,67 @@ def main():
     if args.rootdir is not None:
         if config["format"] == "hdf5":
             audio_query, mel_query = "*.h5", "*.h5"
-            f0_query, excitation_query = "*.h5", "*.h5"
             audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
             mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
-            f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
-            excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
+            if use_f0_and_excitation:
+                f0_query, excitation_query = "*.h5", "*.h5"
+                f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
+                excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
         elif config["format"] == "npy":
             audio_query, mel_query = "*-wave.npy", "*-feats.npy"
-            f0_query, excitation_query = "*-f0.npy", "*-excitation.npy"
             audio_load_fn = np.load
             mel_load_fn = np.load
-            f0_load_fn = np.load
-            excitation_load_fn = np.load
+            if use_f0_and_excitation:
+                f0_query, excitation_query = "*-f0.npy", "*-excitation.npy"
+                f0_load_fn = np.load
+                excitation_load_fn = np.load
         else:
             raise ValueError("support only hdf5 or npy format.")
-        if not args.skip_wav_copy:
-            logging.warn(f"use audiomelf0ex")
-            dataset = AudioMelF0ExcitationDataset(
-                root_dir=args.rootdir,
-                audio_query=audio_query,
-                mel_query=mel_query,
-                f0_query=f0_query,
-                excitation_query=excitation_query,
-                audio_load_fn=audio_load_fn,
-                mel_load_fn=mel_load_fn,
-                f0_load_fn=f0_load_fn,
-                excitation_load_fn=excitation_load_fn,
-                return_utt_id=True,
-            )
-            # dataset = AudioMelDataset(
-            #     root_dir=args.rootdir,
-            #     audio_query=audio_query,
-            #     mel_query=mel_query,
-            #     audio_load_fn=audio_load_fn,
-            #     mel_load_fn=mel_load_fn,
-            #     return_utt_id=True,
-            # )
+        if not use_f0_and_excitation:
+            if not args.skip_wav_copy:
+                dataset = AudioMelDataset(
+                    root_dir=args.rootdir,
+                    audio_query=audio_query,
+                    mel_query=mel_query,
+                    audio_load_fn=audio_load_fn,
+                    mel_load_fn=mel_load_fn,
+                    return_utt_id=True,
+                )
+            else:
+                dataset = MelDataset(
+                    root_dir=args.rootdir,
+                    mel_query=mel_query,
+                    mel_load_fn=mel_load_fn,
+                    return_utt_id=True,
+                )
         else:
-            dataset = MelDataset(
-                root_dir=args.rootdir,
-                mel_query=mel_query,
-                f0_query=f0_query,
-                excitation_query=excitation_query,
-                mel_load_fn=mel_load_fn,
-                f0_load_fn=f0_load_fn,
-                excitation_load_fn=excitation_load_fn,
-                return_utt_id=True,
-            )
+            if not args.skip_wav_copy:
+                dataset = AudioMelF0ExcitationDataset(
+                    root_dir=args.rootdir,
+                    audio_query=audio_query,
+                    mel_query=mel_query,
+                    f0_query=f0_query,
+                    excitation_query=excitation_query,
+                    audio_load_fn=audio_load_fn,
+                    mel_load_fn=mel_load_fn,
+                    f0_load_fn=f0_load_fn,
+                    excitation_load_fn=excitation_load_fn,
+                    return_utt_id=True,
+                )
+            else:
+                dataset = MelF0ExcitationDataset(
+                    root_dir=args.rootdir,
+                    mel_query=mel_query,
+                    f0_query=f0_query,
+                    excitation_query=excitation_query,
+                    mel_load_fn=mel_load_fn,
+                    f0_load_fn=f0_load_fn,
+                    excitation_load_fn=excitation_load_fn,
+                    return_utt_id=True,
+                )
     else:
+        if use_f0_and_excitation:
+            raise NotImplementedError("SCP format is not supported for f0 and excitation.")
         if not args.skip_wav_copy:
             dataset = AudioMelSCPDataset(
                 wav_scp=args.wav_scp,
@@ -204,16 +224,16 @@ def main():
 
     # process each file
     for items in tqdm(dataset):
-        if not args.skip_wav_copy:
-            utt_id, audio, mel, f0, excitation = items
+        if not use_f0_and_excitation:
+            if not args.skip_wav_copy:
+                utt_id, audio, mel = items
+            else:
+                utt_id, mel = items
         else:
-            utt_id, mel, f0, excitation = items
-
-        # logging.warn(f'len(items)={len(items)}')
-        # logging.warn(f'audio:{audio.shape}')
-        # logging.warn(f'mel:{mel.shape}')
-        # logging.warn(f'f0:{f0.shape}')
-        # logging.warn(f'excitation:{excitation.shape}')
+            if not args.skip_wav_copy:
+                utt_id, audio, mel, f0, excitation = items
+            else:
+                utt_id, mel, f0, excitation = items
 
         # normalize
         mel = scaler.transform(mel)
@@ -225,16 +245,17 @@ def main():
                 "feats",
                 mel.astype(np.float32),
             )
-            write_hdf5(
-                os.path.join(args.dumpdir, f"{utt_id}.h5"),
-                "f0",
-                f0.astype(np.float32),
-            )
-            write_hdf5(
-                os.path.join(args.dumpdir, f"{utt_id}.h5"),
-                "excitation",
-                excitation.astype(np.float32),
-            )
+            if use_f0_and_excitation:
+                write_hdf5(
+                    os.path.join(args.dumpdir, f"{utt_id}.h5"),
+                    "f0",
+                    f0.astype(np.float32),
+                )
+                write_hdf5(
+                    os.path.join(args.dumpdir, f"{utt_id}.h5"),
+                    "excitation",
+                    excitation.astype(np.float32),
+                )
             if not args.skip_wav_copy:
                 write_hdf5(
                     os.path.join(args.dumpdir, f"{utt_id}.h5"),
@@ -247,16 +268,17 @@ def main():
                 mel.astype(np.float32),
                 allow_pickle=False,
             )
-            np.save(
-                os.path.join(args.dumpdir, f"{utt_id}-f0.npy"),
-                f0.astype(np.float32),
-                allow_pickle=False,
-            )
-            np.save(
-                os.path.join(args.dumpdir, f"{utt_id}-excitation.npy"),
-                excitation.astype(np.float32),
-                allow_pickle=False,
-            )
+            if use_f0_and_excitation:
+                np.save(
+                    os.path.join(args.dumpdir, f"{utt_id}-f0.npy"),
+                    f0.astype(np.float32),
+                    allow_pickle=False,
+                )
+                np.save(
+                    os.path.join(args.dumpdir, f"{utt_id}-excitation.npy"),
+                    excitation.astype(np.float32),
+                    allow_pickle=False,
+                )
             if not args.skip_wav_copy:
                 np.save(
                     os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
