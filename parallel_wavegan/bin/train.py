@@ -538,9 +538,6 @@ class Trainer(object):
             # convert to ndarray
             y, y_ = y.view(-1).cpu().numpy(), y_.view(-1).cpu().numpy()
 
-            logging.info("y: {}, y_: {}".format(y.shape, y_.shape))
-            logging.info("y:{}, y_:{}".format(y[:10], y_[:10]))
-
             # plot figure and save it
             figname = os.path.join(dirname, f"{idx}.png")
             plt.subplot(2, 1, 1)
@@ -771,7 +768,6 @@ class Collater(object):
                     code, d = torch.unique_consecutive(
                         torch.tensor(c, dtype=torch.long), return_counts=True, dim=0
                     )
-                    # logging.info("code: {}, d: {}, c:{}".format(code.size(), d.size(), c.shape))
                     updated_c_batch.append(code)
                     d_batch.append(d)
                 c_batch = self._pad_list(updated_c_batch, self.pad_value).transpose(
