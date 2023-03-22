@@ -27,6 +27,7 @@ import parallel_wavegan.optimizers
 from parallel_wavegan.datasets import (
     AudioDataset,
     AudioMelDataset,
+    AudioMelF0ExcitationDataset,
     AudioMelSCPDataset,
     AudioSCPDataset,
 )
@@ -537,9 +538,6 @@ class Trainer(object):
             # convert to ndarray
             y, y_ = y.view(-1).cpu().numpy(), y_.view(-1).cpu().numpy()
 
-            logging.info("y: {}, y_: {}".format(y.shape, y_.shape))
-            logging.info("y:{}, y_:{}".format(y[:10], y_[:10]))
-
             # plot figure and save it
             figname = os.path.join(dirname, f"{idx}.png")
             plt.subplot(2, 1, 1)
@@ -650,6 +648,7 @@ class Collater(object):
         hop_size=256,
         aux_context_window=2,
         use_noise_input=False,
+        use_f0_and_excitation=False,
         use_aux_input=True,
         use_duration=False,
         use_global_condition=False,
@@ -663,6 +662,7 @@ class Collater(object):
             hop_size (int): Hop size of auxiliary features.
             aux_context_window (int): Context window size for auxiliary feature conv.
             use_noise_input (bool): Whether to use noise input.
+            use_f0_and_excitation (bool): Whether to use f0 and ext. input.
             use_aux_input (bool): Whether to use auxiliary input.
             use_duration (bool): Whether to use duration for duration prediction.
             use_global_condition (bool): Whether to use global conditioning.
@@ -678,6 +678,7 @@ class Collater(object):
         self.batch_max_steps = batch_max_steps
         self.aux_context_window = aux_context_window
         self.use_noise_input = use_noise_input
+        self.use_f0_and_excitation = use_f0_and_excitation
         self.use_aux_input = use_aux_input
         self.use_duration = use_duration
         self.use_global_condition = use_global_condition
@@ -728,6 +729,8 @@ class Collater(object):
                 self._adjust_length(*b) for b in batch if len(b[1]) > self.mel_threshold
             ]
             xs, cs = [b[0] for b in batch], [b[1] for b in batch]
+            if self.use_f0_and_excitation:
+                fs, es = [b[2] for b in batch], [b[3] for b in batch]
 
             # make batch with random cut
             c_lengths = [len(c) for c in cs]
@@ -748,6 +751,16 @@ class Collater(object):
             y_batch, c_batch = np.array(y_batch), np.array(c_batch)
             y_batch = torch.tensor(y_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T)
 
+            if self.use_f0_and_excitation:
+                f_batch = [f[start:end] for f, start, end in zip(fs, c_starts, c_ends)]
+                e_batch = [e[start:end] for e, start, end in zip(es, c_starts, c_ends)]
+                f_batch, e_batch = np.array(f_batch), np.array(e_batch)
+                f_batch = torch.tensor(f_batch, dtype=torch.float).unsqueeze(
+                    1
+                )  # (B, 1, T')
+                e_batch = torch.tensor(e_batch, dtype=torch.float)  # (B, 1, T', C')
+                e_batch = e_batch.reshape(e_batch.shape[0], 1, -1)  # (B, 1, T' * C')
+
             # duration calculation and return with duration information
             if self.use_duration:
                 updated_c_batch, d_batch = [], []
@@ -757,7 +770,6 @@ class Collater(object):
                     code, d = torch.unique_consecutive(
                         torch.tensor(c, dtype=torch.long), return_counts=True, dim=0
                     )
-                    # logging.info("code: {}, d: {}, c:{}".format(code.size(), d.size(), c.shape))
                     updated_c_batch.append(code)
                     d_batch.append(d)
                 c_batch = self._pad_list(updated_c_batch, self.pad_value).transpose(
@@ -771,12 +783,15 @@ class Collater(object):
                 2, 1
             )  # (B, C, T')
 
-            # make input noise signal batch tensor
+            input_items = (c_batch,)
             if self.use_noise_input:
+                # make input noise signal batch tensor
                 z_batch = torch.randn(y_batch.size())  # (B, 1, T)
-                return (z_batch, c_batch), y_batch
-            else:
-                return (c_batch,), y_batch
+                input_items = (z_batch,) + input_items
+            if self.use_f0_and_excitation:
+                input_items = input_items + (f_batch, e_batch)
+
+            return input_items, y_batch
         else:
             #################################
             #        VQ-WAV2WAV CASE        #
@@ -856,7 +871,7 @@ class Collater(object):
             # NOTE(kan-bayashi): Always return "l" and "g" since VQ-VAE can accept None
             return (l_batch, g_batch), y_batch
 
-    def _adjust_length(self, x, c):
+    def _adjust_length(self, x, c, f0=None, excitation=None):
         """Adjust the audio and feature lengths.
 
         Note:
@@ -871,7 +886,10 @@ class Collater(object):
         # check the legnth is valid
         assert len(x) == len(c) * self.hop_size
 
-        return x, c
+        if f0 is not None and excitation is not None:
+            return x, c, f0, excitation
+        else:
+            return x, c
 
     def _pad_list(self, xs, pad_value):
         """Perform padding for the list of tensors.
@@ -1092,6 +1110,7 @@ def main():
     use_duration = "Duration" in generator_type
     use_local_condition = config.get("use_local_condition", False)
     use_global_condition = config.get("use_global_condition", False)
+    use_f0_and_excitation = generator_type == "UHiFiGANGenerator"
 
     # setup query and load function
     if args.train_wav_scp is None or args.dev_wav_scp is None:
@@ -1103,6 +1122,10 @@ def main():
             audio_query, mel_query = "*.h5", "*.h5"
             audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
             mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+            if use_f0_and_excitation:
+                f0_query, excitation_query = "*.h5", "*.h5"
+                f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
+                excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
             if use_local_condition:
                 local_query = "*.h5"
                 local_load_fn = lambda x: read_hdf5(x, "local")  # NOQA
@@ -1113,6 +1136,10 @@ def main():
             audio_query, mel_query = "*-wave.npy", "*-feats.npy"
             audio_load_fn = np.load
             mel_load_fn = np.load
+            if use_f0_and_excitation:
+                f0_query, excitation_query = "*-f0.npy", "*-excitation.npy"
+                f0_load_fn = np.load
+                excitation_load_fn = np.load
             if use_local_condition:
                 local_query = "*-local.npy"
                 local_load_fn = np.load
@@ -1134,33 +1161,52 @@ def main():
 
     # define dataset for training data
     if args.train_dumpdir is not None:
-        if use_aux_input:
-            train_dataset = AudioMelDataset(
+        if not use_f0_and_excitation:
+            if use_aux_input:
+                train_dataset = AudioMelDataset(
+                    root_dir=args.train_dumpdir,
+                    audio_query=audio_query,
+                    audio_load_fn=audio_load_fn,
+                    mel_query=mel_query,
+                    mel_load_fn=mel_load_fn,
+                    local_query=local_query,
+                    local_load_fn=local_load_fn,
+                    global_query=global_query,
+                    global_load_fn=global_load_fn,
+                    mel_length_threshold=mel_length_threshold,
+                    allow_cache=config.get("allow_cache", False),  # keep compatibility
+                )
+            else:
+                train_dataset = AudioDataset(
+                    root_dir=args.train_dumpdir,
+                    audio_query=audio_query,
+                    audio_load_fn=audio_load_fn,
+                    local_query=local_query,
+                    local_load_fn=local_load_fn,
+                    global_query=global_query,
+                    global_load_fn=global_load_fn,
+                    audio_length_threshold=audio_length_threshold,
+                    allow_cache=config.get("allow_cache", False),  # keep compatibility
+                )
+        else:
+            train_dataset = AudioMelF0ExcitationDataset(
                 root_dir=args.train_dumpdir,
                 audio_query=audio_query,
-                audio_load_fn=audio_load_fn,
                 mel_query=mel_query,
+                f0_query=f0_query,
+                excitation_query=excitation_query,
+                audio_load_fn=audio_load_fn,
                 mel_load_fn=mel_load_fn,
-                local_query=local_query,
-                local_load_fn=local_load_fn,
-                global_query=global_query,
-                global_load_fn=global_load_fn,
+                f0_load_fn=f0_load_fn,
+                excitation_load_fn=excitation_load_fn,
                 mel_length_threshold=mel_length_threshold,
                 allow_cache=config.get("allow_cache", False),  # keep compatibility
             )
-        else:
-            train_dataset = AudioDataset(
-                root_dir=args.train_dumpdir,
-                audio_query=audio_query,
-                audio_load_fn=audio_load_fn,
-                local_query=local_query,
-                local_load_fn=local_load_fn,
-                global_query=global_query,
-                global_load_fn=global_load_fn,
-                audio_length_threshold=audio_length_threshold,
-                allow_cache=config.get("allow_cache", False),  # keep compatibility
-            )
     else:
+        if use_f0_and_excitation:
+            raise NotImplementedError(
+                "SCP format is not supported for f0 and excitation."
+            )
         if use_local_condition:
             raise NotImplementedError("Not supported.")
         if use_global_condition:
@@ -1183,33 +1229,52 @@ def main():
 
     # define dataset for validation
     if args.dev_dumpdir is not None:
-        if use_aux_input:
-            dev_dataset = AudioMelDataset(
+        if not use_f0_and_excitation:
+            if use_aux_input:
+                dev_dataset = AudioMelDataset(
+                    root_dir=args.dev_dumpdir,
+                    audio_query=audio_query,
+                    audio_load_fn=audio_load_fn,
+                    mel_query=mel_query,
+                    mel_load_fn=mel_load_fn,
+                    local_query=local_query,
+                    local_load_fn=local_load_fn,
+                    global_query=global_query,
+                    global_load_fn=global_load_fn,
+                    mel_length_threshold=mel_length_threshold,
+                    allow_cache=config.get("allow_cache", False),  # keep compatibility
+                )
+            else:
+                dev_dataset = AudioDataset(
+                    root_dir=args.dev_dumpdir,
+                    audio_query=audio_query,
+                    audio_load_fn=audio_load_fn,
+                    local_query=local_query,
+                    local_load_fn=local_load_fn,
+                    global_query=global_query,
+                    global_load_fn=global_load_fn,
+                    audio_length_threshold=audio_length_threshold,
+                    allow_cache=config.get("allow_cache", False),  # keep compatibility
+                )
+        else:
+            dev_dataset = AudioMelF0ExcitationDataset(
                 root_dir=args.dev_dumpdir,
                 audio_query=audio_query,
-                audio_load_fn=audio_load_fn,
                 mel_query=mel_query,
+                f0_query=f0_query,
+                excitation_query=excitation_query,
+                audio_load_fn=audio_load_fn,
                 mel_load_fn=mel_load_fn,
-                local_query=local_query,
-                local_load_fn=local_load_fn,
-                global_query=global_query,
-                global_load_fn=global_load_fn,
+                f0_load_fn=f0_load_fn,
+                excitation_load_fn=excitation_load_fn,
                 mel_length_threshold=mel_length_threshold,
                 allow_cache=config.get("allow_cache", False),  # keep compatibility
             )
-        else:
-            dev_dataset = AudioDataset(
-                root_dir=args.dev_dumpdir,
-                audio_query=audio_query,
-                audio_load_fn=audio_load_fn,
-                local_query=local_query,
-                local_load_fn=local_load_fn,
-                global_query=global_query,
-                global_load_fn=global_load_fn,
-                audio_length_threshold=audio_length_threshold,
-                allow_cache=config.get("allow_cache", False),  # keep compatibility
-            )
     else:
+        if use_f0_and_excitation:
+            raise NotImplementedError(
+                "SCP format is not supported for f0 and excitation."
+            )
         if use_local_condition:
             raise NotImplementedError("Not supported.")
         if use_global_condition:
@@ -1243,6 +1308,7 @@ def main():
         batch_max_steps=config["batch_max_steps"],
         hop_size=config.get("hop_size", None),
         aux_context_window=config["generator_params"].get("aux_context_window", 0),
+        use_f0_and_excitation=use_f0_and_excitation,
         use_noise_input=use_noise_input,
         use_aux_input=use_aux_input,
         use_duration=use_duration,

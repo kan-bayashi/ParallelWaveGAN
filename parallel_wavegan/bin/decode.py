@@ -21,6 +21,7 @@ from parallel_wavegan.datasets import (
     AudioDataset,
     AudioSCPDataset,
     MelDataset,
+    MelF0ExcitationDataset,
     MelSCPDataset,
 )
 from parallel_wavegan.utils import load_model, read_hdf5
@@ -131,7 +132,7 @@ def main():
     if (args.scp is not None and args.dumpdir is not None) or (
         args.scp is None and args.dumpdir is None
     ):
-        raise ValueError("Please specify either --dumpdir or --scp.")
+        raise ValueError("Please specify either --dumpdir or --feats-scp.")
 
     # setup model
     if torch.cuda.is_available():
@@ -144,6 +145,7 @@ def main():
         assert hasattr(model, "mean"), "Feature stats are not registered."
         assert hasattr(model, "scale"), "Feature stats are not registered."
     model.remove_weight_norm()
+    model = model.eval().to(device)
     model.to(device)
 
     # check model type
@@ -151,6 +153,7 @@ def main():
     use_aux_input = "VQVAE" not in generator_type
     use_global_condition = config.get("use_global_condition", False)
     use_local_condition = config.get("use_local_condition", False)
+    use_f0_and_excitation = generator_type == "UHiFiGANGenerator"
 
     if use_aux_input:
         ############################
@@ -161,20 +164,47 @@ def main():
             if config["format"] == "hdf5":
                 mel_query = "*.h5"
                 mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+                if use_f0_and_excitation:
+                    f0_query = "*.h5"
+                    f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
+                    excitation_query = "*.h5"
+                    excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
             elif config["format"] == "npy":
                 mel_query = "*-feats.npy"
                 mel_load_fn = np.load
+                if use_f0_and_excitation:
+                    f0_query = "*-f0.npy"
+                    f0_load_fn = np.load
+                    excitation_query = "*-excitation.npy"
+                    excitation_load_fn = np.load
             else:
-                raise ValueError("support only hdf5 or npy format.")
-            dataset = MelDataset(
-                args.dumpdir,
-                mel_query=mel_query,
-                mel_load_fn=mel_load_fn,
-                return_utt_id=True,
-            )
+                raise ValueError("Support only hdf5 or npy format.")
+
+            if not use_f0_and_excitation:
+                dataset = MelDataset(
+                    args.dumpdir,
+                    mel_query=mel_query,
+                    mel_load_fn=mel_load_fn,
+                    return_utt_id=True,
+                )
+            else:
+                dataset = MelF0ExcitationDataset(
+                    root_dir=args.dumpdir,
+                    mel_query=mel_query,
+                    f0_query=f0_query,
+                    excitation_query=excitation_query,
+                    mel_load_fn=mel_load_fn,
+                    f0_load_fn=f0_load_fn,
+                    excitation_load_fn=excitation_load_fn,
+                    return_utt_id=True,
+                )
         else:
+            if use_f0_and_excitation:
+                raise NotImplementedError(
+                    "SCP format is not supported for f0 and excitation."
+                )
             dataset = MelSCPDataset(
-                args.scp,
+                feats_scp=args.feats_scp,
                 return_utt_id=True,
             )
         logging.info(f"The number of features to be decoded = {len(dataset)}.")
@@ -182,11 +212,24 @@ def main():
         # start generation
         total_rtf = 0.0
         with torch.no_grad(), tqdm(dataset, desc="[decode]") as pbar:
-            for idx, (utt_id, c) in enumerate(pbar, 1):
-                # generate
-                c = torch.tensor(c, dtype=torch.float).to(device)
+            for idx, items in enumerate(pbar, 1):
+                if not use_f0_and_excitation:
+                    utt_id, c = items
+                    f0, excitation = None, None
+                else:
+                    utt_id, c, f0, excitation = items
+                batch = dict(normalize_before=args.normalize_before)
+                if c is not None:
+                    c = torch.tensor(c, dtype=torch.float).to(device)
+                    batch.update(c=c)
+                if f0 is not None:
+                    f0 = torch.tensor(f0, dtype=torch.float).to(device)
+                    batch.update(f0=f0)
+                if excitation is not None:
+                    excitation = torch.tensor(excitation, dtype=torch.float).to(device)
+                    batch.update(excitation=excitation)
                 start = time.time()
-                y = model.inference(c, normalize_before=args.normalize_before).view(-1)
+                y = model.inference(**batch).view(-1)
                 rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
                 pbar.set_postfix({"RTF": rtf})
                 total_rtf += rtf
