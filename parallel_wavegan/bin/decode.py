@@ -117,6 +117,10 @@ def main():
         config = yaml.load(f, Loader=yaml.Loader)
     config.update(vars(args))
 
+    # check model architecture
+    generator_type = (config.get("generator_type", "ParallelWaveGANGenerator"),)
+    use_f0_and_excitation = generator_type == "UHiFiGANGenerator"
+
     # check arguments
     if (args.feats_scp is not None and args.dumpdir is not None) or (
         args.feats_scp is None and args.dumpdir is None
@@ -128,36 +132,42 @@ def main():
         if config["format"] == "hdf5":
             mel_query = "*.h5"
             mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
-            f0_query = "*.h5"
-            f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
-            excitation_query = "*.h5"
-            excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
+            if use_f0_and_excitation:
+                f0_query = "*.h5"
+                f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
+                excitation_query = "*.h5"
+                excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
         elif config["format"] == "npy":
             mel_query = "*-feats.npy"
             mel_load_fn = np.load
-            f0_query = "*-f0.npy"
-            f0_load_fn = np.load
-            excitation_query = "*-excitation.npy"
-            excitation_load_fn = np.load
+            if use_f0_and_excitation:
+                f0_query = "*-f0.npy"
+                f0_load_fn = np.load
+                excitation_query = "*-excitation.npy"
+                excitation_load_fn = np.load
         else:
             raise ValueError("Support only hdf5 or npy format.")
-        dataset = MelF0ExcitationDataset(
-            root_dir=args.dumpdir,
-            mel_query=mel_query,
-            f0_query=f0_query,
-            excitation_query=excitation_query,
-            mel_load_fn=mel_load_fn,
-            f0_load_fn=f0_load_fn,
-            excitation_load_fn=excitation_load_fn,
-            return_utt_id=True,
-        )
-        # dataset = MelDataset(
-        #     args.dumpdir,
-        #     mel_query=mel_query,
-        #     mel_load_fn=mel_load_fn,
-        #     return_utt_id=True,
-        # )
+        if not use_f0_and_excitation:
+            dataset = MelDataset(
+                args.dumpdir,
+                mel_query=mel_query,
+                mel_load_fn=mel_load_fn,
+                return_utt_id=True,
+            )
+        else:
+            dataset = MelF0ExcitationDataset(
+                root_dir=args.dumpdir,
+                mel_query=mel_query,
+                f0_query=f0_query,
+                excitation_query=excitation_query,
+                mel_load_fn=mel_load_fn,
+                f0_load_fn=f0_load_fn,
+                excitation_load_fn=excitation_load_fn,
+                return_utt_id=True,
+            )
     else:
+        if use_f0_and_excitation:
+            raise NotImplementedError("SCP format is not supported for f0 and excitation.")
         dataset = MelSCPDataset(
             feats_scp=args.feats_scp,
             return_utt_id=True,
@@ -180,9 +190,12 @@ def main():
     # start generation
     total_rtf = 0.0
     with torch.no_grad(), tqdm(dataset, desc="[decode]") as pbar:
-        for idx, (utt_id, c, f0, excitation) in enumerate(pbar, 1):
-            # for idx, (utt_id, c) in enumerate(pbar, 1):
-            # generate
+        for idx, items in enumerate(pbar, 1):
+            if not use_f0_and_excitation:
+                utt_id, c = items
+                f0, excitation = None, None
+            else:
+                utt_id, c, f0, excitation = items
             batch = dict(normalize_before=args.normalize_before)
             if c is not None:
                 c = torch.tensor(c, dtype=torch.float).to(device)
@@ -194,7 +207,6 @@ def main():
                 excitation = torch.tensor(excitation, dtype=torch.float).to(device)
                 batch.update(excitation=excitation)
             start = time.time()
-            # y = model.inference( c, normalize_before=args.normalize_before).view(-1)
             y = model.inference(**batch).view(-1)
             rtf = (time.time() - start) / (len(y) / config["sampling_rate"])
             pbar.set_postfix({"RTF": rtf})
