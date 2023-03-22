@@ -216,6 +216,7 @@ if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
     for dset in "${dev_set}" "${eval_set}"; do
         _data="data/${dset}"
         _gt_wavscp="${_data}/wav.scp"
+        # shellcheck disable=SC2012
         [ -z "${checkpoint}" ] && checkpoint="$(ls -dt "${expdir}"/*.pkl | head -1 || true)"
         _dir="${expdir}/wav/$(basename "${checkpoint}" .pkl)"
         _gen_wavdir="${_dir}/${dset}"
