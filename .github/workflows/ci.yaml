@@ -91,7 +91,8 @@ jobs:
           sudo apt-get install libsndfile-dev jq
           # make python env
           cd tools; make CUDA_VERSION="" PYTHON=python${{ matrix.python-version }} PYTORCH_VERSION=${{ matrix.pytorch-version }}
-          cd tools; source venv/bin/activate: pip install torch-yin
+          source venv/bin/activate
+          pip install torch-yin
       - name: Integration
         run: |
           cd egs/yesno/voc1 && ./run.sh --conf conf/${{ matrix.config }}
