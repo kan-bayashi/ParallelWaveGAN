@@ -12,7 +12,7 @@ import logging
 import multiprocessing as mp
 import os
 from math import log2, pow
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import librosa
 import numpy as np
@@ -207,8 +207,6 @@ def calculate(
         log_f0_rmse = np.sqrt(np.mean((gen_f0_dtw_voiced - gt_f0_dtw_voiced) ** 2))
         f0_rmse_dict[gt_basename] = log_f0_rmse
 
-        # logging.info(f"{gt_basename} log_f0_rmse: {log_f0_rmse:.4f}, Semitone_ACC: {semitone_ACC*100:.2f}%, VUV_ERROR: {vuv_ERR*100:.2f}")
-
 
 def get_parser() -> argparse.Namespace:
     """Get argument parser."""
@@ -344,8 +342,6 @@ def main():
         semitone_acc_dict = manager.dict()
         vuv_err_dict = manager.dict()
         processes = []
-        # for f in file_lists:
-        #     calculate(f, gt_files, args, log_f0_rmse_dict)
         for f in file_lists:
             p = mp.Process(
                 target=calculate,
@@ -396,7 +392,8 @@ def main():
             semitone_ACC = semitone_acc_dict[utt_id]
             vuv_ERR = vuv_err_dict[utt_id]
             f.write(
-                f"{utt_id} log_f0_rmse: {log_f0_rmse:.4f}, Semitone_ACC: {semitone_ACC*100:.2f}%, VUV_ERROR: {vuv_ERR*100:.2f}\n"
+                f"{utt_id} log_f0_rmse: {log_f0_rmse:.4f}, Semitone_ACC:"
+                f" {semitone_ACC*100:.2f}%, VUV_ERROR: {vuv_ERR*100:.2f}\n"
             )
     with open(f"{args.outdir}/avg_result.txt", "w") as f:
         f.write(f"#utterances: {len(gen_files)}\n")
