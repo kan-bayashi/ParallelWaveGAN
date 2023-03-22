@@ -425,7 +425,10 @@ def main():
                 hop_size=hop_size,
                 frame_length=config["win_length"],
             ).reshape(-1, 1)
-            f0 = f0[: len(mel)]
+            if len(f0) > len(mel):
+                f0 = f0[: len(mel)]
+            else:
+                f0 = np.pad(f0, (0, len(mel) - len(f0)), mode="edge")
             extended_f0 = (
                 torch.from_numpy(f0)
                 .reshape(1, 1, -1)
