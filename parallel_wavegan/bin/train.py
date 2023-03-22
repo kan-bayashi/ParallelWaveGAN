@@ -10,7 +10,6 @@ import argparse
 import logging
 import os
 import sys
-from cmath import log
 from collections import defaultdict
 
 import matplotlib
@@ -541,6 +540,7 @@ class Collater(object):
         hop_size=256,
         aux_context_window=2,
         use_noise_input=False,
+        use_f0_and_excitation=False,
     ):
         """Initialize customized collater for PyTorch DataLoader.
 
@@ -549,6 +549,7 @@ class Collater(object):
             hop_size (int): Hop size of auxiliary features.
             aux_context_window (int): Context window size for auxiliary feature conv.
             use_noise_input (bool): Whether to use noise input.
+            use_f0_and_excitation (bool): Whether to use f0 and ext. input.
 
         """
         if batch_max_steps % hop_size != 0:
@@ -559,6 +560,7 @@ class Collater(object):
         self.hop_size = hop_size
         self.aux_context_window = aux_context_window
         self.use_noise_input = use_noise_input
+        self.use_f0_and_excitation = use_f0_and_excitation
 
         # set useful values in random cutting
         self.start_offset = aux_context_window
@@ -579,12 +581,12 @@ class Collater(object):
 
         """
         # check length
-        # logging.warn(f'len(batch[0]):{len(batch[0])}')
         batch = [
             self._adjust_length(*b) for b in batch if len(b[1]) > self.mel_threshold
         ]
-        xs, es = [b[0] for b in batch], [b[2] for b in batch]
-        fs, cs = [b[1] for b in batch], [b[3] for b in batch]
+        xs, cs = [b[0] for b in batch], [b[1] for b in batch]
+        if self.use_f0_and_excitation:
+            fs, es = [b[2] for b in batch], [b[3] for b in batch]
 
         # make batch with random cut
         c_lengths = [len(c) for c in cs]
@@ -600,47 +602,30 @@ class Collater(object):
         c_ends = start_frames + self.batch_max_frames + self.aux_context_window
         y_batch = [x[start:end] for x, start, end in zip(xs, x_starts, x_ends)]
         c_batch = [c[start:end] for c, start, end in zip(cs, c_starts, c_ends)]
-        f_batch = [f[start:end] for f, start, end in zip(fs, c_starts, c_ends)]
-        e_batch = [e[start:end] for e, start, end in zip(es, c_starts, c_ends)]
 
         # convert each batch to tensor, asuume that each item in batch has the same length
         y_batch, c_batch = np.array(y_batch), np.array(c_batch)
-        f_batch, e_batch = np.array(f_batch), np.array(e_batch)
-
-        # logging.info(f'bef y_batch:{y_batch.shape}')
-        # logging.info(f'bef c_batch:{c_batch.shape}')
-        # logging.info(f'bef f_batch:{f_batch.shape}')
-        # logging.info(f'bef e_batch:{e_batch.shape}')
-
         y_batch = torch.tensor(y_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T)
-        # logging.info(f'aft y_batch:{y_batch.shape}')
-
         c_batch = torch.tensor(c_batch, dtype=torch.float).transpose(2, 1)  # (B, C, T')
-        # logging.info(f'aft c_batch:{c_batch.shape}')
 
-        f_batch = torch.tensor(f_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T')
-        # logging.info(f'aft f_batch:{f_batch.shape}')
-
-        e_batch = torch.tensor(e_batch, dtype=torch.float)  # (B, 1, T', C')
-        bz = e_batch.shape[0]
-        e_batch = e_batch.reshape(bz, 1, -1)  # (B, 1, T' * C')
-        # logging.info(f'aft e_batch:{e_batch.shape}')
+        if self.use_f0_and_excitation:
+            f_batch = [f[start:end] for f, start, end in zip(fs, c_starts, c_ends)]
+            e_batch = [e[start:end] for e, start, end in zip(es, c_starts, c_ends)]
+            f_batch, e_batch = np.array(f_batch), np.array(e_batch)
+            f_batch = torch.tensor(f_batch, dtype=torch.float).unsqueeze(1)  # (B, 1, T')
+            e_batch = torch.tensor(e_batch, dtype=torch.float)  # (B, 1, T', C')
+            e_batch = e_batch.reshape(e_batch.shape[0], 1, -1)  # (B, 1, T' * C')
 
         # make input noise signal batch tensor
+        input_items = (c_batch,)
+
         if self.use_noise_input:
             z_batch = torch.randn(y_batch.size())  # (B, 1, T)
-            return (
-                z_batch,
-                c_batch,
-                f_batch,
-                e_batch,
-            ), y_batch
-        else:
-            return (
-                c_batch,
-                f_batch,
-                e_batch,
-            ), y_batch
+            input_items = (z_batch,) + input_items
+        if self.use_f0_and_excitation:
+            input_items = input_items + (f_batch, e_batch)
+
+        return input_items, y_batch
 
     def _adjust_length(self, x, c, f0=None, excitatioin=None):
         """Adjust the audio and feature lengths.
@@ -840,6 +825,10 @@ def main():
     for key, value in config.items():
         logging.info(f"{key} = {value}")
 
+    # check model architecture
+    generator_type = (config.get("generator_type", "ParallelWaveGANGenerator"),)
+    use_f0_and_excitation = generator_type == "UHiFiGANGenerator"
+
     # get dataset
     if config["remove_short_samples"]:
         mel_length_threshold = config["batch_max_steps"] // config[
@@ -850,45 +839,50 @@ def main():
     if args.train_wav_scp is None or args.dev_wav_scp is None:
         if config["format"] == "hdf5":
             audio_query, mel_query = "*.h5", "*.h5"
-            f0_query, excitation_query = "*.h5", "*.h5"
             audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
-            mel_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
-            f0_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
-            excitation_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+            mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+            if use_f0_and_excitation:
+                f0_query, excitation_query = "*.h5", "*.h5"
+                f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
+                excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
         elif config["format"] == "npy":
             audio_query, mel_query = "*-wave.npy", "*-feats.npy"
-            f0_query, excitation_query = "*-f0.npy", "*-excitation.npy"
             audio_load_fn = np.load
             mel_load_fn = np.load
-            f0_load_fn = np.load
-            excitation_load_fn = np.load
+            if use_f0_and_excitation:
+                f0_query, excitation_query = "*-f0.npy", "*-excitation.npy"
+                f0_load_fn = np.load
+                excitation_load_fn = np.load
         else:
             raise ValueError("support only hdf5 or npy format.")
     if args.train_dumpdir is not None:
-        # train_dataset = AudioMelDataset(
-        #     root_dir=args.train_dumpdir,
-        #     audio_query=audio_query,
-        #     mel_query=mel_query,
-        #     audio_load_fn=audio_load_fn,
-        #     mel_load_fn=mel_load_fn,
-        #     mel_length_threshold=mel_length_threshold,
-        #     allow_cache=config.get("allow_cache", False),  # keep compatibility
-        # )
-        # logging.info(f'train AudioMelF0ExcitationDataset')
-        train_dataset = AudioMelF0ExcitationDataset(
-            root_dir=args.train_dumpdir,
-            audio_query=audio_query,
-            mel_query=mel_query,
-            f0_query=f0_query,
-            excitation_query=excitation_query,
-            audio_load_fn=audio_load_fn,
-            mel_load_fn=mel_load_fn,
-            f0_load_fn=f0_load_fn,
-            excitation_load_fn=excitation_load_fn,
-            mel_length_threshold=mel_length_threshold,
-            allow_cache=config.get("allow_cache", False),  # keep compatibility
-        )
+        if not use_f0_and_excitation:
+            train_dataset = AudioMelDataset(
+                root_dir=args.train_dumpdir,
+                audio_query=audio_query,
+                mel_query=mel_query,
+                audio_load_fn=audio_load_fn,
+                mel_load_fn=mel_load_fn,
+                mel_length_threshold=mel_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
+        else:
+            train_dataset = AudioMelF0ExcitationDataset(
+                root_dir=args.train_dumpdir,
+                audio_query=audio_query,
+                mel_query=mel_query,
+                f0_query=f0_query,
+                excitation_query=excitation_query,
+                audio_load_fn=audio_load_fn,
+                mel_load_fn=mel_load_fn,
+                f0_load_fn=f0_load_fn,
+                excitation_load_fn=excitation_load_fn,
+                mel_length_threshold=mel_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
     else:
+        if use_f0_and_excitation:
+            raise NotImplementedError("SCP format is not supported for f0 and excitation.")
         train_dataset = AudioMelSCPDataset(
             wav_scp=args.train_wav_scp,
             feats_scp=args.train_feats_scp,
@@ -898,30 +892,33 @@ def main():
         )
     logging.info(f"The number of training files = {len(train_dataset)}.")
     if args.dev_dumpdir is not None:
-        # dev_dataset = AudioMelDataset(
-        #     root_dir=args.dev_dumpdir,
-        #     audio_query=audio_query,
-        #     mel_query=mel_query,
-        #     audio_load_fn=audio_load_fn,
-        #     mel_load_fn=mel_load_fn,
-        #     mel_length_threshold=mel_length_threshold,
-        #     allow_cache=config.get("allow_cache", False),  # keep compatibility
-        # )
-        # logging.info(f'dev AudioMelF0ExcitationDataset')
-        dev_dataset = AudioMelF0ExcitationDataset(
-            root_dir=args.dev_dumpdir,
-            audio_query=audio_query,
-            mel_query=mel_query,
-            f0_query=f0_query,
-            excitation_query=excitation_query,
-            audio_load_fn=audio_load_fn,
-            mel_load_fn=mel_load_fn,
-            f0_load_fn=f0_load_fn,
-            excitation_load_fn=excitation_load_fn,
-            mel_length_threshold=mel_length_threshold,
-            allow_cache=config.get("allow_cache", False),  # keep compatibility
-        )
+        if not use_f0_and_excitation:
+            dev_dataset = AudioMelDataset(
+                root_dir=args.dev_dumpdir,
+                audio_query=audio_query,
+                mel_query=mel_query,
+                audio_load_fn=audio_load_fn,
+                mel_load_fn=mel_load_fn,
+                mel_length_threshold=mel_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
+        else:
+            dev_dataset = AudioMelF0ExcitationDataset(
+                root_dir=args.dev_dumpdir,
+                audio_query=audio_query,
+                mel_query=mel_query,
+                f0_query=f0_query,
+                excitation_query=excitation_query,
+                audio_load_fn=audio_load_fn,
+                mel_load_fn=mel_load_fn,
+                f0_load_fn=f0_load_fn,
+                excitation_load_fn=excitation_load_fn,
+                mel_length_threshold=mel_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
     else:
+        if use_f0_and_excitation:
+            raise NotImplementedError("SCP format is not supported for f0 and excitation.")
         dev_dataset = AudioMelSCPDataset(
             wav_scp=args.dev_wav_scp,
             feats_scp=args.dev_feats_scp,
@@ -944,6 +941,7 @@ def main():
         # keep compatibility
         use_noise_input=config.get("generator_type", "ParallelWaveGANGenerator")
         in ["ParallelWaveGANGenerator"],
+        use_f0_and_excitation=use_f0_and_excitation,
     )
     sampler = {"train": None, "dev": None}
     if args.distributed:
