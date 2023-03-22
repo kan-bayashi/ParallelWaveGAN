@@ -73,6 +73,7 @@ jobs:
           - "parallel_wavegan.v1.debug.diff_fs.yaml"
           - "hifigan.v1.debug.yaml"
           - "style_melgan.v1.debug.yaml"
+          - "uhifigan.v1.debug.yaml"
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v2
@@ -90,6 +91,7 @@ jobs:
           sudo apt-get install libsndfile-dev jq
           # make python env
           cd tools; make CUDA_VERSION="" PYTHON=python${{ matrix.python-version }} PYTORCH_VERSION=${{ matrix.pytorch-version }}
+          cd tools; source venv/bin/activate: pip install torch-yin
       - name: Integration
         run: |
           cd egs/yesno/voc1 && ./run.sh --conf conf/${{ matrix.config }}
