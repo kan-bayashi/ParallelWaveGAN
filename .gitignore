@@ -33,4 +33,5 @@ egs/*/*/conf/tuning
 
 # tools related
 tools/venv/
+tools/*.done
 tools/apex/
