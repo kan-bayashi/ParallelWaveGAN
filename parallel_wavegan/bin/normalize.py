@@ -124,7 +124,7 @@ def main():
     config.update(vars(args))
 
     # check model architecture
-    generator_type = (config.get("generator_type", "ParallelWaveGANGenerator"),)
+    generator_type = config.get("generator_type", "ParallelWaveGANGenerator")
     use_f0_and_excitation = generator_type == "UHiFiGANGenerator"
 
     # check arguments
