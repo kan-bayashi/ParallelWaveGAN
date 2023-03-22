@@ -70,18 +70,10 @@ class UHiFiGANGenerator(torch.nn.Module):
         self.num_upsamples = len(upsample_kernel_sizes)
         self.num_blocks = len(resblock_kernel_sizes)
         self.use_causal_conv = use_causal_conv
-
-        self.input_conv = None
-
         self.downsamples = torch.nn.ModuleList()
         self.downsamples_mrf = torch.nn.ModuleList()
-
-        self.hidden_conv = None
-
         self.upsamples = torch.nn.ModuleList()
         self.upsamples_mrf = torch.nn.ModuleList()
-
-        self.output_conv = None
 
         if not use_causal_conv:
             self.input_conv = torch.nn.Sequential(
@@ -231,21 +223,6 @@ class UHiFiGANGenerator(torch.nn.Module):
 
             channels = channels // 2
 
-            # hidden_channel for MRF module
-            # for j in range(len(resblock_kernel_sizes)):
-            #     self.blocks += [
-            #         ResidualBlock(
-            #             kernel_size=resblock_kernel_sizes[j],
-            #             channels=channels // (2 ** (i + 1)),
-            #             dilations=resblock_dilations[j],
-            #             bias=bias,
-            #             use_additional_convs=use_additional_convs,
-            #             nonlinear_activation=nonlinear_activation,
-            #             nonlinear_activation_params=nonlinear_activation_params,
-            #             use_causal_conv=use_causal_conv,
-            #         )
-            #     ]
-
         if not use_causal_conv:
             self.output_conv = torch.nn.Sequential(
                 # NOTE(kan-bayashi): follow official implementation but why
@@ -293,22 +270,6 @@ class UHiFiGANGenerator(torch.nn.Module):
             Tensor: Output tensor (B, out_channels, T).
 
         """
-        # logging.warn(f'c:{c.shape}')
-        # logging.warn(f'f0:{f0.shape}')
-        # logging.warn(f'excitation:{excitation.shape}')
-
-        # logging.info(f'c:{c.shape}')
-        # if f0 is not None:
-        #     c = torch.cat( (c,f0), 1)
-        # if excitation is not None:
-        #     c = torch.cat( (c,excitation), 1)
-        # if f0 is not None and excitation is not None:
-        #     c = torch.cat( (c, f0, excitation) ,1)
-        # elif f0 is not None:
-        #     c = torch.cat( (c,f0), 1)
-        # elif excitation is not None:
-        #     c = torch.cat( (c,excitation), 1)
-
         residual_results = []
         hidden = self.input_conv(excitation)
 
@@ -321,33 +282,21 @@ class UHiFiGANGenerator(torch.nn.Module):
             hidden = self.downsamples[i](hidden)
             residual_results.append(hidden)
 
-        # logging.warn(f'hidden:{hidden.shape}')
         residual_results.reverse()
-        # logging.warn(f'residual_results:{ [r.shape for r in residual_results] }')
 
         hidden_mel = self.hidden_conv(c)
 
         for i in range(len(self.upsamples)):
-            # logging.warn(f'bef {i}-th upsampe:{hidden_mel.shape}')
-            # logging.warn(f'bef {i}-th upsampe:{residual_results[i].shape}')
             hidden_mel = torch.cat((hidden_mel, residual_results[i]), dim=1)
-            # logging.warn(f'aft {i}-th upsample :{hidden_mel.shape}')
             hidden_mel = self.upsamples[i](hidden_mel)
 
-            # logging.warn(f'bef {i}-th MRF:{hidden_mel.shape}')
-            # logging.warn(f'self.upsamples_mrf:{self.upsamples_mrf}')
             cs = 0.0  # initialize
             for j in range(self.num_blocks):
-                # logging.warn(f'upsamples_mrf[{i * self.num_blocks + j}]:{self.upsamples_mrf[i * self.num_blocks + j]}')
                 tc = self.upsamples_mrf[i * self.num_blocks + j](hidden_mel)
-                # logging.info(f'{j}-th tc.shape:{tc.shape}')
                 cs += tc
             hidden_mel = cs / self.num_blocks
-            # logging.warn(f'aft {i}-th MRF:{hidden_mel.shape}')
 
-        # logging.warn(f'bef output conv mel : {hidden_mel.shape}')
         mel = self.output_conv(hidden_mel)
-        # logging.warn(f'aft output conv mel : {mel.shape}')
 
         return mel
 
@@ -412,6 +361,8 @@ class UHiFiGANGenerator(torch.nn.Module):
         """Perform inference.
 
         Args:
+            excitation (Union[Tensor, ndarray]): Excitation tensor.
+            f0 (Union[Tensor, ndarray]): F0 tensor.
             c (Union[Tensor, ndarray]): Input tensor (T, in_channels).
             normalize_before (bool): Whether to perform normalization.
 
@@ -419,9 +370,6 @@ class UHiFiGANGenerator(torch.nn.Module):
             Tensor: Output tensor (T ** prod(upsample_scales), out_channels).
 
         """
-        # print(len(c))
-        # logging.info(f'len(c):{len(c)}')
-        # excitation, f0, c = c
         if c is not None and not isinstance(c, torch.Tensor):
             c = torch.tensor(c, dtype=torch.float).to(next(self.parameters()).device)
         if excitation is not None and not isinstance(excitation, torch.Tensor):
@@ -431,10 +379,6 @@ class UHiFiGANGenerator(torch.nn.Module):
         if f0 is not None and not isinstance(f0, torch.Tensor):
             f0 = torch.tensor(f0, dtype=torch.float).to(next(self.parameters()).device)
 
-        # logging.info(f'excitation.shape:{excitation.shape}')
-        # logging.info(f'f0.shape:{f0.shape}')
-        # logging.info(f'c.shape:{c.shape}')
-        # c = self.forward(None, None, c.transpose(1, 0).unsqueeze(0))
         c = self.forward(
             c.transpose(1, 0).unsqueeze(0),
             f0.unsqueeze(1).transpose(1, 0).unsqueeze(0),
