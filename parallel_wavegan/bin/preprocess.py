@@ -54,7 +54,6 @@ def logmelfilterbank(
         ndarray: Log Mel filterbank feature (#frames, num_mels).
 
     """
-    logging.warn(f"audio:{audio.shape}")
     # get amplitude spectrogram
     x_stft = librosa.stft(
         audio,
@@ -64,9 +63,7 @@ def logmelfilterbank(
         window=window,
         pad_mode="reflect",
     )
-    logging.warn(f"x_stft:{x_stft.shape}")
     spc = np.abs(x_stft).T  # (#frames, #bins)
-    logging.warn(f"spc:{spc.shape}")
 
     # get mel basis
     fmin = 0 if fmin is None else fmin
@@ -79,7 +76,6 @@ def logmelfilterbank(
         fmax=fmax,
     )
 
-    logging.warn(f"mel_basis:{mel_basis.shape}")
     mel = np.maximum(eps, np.dot(spc, mel_basis.T))
 
     if log_base is None:
