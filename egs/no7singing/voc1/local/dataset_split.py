@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-import os
 import argparse
-import sys
+import os
 import random
 import shutil
+import sys
 from shutil import copyfile
-
 
 UTT_PREFIX = "no7singing"
 DEV_LIST = ["13", "14", "26", "28", "39"]

@@ -2,7 +2,6 @@ import argparse
 import os
 import shutil
 
-
 UTT_PREFIX = "natsume"
 DEV_LIST = ["9", "22", "38", "43", "44"]
 TEST_LIST = ["2", "13", "24", "25", "27"]

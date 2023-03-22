@@ -2,7 +2,6 @@ import argparse
 import os
 import shutil
 
-
 UTT_PREFIX = "csd"
 DEV_LIST = ["046"]
 TEST_LIST = ["047", "048", "049", "050"]
@@ -60,7 +59,6 @@ def process_subset(src_data, subset, check_func, dump_dir, fs):
     wavscp = open(os.path.join(subset, "wav.scp"), "w", encoding="utf-8")
     label_scp = open(os.path.join(subset, "label"), "w", encoding="utf-8")
     for csv in os.listdir(os.path.join(src_data, "csv")):
-
         if not os.path.isfile(os.path.join(src_data, "csv", csv)):
             continue
         if not check_func(csv):

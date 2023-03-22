@@ -1,0 +1,1 @@
+../../vq1/local/decode_from_text.py

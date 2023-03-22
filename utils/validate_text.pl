@@ -1,0 +1,1 @@
+kaldi/validate_text.pl

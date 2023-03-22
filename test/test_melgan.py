@@ -9,20 +9,25 @@ import logging
 import numpy as np
 import pytest
 import torch
+from test_parallel_wavegan import (
+    make_discriminator_args,
+    make_mutli_reso_stft_loss_args,
+    make_residual_discriminator_args,
+)
 
-from parallel_wavegan.losses import DiscriminatorAdversarialLoss
-from parallel_wavegan.losses import FeatureMatchLoss
-from parallel_wavegan.losses import GeneratorAdversarialLoss
-from parallel_wavegan.losses import MultiResolutionSTFTLoss
-from parallel_wavegan.models import MelGANGenerator
-from parallel_wavegan.models import MelGANMultiScaleDiscriminator
-from parallel_wavegan.models import ParallelWaveGANDiscriminator
-from parallel_wavegan.models import ResidualParallelWaveGANDiscriminator
+from parallel_wavegan.losses import (
+    DiscriminatorAdversarialLoss,
+    FeatureMatchLoss,
+    GeneratorAdversarialLoss,
+    MultiResolutionSTFTLoss,
+)
+from parallel_wavegan.models import (
+    MelGANGenerator,
+    MelGANMultiScaleDiscriminator,
+    ParallelWaveGANDiscriminator,
+    ResidualParallelWaveGANDiscriminator,
+)
 from parallel_wavegan.optimizers import RAdam
-
-from test_parallel_wavegan import make_discriminator_args
-from test_parallel_wavegan import make_mutli_reso_stft_loss_args
-from test_parallel_wavegan import make_residual_discriminator_args
 
 logging.basicConfig(
     level=logging.DEBUG,

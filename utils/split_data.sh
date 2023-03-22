@@ -43,6 +43,21 @@ else
     has_segments=false
     num_src_utts=$(wc -l < "${src_scp}")
 fi
+if [ -e "${src_dir}/utt2spk" ]; then
+    has_utt2spk=true
+    src_utt2spk=${src_dir}/utt2spk
+else
+    has_utt2spk=false
+fi
+src_scp=${src_dir}/wav.scp
+
+if ${has_utt2spk}; then
+    num_src_utt2spk=$(wc -l < "${src_utt2spk}")
+    if [ "${num_src_utt2spk}" -ne "${num_src_utts}" ]; then
+        echo "ERROR: wav.scp and utt2spk has different #lines (${num_src_utts} vs ${num_src_utt2spk})." >&2
+        exit 1;
+    fi
+fi
 
 # check number of utts
 if [ "${num_first}" -eq 0 ] && [ "${num_second}" -eq 0 ]; then
@@ -79,6 +94,16 @@ if ! "${has_segments}"; then
         head -n "${num_first}" "${src_scp}" | sort > "${first_dist_dir}/wav.scp"
         tail -n "${num_second}" "${src_scp}" | sort > "${second_dist_dir}/wav.scp"
     fi
+    if "${has_utt2spk}"; then
+        grep -f <(awk '{print $1}' "${first_dist_dir}/wav.scp") \
+            "${src_utt2spk}" > "${first_dist_dir}/utt2spk"
+        grep -f <(awk '{print $1}' "${second_dist_dir}/wav.scp") \
+            "${src_utt2spk}" > "${second_dist_dir}/utt2spk"
+        diff -q <(awk '{print $1}' "${first_dist_dir}/wav.scp") \
+            <(awk '{print $1}' "${first_dist_dir}/utt2spk") > /dev/null
+        diff -q <(awk '{print $1}' "${second_dist_dir}/wav.scp") \
+            <(awk '{print $1}' "${second_dist_dir}/utt2spk") > /dev/null
+    fi
 else
     # split segments at first
     if "${shuffle}"; then
@@ -99,6 +124,16 @@ else
     awk '{print $2}' < "${second_dist_dir}/segments" | sort | uniq | while read -r wav_id; do
         grep "^${wav_id} " < "${src_scp}" >> "${second_dist_dir}/wav.scp"
     done
+    if "${has_utt2spk}"; then
+        grep -f <(awk '{print $1}' "${first_dist_dir}/segments") \
+            "${src_utt2spk}" > "${first_dist_dir}/utt2spk"
+        grep -f <(awk '{print $1}' "${second_dist_dir}/segments") \
+            "${src_utt2spk}" > "${second_dist_dir}/utt2spk"
+        diff -q <(awk '{print $1}' "${first_dist_dir}/segments") \
+            <(awk '{print $1}' "${first_dist_dir}/utt2spk") > /dev/null
+        diff -q <(awk '{print $1}' "${second_dist_dir}/segments") \
+            <(awk '{print $1}' "${second_dist_dir}/utt2spk") > /dev/null
+    fi
 fi
 
 echo "Successfully split data directory."

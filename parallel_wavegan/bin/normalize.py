@@ -86,6 +86,13 @@ def main():
         help="yaml format configuration file.",
     )
     parser.add_argument(
+        "--target-feats",
+        type=str,
+        default="feats",
+        choices=["feats", "local"],
+        help="target name to be normalized.",
+    )
+    parser.add_argument(
         "--verbose",
         type=int,
         default=1,
@@ -132,22 +139,30 @@ def main():
 
     # get dataset
     if args.rootdir is not None:
+        global_query = None
+        global_load_fn = None
         if config["format"] == "hdf5":
             audio_query, mel_query = "*.h5", "*.h5"
             audio_load_fn = lambda x: read_hdf5(x, "wave")  # NOQA
-            mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+            mel_load_fn = lambda x: read_hdf5(x, args.target_feats)  # NOQA
             if use_f0_and_excitation:
                 f0_query, excitation_query = "*.h5", "*.h5"
                 f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
                 excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
+            if config.get("use_global_condition", False):
+                global_query = "*.h5"
+                global_load_fn = lambda x: read_hdf5(x, "global")  # NOQA
         elif config["format"] == "npy":
-            audio_query, mel_query = "*-wave.npy", "*-feats.npy"
+            audio_query, mel_query = "*-wave.npy", f"*-{args.target_feats}.npy"
             audio_load_fn = np.load
             mel_load_fn = np.load
             if use_f0_and_excitation:
                 f0_query, excitation_query = "*-f0.npy", "*-excitation.npy"
                 f0_load_fn = np.load
                 excitation_load_fn = np.load
+            if config.get("use_global_condition", False):
+                global_query = "*-global.npy"
+                global_load_fn = np.load
         else:
             raise ValueError("support only hdf5 or npy format.")
         if not use_f0_and_excitation:
@@ -158,6 +173,8 @@ def main():
                     mel_query=mel_query,
                     audio_load_fn=audio_load_fn,
                     mel_load_fn=mel_load_fn,
+                    global_query=global_query,
+                    global_load_fn=global_load_fn,
                     return_utt_id=True,
                 )
             else:
@@ -165,6 +182,8 @@ def main():
                     root_dir=args.rootdir,
                     mel_query=mel_query,
                     mel_load_fn=mel_load_fn,
+                    global_query=global_query,
+                    global_load_fn=global_load_fn,
                     return_utt_id=True,
                 )
         else:
@@ -195,6 +214,8 @@ def main():
     else:
         if use_f0_and_excitation:
             raise NotImplementedError("SCP format is not supported for f0 and excitation.")
+        if config.get("use_global_condition", False):
+            raise NotImplementedError("SCP format is Not supported for global conditioning.")
         if not args.skip_wav_copy:
             dataset = AudioMelSCPDataset(
                 wav_scp=args.wav_scp,
@@ -229,6 +250,11 @@ def main():
                 utt_id, audio, mel = items
             else:
                 utt_id, mel = items
+        elif config.get("use_global_condition", False):
+            if not args.skip_wav_copy:
+                utt_id, audio, mel, g = items
+            else:
+                utt_id, mel, g = items
         else:
             if not args.skip_wav_copy:
                 utt_id, audio, mel, f0, excitation = items
@@ -236,14 +262,21 @@ def main():
                 utt_id, mel, f0, excitation = items
 
         # normalize
-        mel = scaler.transform(mel)
+        mel_norm = scaler.transform(mel)
+
+        # replace with the original features if the feature is binary
+        if args.target_feats == "local":
+            is_binary = np.logical_or(mel == 1, mel == 0).sum(axis=0) == len(mel)
+            for idx, isb in enumerate(is_binary):
+                if isb:
+                    mel_norm[:, idx] = mel[:, idx]
 
         # save
         if config["format"] == "hdf5":
             write_hdf5(
                 os.path.join(args.dumpdir, f"{utt_id}.h5"),
-                "feats",
-                mel.astype(np.float32),
+                args.target_feats,
+                mel_norm.astype(np.float32),
             )
             if use_f0_and_excitation:
                 write_hdf5(
@@ -262,10 +295,14 @@ def main():
                     "wave",
                     audio.astype(np.float32),
                 )
+            if config.get("use_global_condition", False):
+                write_hdf5(
+                    os.path.join(args.dumpdir, f"{utt_id}.h5"), "global", g.reshape(-1)
+                )
         elif config["format"] == "npy":
             np.save(
-                os.path.join(args.dumpdir, f"{utt_id}-feats.npy"),
-                mel.astype(np.float32),
+                os.path.join(args.dumpdir, f"{utt_id}-{args.target_feats}.npy"),
+                mel_norm.astype(np.float32),
                 allow_pickle=False,
             )
             if use_f0_and_excitation:
@@ -283,6 +320,12 @@ def main():
                 np.save(
                     os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
                     audio.astype(np.float32),
+                    allow_pickle=False,
+                )
+            if config.get("use_global_condition", False):
+                np.save(
+                    os.path.join(args.dumpdir, f"{utt_id}-global.npy"),
+                    g.reshape(-1),
                     allow_pickle=False,
                 )
         else:

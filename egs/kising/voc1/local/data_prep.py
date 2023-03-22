@@ -1,5 +1,6 @@
 import argparse
 import os
+
 import librosa
 import numpy as np
 
@@ -40,7 +41,6 @@ def process_text_info(text):
 
 
 def process_subset(args, set_name, check_func):
-
     if not os.path.exists(os.path.join(args.tgt_dir, set_name)):
         os.makedirs(os.path.join(args.tgt_dir, set_name))
 
