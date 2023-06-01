@@ -13,6 +13,7 @@ from espnet2.fileio.score_scp import SingingScoreWriter
 """Generate segments according to structured annotation."""
 """Transfer music score into 'score' format."""
 
+
 def makedir(data_url):
     if os.path.exists(data_url):
         shutil.rmtree(data_url)
@@ -35,7 +36,11 @@ def process_utterance(
 
     # apply bit convert, there is a known issue in direct convert in format wavscp
     cmd = "sox {}.wav -c 1 -t wavpcm -b 16 -r {} {}/m4singer_{}.wav".format(
-        os.path.join(audio_dir, song_name.replace(" ", "\\ "), uid.replace("+", "\\ ").split("#")[-1]),
+        os.path.join(
+            audio_dir,
+            song_name.replace(" ", "\\ "),
+            uid.replace("+", "\\ ").split("#")[-1],
+        ),
         tgt_sr,
         wav_dumpdir,
         uid,
@@ -75,15 +80,15 @@ def split_subset(args, meta):
     random.shuffle(item_names)
     valid_num, test_num = 100, 100
 
-    test_names = item_names[: test_num]
+    test_names = item_names[:test_num]
     # NOTE(jiatong): the valid set is different from M4Singer
     # As they include test set in the validation set
     # but we do not.
-    valid_names = item_names[test_num: valid_num + test_num]
-    train_names = item_names[valid_num + test_num: ]
+    valid_names = item_names[test_num : valid_num + test_num]
+    train_names = item_names[valid_num + test_num :]
 
     data = {"tr_no_dev": [], "dev": [], "eval": []}
-    
+
     for key in overall_data.keys():
         if key in test_names:
             data["eval"].append(overall_data[key])
