@@ -13,7 +13,7 @@ show_variables:
 
 virtualenv.done: show_variables
 	test -d venv || $(PYTHON) -m venv venv
-	. venv/bin/activate; cd ../; pip install -U pip
+	. venv/bin/activate; cd ../; pip install -U pip setuptools wheel
 	# install numpy here since python3.6 is not supported in > 1.20
 	. venv/bin/activate; cd ../; pip install numpy
 	touch virtualenv.done
