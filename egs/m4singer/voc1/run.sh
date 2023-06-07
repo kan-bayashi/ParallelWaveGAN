@@ -40,7 +40,7 @@ checkpoint="" # checkpoint path to be used for decoding
 
 train_set=tr_no_dev
 dev_set=dev
-eval_set=eval
+eval_set="eval"
 
 set -euo pipefail
 
