@@ -582,7 +582,6 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
 
         # backward compatibility
         self._register_load_state_dict_pre_hook(self._load_state_dict_pre_hook)
-        self.register_load_state_dict_post_hook(self._load_state_dict_post_hook)
 
     def forward(self, x):
         """Calculate forward propagation.
@@ -672,44 +671,36 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
             if not any(["weight_g" in k for k in state_dict.keys()]):
                 logging.warning(
                     "It seems weight norm is not applied in the pretrained model. To"
-                    " keep the compatibility, we will remove the norm, load the"
-                    " parameteres, and then apply the norm again."
+                    " keep the compatibility, we will apply the norm to the pretrained parameters."
                 )
-                self.remove_weight_norm()
+                keys = [k[:-2] for k in self.state_dict().keys() if k.endswith("weight_g")]
+                from torch.nn.utils import weight_norm
+                for k in keys:
+                    weight = state_dict[prefix + k]
+                    m = torch.nn.Conv1d(weight.shape[1], weight.shape[0], weight.shape[2])
+                    weight_norm(m)
+                    state_dict[prefix + k + "_g"] = m.weight_g
+                    state_dict[prefix + k + "_v"] = m.weight_v
+                    del state_dict[prefix + k]
+                    del m
+
         if self.use_spectral_norm:
             if not any(["weight_u" in k for k in state_dict.keys()]):
                 logging.warning(
                     "It seems spectral norm is not applied in the pretrained model. To"
-                    " keep the compatibility, we will remove the norm, load the"
-                    " parameteres, and then apply the norm again."
+                    " keep the compatibility, we will apply the norm to the pretrained parameters."
                 )
-                self.remove_spectral_norm()
-
-    def _load_state_dict_post_hook(
-        self,
-        module,
-        improbable_keys,
-    ):
-        """Fix the compatibility of weight / spectral normalization issue.
-
-        Some pretrained models are trained with configs that use weight / spectral
-        normalization, but actually, the norm is not applied. This causes the mismatch
-        of the parameters with configs. To solve this issue, when parameter mismatch
-        happens in loading, we remove the norm at first, load the parameters, and then
-        apply the norm in post-hook functions.
-
-        See also:
-            - https://github.com/kan-bayashi/ParallelWaveGAN/issues/309
-            - https://github.com/espnet/espnet/issues/4595
-
-        """
-        if self.use_weight_norm:
-            if not any(["weight_g" in k for k in self.state_dict().keys()]):
-                self.apply_weight_norm()
-        if self.use_spectral_norm:
-            if not any(["weight_u" in k for k in self.state_dict().keys()]):
-                self.apply_spectral_norm()
-        pass
+                keys = [k[:-2] for k in self.state_dict().keys() if k.endswith("weight_u")]
+                from torch.nn.utils import spectral_norm
+                for k in keys:
+                    weight = state_dict[prefix + k]
+                    m = torch.nn.Conv1d(weight.shape[1], weight.shape[0], weight.shape[2])
+                    spectral_norm(m)
+                    state_dict[prefix + k + "_u"] = m.weight_u
+                    state_dict[prefix + k + "_v"] = m.weight_v
+                    state_dict[prefix + k + "_orig"] = m.weight_orig
+                    del state_dict[prefix + k]
+                    del m
 
 
 class HiFiGANMultiScaleDiscriminator(torch.nn.Module):
