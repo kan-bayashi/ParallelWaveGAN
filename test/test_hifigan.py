@@ -7,11 +7,11 @@
 
 import logging
 import os
-import yaml
 
 import numpy as np
 import pytest
 import torch
+import yaml
 from test_parallel_wavegan import make_mutli_reso_stft_loss_args
 
 import parallel_wavegan.models
@@ -224,7 +224,7 @@ def test_causal_hifigan(dict_g):
     )
 
 
-@pytest.mark.skipif(torch.cuda.is_available(), reason="Run in only local")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="Run in only local")
 def test_fix_norm_issue():
     from parallel_wavegan.utils import download_pretrained_model
 
