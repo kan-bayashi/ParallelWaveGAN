@@ -156,15 +156,19 @@ class Trainer(object):
         state_dict = torch.load(checkpoint_path, map_location="cpu")
         if self.config["distributed"]:
             self.model["generator"].module.load_state_dict(
-                state_dict["model"]["generator"]
+                state_dict["model"]["generator"],
             )
             self.model["discriminator"].module.load_state_dict(
-                state_dict["model"]["discriminator"]
+                state_dict["model"]["discriminator"],
+                strict=False,
             )
         else:
-            self.model["generator"].load_state_dict(state_dict["model"]["generator"])
+            self.model["generator"].load_state_dict(
+                state_dict["model"]["generator"],
+            )
             self.model["discriminator"].load_state_dict(
-                state_dict["model"]["discriminator"]
+                state_dict["model"]["discriminator"],
+                strict=False,
             )
         if not load_only_params:
             self.steps = state_dict["steps"]

@@ -6,12 +6,15 @@
 """Test code for HiFi-GAN modules."""
 
 import logging
+import os
 
 import numpy as np
 import pytest
 import torch
+import yaml
 from test_parallel_wavegan import make_mutli_reso_stft_loss_args
 
+import parallel_wavegan.models
 from parallel_wavegan.losses import (
     DiscriminatorAdversarialLoss,
     FeatureMatchLoss,
@@ -219,3 +222,23 @@ def test_causal_hifigan(dict_g):
         y[..., : c.size(-1) // 2 * upsampling_factor].detach().cpu().numpy(),
         y_[..., : c_.size(-1) // 2 * upsampling_factor].detach().cpu().numpy(),
     )
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="Run in only local")
+def test_fix_norm_issue():
+    from parallel_wavegan.utils import download_pretrained_model
+
+    checkpoint = download_pretrained_model("ljspeech_hifigan.v1")
+    config = os.path.join(os.path.dirname(checkpoint), "config.yml")
+    with open(config) as f:
+        config = yaml.load(f, Loader=yaml.Loader)
+
+    # get model and load parameters
+    discriminator_type = config.get("discriminator_type")
+    model_class = getattr(
+        parallel_wavegan.models,
+        discriminator_type,
+    )
+    model = model_class(**config["discriminator_params"])
+    state_dict = torch.load(checkpoint, map_location="cpu")["model"]["discriminator"]
+    model.load_state_dict(state_dict, strict=False)
