@@ -239,5 +239,9 @@ def test_fix_norm_issue():
         discriminator_type,
     )
     model = model_class(**config["discriminator_params"])
+
+    state_dict_org = model.state_dict()
+    model.load_state_dict(state_dict_org)
+
     state_dict = torch.load(checkpoint, map_location="cpu")["model"]["discriminator"]
     model.load_state_dict(state_dict, strict=False)
