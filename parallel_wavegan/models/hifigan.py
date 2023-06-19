@@ -678,7 +678,7 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
                 " - discriminator_params.follow_official_norm \n"
                 " - discriminator_params.scale_discriminator_params.use_weight_norm \n"
                 " - discriminator_params.scale_discriminator_params.use_spectral_norm \n"
-                " See also: https://github.com/kan-bayashi/ParallelWaveGAN/issues/309"
+                " See also: https://github.com/kan-bayashi/ParallelWaveGAN/pull/409"
             )
             self.remove_weight_norm()
             self.use_weight_norm = False
@@ -695,7 +695,7 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
                 " - discriminator_params.follow_official_norm \n"
                 " - discriminator_params.scale_discriminator_params.use_weight_norm \n"
                 " - discriminator_params.scale_discriminator_params.use_spectral_norm \n"
-                " See also: https://github.com/kan-bayashi/ParallelWaveGAN/issues/309"
+                " See also: https://github.com/kan-bayashi/ParallelWaveGAN/pull/409"
             )
             self.remove_spectral_norm()
             self.use_spectral_norm = False
