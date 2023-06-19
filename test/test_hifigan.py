@@ -224,7 +224,6 @@ def test_causal_hifigan(dict_g):
     )
 
 
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="Run in only local")
 def test_fix_norm_issue():
     from parallel_wavegan.utils import download_pretrained_model
 
