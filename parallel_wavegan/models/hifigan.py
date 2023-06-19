@@ -659,12 +659,11 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
         Some pretrained models are trained with configs that use weight / spectral
         normalization, but actually, the norm is not applied. This causes the mismatch
         of the parameters with configs. To solve this issue, when parameter mismatch
-        happens in loading, we remove the norm at first, load the parameters, and then
-        apply the norm in post-hook functions.
+        happens in loading pretrained model, we remove the norm from the current model.
 
         See also:
-            - https://github.com/kan-bayashi/ParallelWaveGAN/issues/309
-            - https://github.com/espnet/espnet/issues/4595
+            - https://github.com/kan-bayashi/ParallelWaveGAN/pull/409
+            - https://github.com/espnet/espnet/pull/5240
 
         """
         if self.use_weight_norm and not any(
