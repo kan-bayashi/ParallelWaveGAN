@@ -671,42 +671,35 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
             ["weight_g" in k for k in state_dict.keys()]
         ):
             logging.warning(
-                "It seems weight norm is not applied in the pretrained model. To"
-                " keep the compatibility, we will apply the norm to the pretrained"
-                " parameters."
+                "It seems weight norm is not applied in the pretrained model but the"
+                " current model uses it. To keep the compatibility, we remove the norm"
+                " from the current model. This may causes training error due to the the"
+                " parameter mismatch when finetuning. To avoid this issue, please"
+                " change the following parameters in config to false: \n"
+                " - discriminator_params.follow_official_norm \n"
+                " - discriminator_params.scale_discriminator_params.use_weight_norm \n"
+                " - discriminator_params.scale_discriminator_params.use_spectral_norm \n"
+                " See also: https://github.com/kan-bayashi/ParallelWaveGAN/issues/309"
             )
-            keys = [k[:-2] for k in self.state_dict().keys() if k.endswith("weight_g")]
-            from torch.nn.utils import weight_norm
-
-            for k in keys:
-                weight = state_dict[prefix + k]
-                m = torch.nn.Conv1d(weight.shape[1], weight.shape[0], weight.shape[2])
-                weight_norm(m)
-                state_dict[prefix + k + "_g"] = m.weight_g
-                state_dict[prefix + k + "_v"] = m.weight_v
-                del state_dict[prefix + k]
-                del m
+            self.remove_weight_norm()
+            self.use_weight_norm = False
 
         if self.use_spectral_norm and not any(
             ["weight_u" in k for k in state_dict.keys()]
         ):
             logging.warning(
-                "It seems spectral norm is not applied in the pretrained model. To"
-                " keep the compatibility, we will apply the norm to the pretrained"
-                " parameters."
+                "It seems spectral norm is not applied in the pretrained model but the"
+                " current model uses it. To keep the compatibility, we remove the norm"
+                " from the current model. This may causes training error due to the the"
+                " parameter mismatch when finetuning. To avoid this issue, please"
+                " change the following parameters in config to false: \n"
+                " - discriminator_params.follow_official_norm \n"
+                " - discriminator_params.scale_discriminator_params.use_weight_norm \n"
+                " - discriminator_params.scale_discriminator_params.use_spectral_norm \n"
+                " See also: https://github.com/kan-bayashi/ParallelWaveGAN/issues/309"
             )
-            keys = [k[:-2] for k in self.state_dict().keys() if k.endswith("weight_u")]
-            from torch.nn.utils import spectral_norm
-
-            for k in keys:
-                weight = state_dict[prefix + k]
-                m = torch.nn.Conv1d(weight.shape[1], weight.shape[0], weight.shape[2])
-                spectral_norm(m)
-                state_dict[prefix + k + "_u"] = m.weight_u
-                state_dict[prefix + k + "_v"] = m.weight_v
-                state_dict[prefix + k + "_orig"] = m.weight_orig
-                del state_dict[prefix + k]
-                del m
+            self.remove_spectral_norm()
+            self.use_spectral_norm = False
 
 
 class HiFiGANMultiScaleDiscriminator(torch.nn.Module):

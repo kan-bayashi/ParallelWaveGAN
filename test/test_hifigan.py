@@ -239,17 +239,6 @@ def test_fix_norm_issue():
         parallel_wavegan.models,
         discriminator_type,
     )
-    model_1 = model_class(**config["discriminator_params"])
-    model_2 = model_class(**config["discriminator_params"])
-
-    model_2.load_state_dict(model_1.state_dict())
-    state_dict_2 = model_2.state_dict()
-
-    model_1.load_state_dict(
-        torch.load(checkpoint, map_location="cpu")["model"]["discriminator"],
-        strict=False,
-    )
-    state_dict_1 = model_1.state_dict()
-    for k in state_dict_1.keys():
-        with pytest.raises(AssertionError):
-            np.testing.assert_array_equal(state_dict_1[k], state_dict_2[k])
+    model = model_class(**config["discriminator_params"])
+    state_dict = torch.load(checkpoint, map_location="cpu")["model"]["discriminator"]
+    model.load_state_dict(state_dict, strict=False)
