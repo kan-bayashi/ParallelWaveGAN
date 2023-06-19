@@ -671,13 +671,19 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
             if not any(["weight_g" in k for k in state_dict.keys()]):
                 logging.warning(
                     "It seems weight norm is not applied in the pretrained model. To"
-                    " keep the compatibility, we will apply the norm to the pretrained parameters."
+                    " keep the compatibility, we will apply the norm to the pretrained"
+                    " parameters."
                 )
-                keys = [k[:-2] for k in self.state_dict().keys() if k.endswith("weight_g")]
+                keys = [
+                    k[:-2] for k in self.state_dict().keys() if k.endswith("weight_g")
+                ]
                 from torch.nn.utils import weight_norm
+
                 for k in keys:
                     weight = state_dict[prefix + k]
-                    m = torch.nn.Conv1d(weight.shape[1], weight.shape[0], weight.shape[2])
+                    m = torch.nn.Conv1d(
+                        weight.shape[1], weight.shape[0], weight.shape[2]
+                    )
                     weight_norm(m)
                     state_dict[prefix + k + "_g"] = m.weight_g
                     state_dict[prefix + k + "_v"] = m.weight_v
@@ -688,13 +694,19 @@ class HiFiGANScaleDiscriminator(torch.nn.Module):
             if not any(["weight_u" in k for k in state_dict.keys()]):
                 logging.warning(
                     "It seems spectral norm is not applied in the pretrained model. To"
-                    " keep the compatibility, we will apply the norm to the pretrained parameters."
+                    " keep the compatibility, we will apply the norm to the pretrained"
+                    " parameters."
                 )
-                keys = [k[:-2] for k in self.state_dict().keys() if k.endswith("weight_u")]
+                keys = [
+                    k[:-2] for k in self.state_dict().keys() if k.endswith("weight_u")
+                ]
                 from torch.nn.utils import spectral_norm
+
                 for k in keys:
                     weight = state_dict[prefix + k]
-                    m = torch.nn.Conv1d(weight.shape[1], weight.shape[0], weight.shape[2])
+                    m = torch.nn.Conv1d(
+                        weight.shape[1], weight.shape[0], weight.shape[2]
+                    )
                     spectral_norm(m)
                     state_dict[prefix + k + "_u"] = m.weight_u
                     state_dict[prefix + k + "_v"] = m.weight_v
