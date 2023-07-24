@@ -131,7 +131,7 @@ jobs:
           # make python env
           cd tools; make CUDA_VERSION="" PYTHON=python${{ matrix.python-version }} PYTORCH_VERSION=${{ matrix.pytorch-version }}
           source venv/bin/activate
-          pip install pyreaper
+          pip install pyreaper --no-build-isolation
       - name: Integration
         run: |
           cd egs/yesno/vq1 && ./run.sh --conf conf/${{ matrix.config }}
