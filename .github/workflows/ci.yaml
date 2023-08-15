@@ -102,6 +102,41 @@ jobs:
           name: artifacts-${{ matrix.config }}
           path: egs/yesno/voc1
 
+  integration_segments:
+    runs-on: ubuntu-20.04
+    strategy:
+      max-parallel: 10
+      matrix:
+        python-version: [3.9]
+        pytorch-version: [1.13.1]
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: 'x64'
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-${{ hashFiles('**/setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-
+      - name: Install dependencies
+        run: |
+          sudo apt-get install libsndfile-dev jq
+          # make python env
+          cd tools; make CUDA_VERSION="" PYTHON=python${{ matrix.python-version }} PYTORCH_VERSION=${{ matrix.pytorch-version }}
+          source venv/bin/activate
+          pip install torch-yin
+      - name: Integration
+        run: |
+          cd egs/yesno/voc1 && ./run.sh --use_fake_segments true
+      - uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: artifacts-${{ matrix.config }}
+          path: egs/yesno/voc1
+
   integration_vq:
     runs-on: ubuntu-20.04
     strategy:

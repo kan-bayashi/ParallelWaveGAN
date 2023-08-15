@@ -28,7 +28,7 @@ if [ $# -ne 3 ]; then
     exit 1
 fi
 
-set -eu
+set -eux
 
 src_dir=$1
 first_dist_dir=$2
@@ -49,7 +49,6 @@ if [ -e "${src_dir}/utt2spk" ]; then
 else
     has_utt2spk=false
 fi
-src_scp=${src_dir}/wav.scp
 
 if ${has_utt2spk}; then
     num_src_utt2spk=$(wc -l < "${src_utt2spk}")
