@@ -16,9 +16,65 @@ import resampy
 import soundfile as sf
 import yaml
 from tqdm import tqdm
+from scipy.interpolate import interp1d
+
 
 from parallel_wavegan.datasets import AudioDataset, AudioSCPDataset
 from parallel_wavegan.utils import write_hdf5
+
+def logf0_and_vuv_pyreaper(audio, fs, hop_size=64, f0min=40.0, f0max=500.0):
+    """Extract continuous log f0 and uv sequences.
+
+    Args:
+        audio (ndarray): Audio sequence in float (-1, 1).
+        fs (ndarray): Sampling rate.
+        hop_size (int): Hop size in point.
+        f0min (float): Minimum f0 value.
+        f0max (float): Maximum f0 value.
+
+    Returns:
+        ndarray: Continuous log f0 sequence (#frames, 1).
+        ndarray: Voiced (=1) / unvoiced (=0) sequence (#frames, 1).
+
+    """
+    # delayed import
+    import pyreaper
+
+    # convert to 16 bit interger and extract f0
+    logging.info(f'old audio2: {len(audio)}')
+    audio = np.array([round(x * np.iinfo(np.int16).max) for x in audio], dtype=np.int16)
+    logging.info(f'new audio2: {len(audio)}')
+    _, _, f0_times, f0, _ = pyreaper.reaper(audio, fs, frame_period=hop_size / fs)
+    logging.info(f'new f0: {max(f0)}')
+
+    # get vuv
+    vuv = np.float32(f0 != -1)
+
+    if vuv.sum() == 0:
+        logging.warn("All of the frames are unvoiced.")
+        return
+
+    # get start and end of f0
+    start_f0 = f0[f0 != -1][0]
+    end_f0 = f0[f0 != -1][-1]
+
+    # padding start and end of f0 sequence
+    start_idx = np.where(f0 == start_f0)[0][0]
+    end_idx = np.where(f0 == end_f0)[0][-1]
+    f0[:start_idx] = start_f0
+    f0[end_idx:] = end_f0
+
+    # get non-zero frame index
+    voiced_frame_idxs = np.where(f0 != -1)[0]
+
+    # perform linear interpolation
+    f = interp1d(f0_times[voiced_frame_idxs], f0[voiced_frame_idxs])
+    f0 = f(f0_times)
+
+    # convert to log domain
+    lf0 = np.log(f0)
+
+    return lf0.reshape(-1, 1), vuv.reshape(-1, 1)
 
 
 def main():
@@ -94,6 +150,12 @@ def main():
         type=int,
         default=1,
         help="logging level. higher is more logging. (default=1)",
+    )
+    parser.add_argument(
+        "--extract-f0",
+        default=False,
+        action="store_true",
+        help="whether to extract f0 sequence.",
     )
     args = parser.parse_args()
 
@@ -185,6 +247,9 @@ def main():
 
         # use hubert index instead of mel
         mel = np.array(text[utt_id]).astype(np.int64).reshape(-1, 1)
+        
+        logging.info(f'mel: {mel.shape}')
+        logging.info(f'audio: {audio.shape}')
 
         if args.spk2idx is not None:
             spk = utt2spk[utt_id]
@@ -201,13 +266,31 @@ def main():
 
         # make sure the audio length and feature length are matched
         logging.info(f"Mod: {len(audio) - len(mel) * config['hop_size']}")
+        logging.info(f"old audio: {len(audio)}")
+        logging.info(f"old mel: {len(mel)}")
         if len(mel) * config["hop_size"] <= len(audio):
             logging.warning(
                 "len(mel) * config['hop_size'] <= len(audio), may be errors"
             )
         mel = mel[: len(audio) // config["hop_size"]]
         audio = audio[: len(mel) * config["hop_size"]]
+        logging.info(f"new audio: {len(audio)}")
+        logging.info(f"new mel: {len(mel)}")
         assert len(mel) * config["hop_size"] == len(audio)
+
+        logging.info(args.extract_f0)
+        if args.extract_f0:                
+            l_ = logf0_and_vuv_pyreaper(audio, config["sampling_rate"], config["hop_size"])
+            if l_ is None:
+                continue
+            l_ = np.concatenate(l_, axis=-1)
+            logging.info(f'len(f0)={l_.shape}')
+            if len(audio) > len(l_) * config["hop_size"]:
+                audio = audio[: len(l_) * config["hop_size"]]
+            if len(audio) < len(l_) * config["hop_size"]:
+                audio = np.pad(
+                    audio, (0, len(l_) * config["hop_size"] - len(audio)), mode="edge"
+                )
 
         # apply global gain
         if config["global_gain_scale"] > 0.0:
@@ -231,6 +314,12 @@ def main():
                 "feats",
                 mel.astype(np.float32),
             )
+            if args.extract_f0:
+                write_hdf5(
+                    os.path.join(args.dumpdir, f"{utt_id}.h5"),
+                    "local",
+                    l_.astype(np.float32),
+                )
         elif config["format"] == "npy":
             np.save(
                 os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
@@ -242,6 +331,12 @@ def main():
                 mel.astype(np.float32),
                 allow_pickle=False,
             )
+            if args.extract_f0:
+                np.save(
+                    os.path.join(args.dumpdir, f"{utt_id}-local.npy"),
+                    l_.astype(np.float32),
+                    allow_pickle=False,
+                )
         else:
             raise ValueError("support only hdf5 or npy format.")
 

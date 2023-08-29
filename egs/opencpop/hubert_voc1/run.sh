@@ -42,6 +42,7 @@ dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
 hubert_text=/data8/tyx/task/discrete_unit/opencpop_hubert
+use_f0=false            # whether add f0 
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
@@ -91,18 +92,25 @@ EOF
     fi
     # extract raw features
     pids=()
-    for name in "${train_set}" "${dev_set}" "${eval_set}"; do
+    for name in "${dev_set}"; do
+    # for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.*.log."
         utils/make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
+
+        _opts=
+        if [ ${use_f0} == true ]; then
+            _opts+="--extract-f0"
+        fi
         ${train_cmd} JOB=1:${n_jobs} "${dumpdir}/${name}/raw/preprocessing.JOB.log" \
             local/preprocess_hubert.py \
                 --config "${conf}" \
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
                 --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
                 --text "${hubert_text}" \
-                --verbose "${verbose}"
+                --verbose "${verbose}" \
+                ${_opts}
         echo "Successfully finished feature extraction of ${name} set."
     ) &
     pids+=($!)
