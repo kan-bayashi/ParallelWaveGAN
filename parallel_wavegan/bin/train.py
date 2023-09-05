@@ -27,6 +27,7 @@ import parallel_wavegan.optimizers
 from parallel_wavegan.datasets import (
     AudioDataset,
     AudioMelDataset,
+    AudioMelF0Dataset,
     AudioMelF0ExcitationDataset,
     AudioMelSCPDataset,
     AudioSCPDataset,
@@ -652,6 +653,7 @@ class Collater(object):
         hop_size=256,
         aux_context_window=2,
         use_noise_input=False,
+        use_f0=False,
         use_f0_and_excitation=False,
         use_aux_input=True,
         use_duration=False,
@@ -682,6 +684,7 @@ class Collater(object):
         self.batch_max_steps = batch_max_steps
         self.aux_context_window = aux_context_window
         self.use_noise_input = use_noise_input
+        self.use_f0 = use_f0
         self.use_f0_and_excitation = use_f0_and_excitation
         self.use_aux_input = use_aux_input
         self.use_duration = use_duration
@@ -733,6 +736,8 @@ class Collater(object):
                 self._adjust_length(*b) for b in batch if len(b[1]) > self.mel_threshold
             ]
             xs, cs = [b[0] for b in batch], [b[1] for b in batch]
+            if self.use_f0:
+                fs = [b[2] for b in batch]
             if self.use_f0_and_excitation:
                 fs, es = [b[2] for b in batch], [b[3] for b in batch]
 
@@ -764,6 +769,13 @@ class Collater(object):
                 )  # (B, 1, T')
                 e_batch = torch.tensor(e_batch, dtype=torch.float)  # (B, 1, T', C')
                 e_batch = e_batch.reshape(e_batch.shape[0], 1, -1)  # (B, 1, T' * C')
+                
+            if self.use_f0:
+                f_batch = [f[start:end] for f, start, end in zip(fs, c_starts, c_ends)]
+                f_batch = np.array(f_batch)
+                f_batch = torch.tensor(f_batch, dtype=torch.float).unsqueeze(
+                    1
+                )  # (B, 1, T')
 
             # duration calculation and return with duration information
             if self.use_duration:
@@ -794,6 +806,8 @@ class Collater(object):
                 input_items = (z_batch,) + input_items
             if self.use_f0_and_excitation:
                 input_items = input_items + (f_batch, e_batch)
+            if self.use_f0:
+                input_items = input_items + (f_batch)
 
             return input_items, y_batch
         else:
@@ -1031,6 +1045,12 @@ def main():
         help="logging level. higher is more logging. (default=1)",
     )
     parser.add_argument(
+        "--use-f0",
+        default=False,
+        action="store_true",
+        help="whether to use f0 sequence.",
+    )
+    parser.add_argument(
         "--rank",
         "--local_rank",
         default=0,
@@ -1130,6 +1150,9 @@ def main():
                 f0_query, excitation_query = "*.h5", "*.h5"
                 f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
                 excitation_load_fn = lambda x: read_hdf5(x, "excitation")  # NOQA
+            if args.use_f0:
+                f0_query = "*.h5"
+                f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
             if use_local_condition:
                 local_query = "*.h5"
                 local_load_fn = lambda x: read_hdf5(x, "local")  # NOQA
@@ -1144,6 +1167,9 @@ def main():
                 f0_query, excitation_query = "*-f0.npy", "*-excitation.npy"
                 f0_load_fn = np.load
                 excitation_load_fn = np.load
+            if args.use_f0:
+                f0_query = "*-f0.npy"
+                f0_load_fn = np.load
             if use_local_condition:
                 local_query = "*-local.npy"
                 local_load_fn = np.load
@@ -1166,7 +1192,21 @@ def main():
     # define dataset for training data
     if args.train_dumpdir is not None:
         if not use_f0_and_excitation:
-            if use_aux_input:
+            if args.use_f0:
+                train_dataset = AudioMelF0Dataset(
+                    root_dir=args.train_dumpdir,
+                    audio_query=audio_query,
+                    mel_query=mel_query,
+                    f0_query=f0_query,
+                    excitation_query=excitation_query,
+                    audio_load_fn=audio_load_fn,
+                    mel_load_fn=mel_load_fn,
+                    f0_load_fn=f0_load_fn,
+                    excitation_load_fn=excitation_load_fn,
+                    mel_length_threshold=mel_length_threshold,
+                    allow_cache=config.get("allow_cache", False),  # keep compatibility
+                )
+            elif use_aux_input:
                 train_dataset = AudioMelDataset(
                     root_dir=args.train_dumpdir,
                     audio_query=audio_query,
@@ -1211,6 +1251,10 @@ def main():
             raise NotImplementedError(
                 "SCP format is not supported for f0 and excitation."
             )
+        if args.use_f0:
+            raise NotImplementedError(
+                "SCP format is not supported for f0."
+            )
         if use_local_condition:
             raise NotImplementedError("Not supported.")
         if use_global_condition:
@@ -1234,7 +1278,21 @@ def main():
     # define dataset for validation
     if args.dev_dumpdir is not None:
         if not use_f0_and_excitation:
-            if use_aux_input:
+            if args.use_f0:
+                dev_dataset = AudioMelF0Dataset(
+                    root_dir=args.dev_dumpdir,
+                    audio_query=audio_query,
+                    mel_query=mel_query,
+                    f0_query=f0_query,
+                    excitation_query=excitation_query,
+                    audio_load_fn=audio_load_fn,
+                    mel_load_fn=mel_load_fn,
+                    f0_load_fn=f0_load_fn,
+                    excitation_load_fn=excitation_load_fn,
+                    mel_length_threshold=mel_length_threshold,
+                    allow_cache=config.get("allow_cache", False),  # keep compatibility
+                )
+            elif use_aux_input:
                 dev_dataset = AudioMelDataset(
                     root_dir=args.dev_dumpdir,
                     audio_query=audio_query,
@@ -1279,6 +1337,10 @@ def main():
             raise NotImplementedError(
                 "SCP format is not supported for f0 and excitation."
             )
+        if args.use_f0:
+            raise NotImplementedError(
+                "SCP format is not supported for f0."
+            )
         if use_local_condition:
             raise NotImplementedError("Not supported.")
         if use_global_condition:
@@ -1312,6 +1374,7 @@ def main():
         batch_max_steps=config["batch_max_steps"],
         hop_size=config.get("hop_size", None),
         aux_context_window=config["generator_params"].get("aux_context_window", 0),
+        use_f0=args.use_f0,
         use_f0_and_excitation=use_f0_and_excitation,
         use_noise_input=use_noise_input,
         use_aux_input=use_aux_input,

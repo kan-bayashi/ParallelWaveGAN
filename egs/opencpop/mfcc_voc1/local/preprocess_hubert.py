@@ -15,60 +15,10 @@ import numpy as np
 import resampy
 import soundfile as sf
 import yaml
-import torch
 from tqdm import tqdm
-from scipy.interpolate import interp1d
-
 
 from parallel_wavegan.datasets import AudioDataset, AudioSCPDataset
 from parallel_wavegan.utils import write_hdf5
-
-def f0_torchyin(
-    audio,
-    sampling_rate,
-    hop_size=256,
-    frame_length=None,
-    pitch_min=40,
-    pitch_max=10000,
-):
-    """Compute F0 with Yin.
-
-    Args:
-        audio (ndarray): Audio signal (T,).
-        sampling_rate (int): Sampling rate.
-        hop_size (int): Hop size.
-        pitch_min (int): Minimum pitch in pitch extraction.
-        pitch_max (int): Maximum pitch in pitch extraction.
-
-    Returns:
-        ndarray: f0 feature (#frames, ).
-
-    Note:
-        Unvoiced frame has value = 0.
-
-    """
-    torch_wav = torch.from_numpy(audio).float()
-    if frame_length is not None:
-        pitch_min = sampling_rate / (frame_length / 2)
-
-    import torchyin
-
-    pitch = torchyin.estimate(
-        torch_wav,
-        sample_rate=sampling_rate,
-        pitch_min=pitch_min,
-        pitch_max=pitch_max,
-        frame_stride=hop_size / sampling_rate,
-    )
-    f0 = pitch.cpu().numpy()
-    logging.info(f'f0: {f0}')
-    nonzeros_idxs = np.where(f0 != 0)[0]
-    midi_number = np.zeros(shape=f0.shape, dtype=float)
-    midi_number[nonzeros_idxs] = 69 + 12 * np.log2(f0[nonzeros_idxs] / 440)
-    midi_number = midi_number.astype(int)
-    logging.info(f'midi: {midi_number}')
-    # f0[nonzeros_idxs] = np.log(f0[nonzeros_idxs])
-    return midi_number
 
 
 def main():
@@ -144,12 +94,6 @@ def main():
         type=int,
         default=1,
         help="logging level. higher is more logging. (default=1)",
-    )
-    parser.add_argument(
-        "--use-f0",
-        default=False,
-        action="store_true",
-        help="whether to use f0 sequence.",
     )
     args = parser.parse_args()
 
@@ -241,7 +185,7 @@ def main():
 
         # use hubert index instead of mel
         mel = np.array(text[utt_id]).astype(np.int64).reshape(-1, 1)
-        
+
         if args.spk2idx is not None:
             spk = utt2spk[utt_id]
             if spk in spk2idx:
@@ -265,21 +209,6 @@ def main():
         audio = audio[: len(mel) * config["hop_size"]]
         assert len(mel) * config["hop_size"] == len(audio)
 
-        # use f0
-        if args.use_f0:
-            f0 = f0_torchyin(
-                audio,
-                sampling_rate=config["sampling_rate"],
-                hop_size=config["hop_size"],
-                frame_length=config["win_length"],
-            ).reshape(-1, 1)
-            logging.info(f'f0: {f0.shape}')
-            if len(f0) > len(mel):
-                f0 = f0[: len(mel)]
-            else:
-                f0 = np.pad(f0, (0, len(mel) - len(f0)), mode="edge")
-            f0 = np.squeeze(f0)  # (#frames,)
-
         # apply global gain
         if config["global_gain_scale"] > 0.0:
             audio *= config["global_gain_scale"]
@@ -302,13 +231,6 @@ def main():
                 "feats",
                 mel.astype(np.float32),
             )
-            if args.use_f0:
-                write_hdf5(
-                    os.path.join(args.dumpdir, f"{utt_id}.h5"),
-                    "f0",
-                    f0.astype(np.float32),
-                )
-                
         elif config["format"] == "npy":
             np.save(
                 os.path.join(args.dumpdir, f"{utt_id}-wave.npy"),
@@ -320,13 +242,6 @@ def main():
                 mel.astype(np.float32),
                 allow_pickle=False,
             )
-            if args.use_f0:
-                np.save(
-                    os.path.join(args.dumpdir, f"{utt_id}-f0.npy"),
-                    f0.astype(np.float32),
-                    allow_pickle=False,
-                )
-                
         else:
             raise ValueError("support only hdf5 or npy format.")
 

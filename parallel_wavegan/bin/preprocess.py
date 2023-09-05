@@ -405,7 +405,6 @@ def main():
             assert len(mel) * config["hop_size"] == len(audio)
 
         # extract f0 sequence
-        logging.info(args.extract_f0)
         if args.extract_f0:
             l_ = logf0_and_vuv_pyreaper(audio, fs, config["hop_size"])
             if l_ is None:
@@ -416,9 +415,6 @@ def main():
             if len(audio) < len(l_) * config["hop_size"]:
                 audio = np.pad(
                     audio, (0, len(l_) * config["hop_size"] - len(audio)), mode="edge"
-                )
-            logging.info(f"f0: {l_[0]}")
-            logging.info(f"vuv: {l_[1]}")
 
         if use_f0_and_excitation:
             f0 = f0_torchyin(
