@@ -28,7 +28,11 @@ generator_params:
     in_channels: 512                      # Number of input channels.
     out_channels: 1                       # Number of output channels.
     channels: 512                         # Number of initial channels.
+<<<<<<< HEAD
     num_embs: 1024
+=======
+    num_embs: 500
+>>>>>>> master
     kernel_size: 7                        # Kernel size of initial and final conv layers.
     upsample_scales: [10, 8, 2, 2]        # Upsampling scales.
     upsample_kernel_sizes: [20, 16, 4, 4] # Kernel size for upsampling layers.

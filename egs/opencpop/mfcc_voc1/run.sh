@@ -17,7 +17,7 @@ n_jobs=16      # number of parallel jobs in feature extraction
 conf=conf/hifigan_hubert_duration.v1.yaml
 
 # directory path setting
-db_root=/data8/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
+db_root=/data4/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
                           # each wav filename in the directory should be unique
                           # e.g.
                           # /path/to/database
@@ -41,7 +41,11 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
+<<<<<<< HEAD
 hubert_text=/data8/tyx/task/discrete_unit/mfcc_new.txt
+=======
+hubert_text=/data4/tyx/task/discrete_unit/mfcc_new.txt
+>>>>>>> master
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
@@ -55,10 +59,17 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     	echo "ERROR: Please download https://wenet.org.cn/opencpop/download/ and locate it at ${download_dir}"
     	exit 1
     fi
+<<<<<<< HEAD
     mkdir -p wav_dump
     python local/data_prep.py ${db_root} \
         --wav_dumpdir wav_dump \
         --sr 24000
+=======
+    # mkdir -p wav_dump
+    # python local/data_prep.py ${db_root} \
+    #     --wav_dumpdir wav_dump \
+    #     --sr 24000
+>>>>>>> master
 
     sort -o data/train/wav.scp data/train/wav.scp
 
