@@ -20,6 +20,9 @@ conf=conf/parallel_wavegan.v1.debug.yaml
 download_dir=downloads # direcotry to save downloaded files
 dumpdir=dump           # directory to dump features
 
+# data setting
+use_fake_segments=false  # for testing
+
 # training related setting
 tag=""     # tag for directory to save model
 resume=""  # checkpoint path to resume training
@@ -47,6 +50,7 @@ fi
 if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"
     local/data_prep.sh \
+        --use_fake_segments "${use_fake_segments}" \
         --train_set "${train_set}" \
         --dev_set "${dev_set}" \
         --eval_set "${eval_set}" \

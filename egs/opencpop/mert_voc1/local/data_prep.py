@@ -31,6 +31,10 @@ def process_subset(args, set_name):
     utt2spk = open(
         os.path.join(args.tgt_dir, set_name, "utt2spk"), "w", encoding="utf-8"
     )
+<<<<<<< HEAD
+=======
+
+>>>>>>> d68da20d2e4386c25aeff38ba202c54819c01f66
     with open(
         os.path.join(args.src_data, "segments", set_name + ".txt"),
         "r",
