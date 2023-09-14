@@ -56,10 +56,10 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     	echo "ERROR: Please download https://wenet.org.cn/opencpop/download/ and locate it at ${download_dir}"
     	exit 1
     fi
-    # mkdir -p wav_dump
-    # python local/data_prep.py ${db_root} \
-    #     --wav_dumpdir wav_dump \
-    #     --sr 24000
+    mkdir -p wav_dump
+    python local/data_prep.py ${db_root} \
+        --wav_dumpdir wav_dump \
+        --sr 24000
 
     sort -o data/train/wav.scp data/train/wav.scp
 
@@ -98,19 +98,17 @@ EOF
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.*.log."
         utils/make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
-
-        # _opts=
-        # if [ ${use_f0} == true ]; then
-        #     _opts+="--use-f0"
-        # fi
+        _opts=
+        if [ ${use_f0} == true ]; then
+            _opts+="--use-f0"
+        fi
         ${train_cmd} JOB=1:${n_jobs} "${dumpdir}/${name}/raw/preprocessing.JOB.log" \
             local/preprocess_hubert.py \
                 --config "${conf}" \
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
-                --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
+                --dumpdir "${dumpdir}/${name}" \
                 --text "${hubert_text}" \
-                --verbose "${verbose}" # \
-                # ${_opts}
+                --verbose "${verbose}" ${_opts}
         echo "Successfully finished feature extraction of ${name} set."
     ) &
     pids+=($!)
@@ -135,9 +133,10 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     else
         train="parallel-wavegan-train"
     fi
-    # if [ ${use_f0} == true ]; then
-    #     _opts+="--use-f0"
-    # fi
+    _opts=
+    if [ ${use_f0} == true ]; then
+        _opts+="--use-f0"
+    fi
     # shellcheck disable=SC2012
     resume="$(ls -dt "${expdir}"/*.pkl | head -1 || true)"
     echo "Training start. See the progress via ${expdir}/train.log."
@@ -148,8 +147,7 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
             --dev-dumpdir "${dumpdir}/${dev_set}/raw" \
             --outdir "${expdir}" \
             --resume "${resume}" \
-            --verbose "${verbose}" # \
-            # ${_opts}
+            --verbose "${verbose}" ${_opts}
     echo "Successfully finished training."
 fi
 

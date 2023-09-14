@@ -98,6 +98,7 @@ EOF
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.*.log."
         utils/make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
+        _opts=
         if [ ${use_f0} == true ]; then
             _opts+="--use-f0"
         fi
@@ -107,8 +108,7 @@ EOF
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
                 --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
                 --text "${hubert_text}" \
-                --verbose "${verbose}" \
-                ${_opts}
+                --verbose "${verbose}" ${_opts}
         echo "Successfully finished feature extraction of ${name} set."
     ) &
     pids+=($!)
@@ -133,6 +133,7 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     else
         train="parallel-wavegan-train"
     fi
+    _opts=
     if [ ${use_f0} == true ]; then
         _opts+="--use-f0"
     fi
@@ -146,8 +147,7 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
             --dev-dumpdir "${dumpdir}/${dev_set}/raw" \
             --outdir "${expdir}" \
             --resume "${resume}" \
-            --verbose "${verbose}" \
-            ${_opts}
+            --verbose "${verbose}" ${_opts}
     echo "Successfully finished training."
 fi
 
