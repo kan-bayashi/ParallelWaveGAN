@@ -42,6 +42,7 @@ dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
 hubert_text=/data4/tyx/task/discrete_unit/opencpop_wavlm_km1024_noprefix.txt
+use_pretrain_feature=true
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
@@ -96,13 +97,17 @@ EOF
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.*.log."
         utils/make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
+        opts=""
+        if [ ${use_pretrain_feature} == "true" ]; then
+            _opts+="--use-pretrain-feature"
+        fi
         ${train_cmd} JOB=1:${n_jobs} "${dumpdir}/${name}/raw/preprocessing.JOB.log" \
             local/preprocess_hubert.py \
                 --config "${conf}" \
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
                 --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
                 --text "${hubert_text}" \
-                --verbose "${verbose}"
+                --verbose "${verbose}" ${_opts}
         echo "Successfully finished feature extraction of ${name} set."
     ) &
     pids+=($!)

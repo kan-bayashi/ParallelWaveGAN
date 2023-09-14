@@ -1015,10 +1015,12 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
             else:
                 g = g.unsqueeze(1).expand(-1, c.size(1), -1)
                 c = torch.cat([c, g], dim=-1)
-        else:
-            assert c.size(1) == 1
-            c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
-
+        # NOTE(Yuxun): update for using embeding as input
+        # else:
+        #     assert c.size(1) == 1
+        #     logging.info(f'gen_c: {c.shape}')
+        #     c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
+            
         c = self.input_conv(c)
         for i in range(self.num_upsamples):
             c = self.upsamples[i](c)
@@ -1085,8 +1087,10 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
         if g is not None:
             c = c[:, 0:1]
             c = torch.cat([c, c.new_zeros(*c.size()).fill_(g).to(c.device)], dim=1)
-        if self.num_spk_embs <= 0:
-            c = c[:, 0:1]
+        # NOTE(Yuxun): update for using embedding 
+        # if self.num_spk_embs <= 0:
+        #     c = c[:, 0:1]
+        # c = self.forward(c.transpose(1, 0).unsqueeze(0))
         c = self.forward(c.transpose(1, 0).unsqueeze(0))
         return c.squeeze(0).transpose(1, 0)
 

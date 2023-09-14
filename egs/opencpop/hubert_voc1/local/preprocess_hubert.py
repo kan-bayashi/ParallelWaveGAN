@@ -16,6 +16,7 @@ import resampy
 import soundfile as sf
 import yaml
 from tqdm import tqdm
+from transformers import HubertModel, Wav2Vec2FeatureExtractor
 
 from parallel_wavegan.datasets import AudioDataset, AudioSCPDataset
 from parallel_wavegan.utils import write_hdf5
@@ -88,6 +89,12 @@ def main():
         type=str,
         required=True,
         help="yaml format configuration file.",
+    )
+    parser.add_argument(
+        "--use-pretrain-feature",
+        default=False,
+        action="store_true",
+        help="whether to use pretrain model to get feature.",
     )
     parser.add_argument(
         "--verbose",
@@ -182,9 +189,18 @@ def main():
                 frame_length=config["trim_frame_size"],
                 hop_length=config["trim_hop_size"],
             )
-
-        # use hubert index instead of mel
-        mel = np.array(text[utt_id]).astype(np.int64).reshape(-1, 1)
+        
+        if args.use_pretrain_feature:
+            pretrained_model = "facebook/hubert-base-ls960"
+            model = HubertModel.from_pretrained(pretrained_model)
+            processor = Wav2Vec2FeatureExtractor.from_pretrained(pretrained_model, trust_remote_code=True) 
+            inputs = processor(audio, sampling_rate=16000, return_tensors="pt")
+            outputs = model(**inputs)
+            features = outputs.last_hidden_state
+            mel = features.squeeze(0).detach().numpy()
+        else:
+            # use hubert index instead of mel
+            mel = np.array(text[utt_id]).astype(np.int64).reshape(-1, 1)
 
         if args.spk2idx is not None:
             spk = utt2spk[utt_id]
