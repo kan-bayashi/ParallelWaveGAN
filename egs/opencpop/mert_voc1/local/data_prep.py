@@ -13,11 +13,11 @@ def process_utterance(wavscp, utt2spk, audio_dir, wav_dumpdir, segment, tgt_sr=2
     # apply bit convert, there is a known issue in direct convert in format wavscp
     cmd = (
         f"sox {os.path.join(audio_dir, uid)}.wav -c 1 -t wavpcm -b 16 -r"
-        f" {tgt_sr} {os.path.join(wav_dumpdir, uid)}_bits16.wav"
+        f" {tgt_sr} {os.path.join(wav_dumpdir, uid)}.wav"
     )
     os.system(cmd)
 
-    wavscp.write("{} {}_bits16.wav\n".format(uid, os.path.join(wav_dumpdir, uid)))
+    wavscp.write("{} {}.wav\n".format(uid, os.path.join(wav_dumpdir, uid)))
 
 
 def process_subset(args, set_name):
@@ -31,7 +31,10 @@ def process_subset(args, set_name):
     utt2spk = open(
         os.path.join(args.tgt_dir, set_name, "utt2spk"), "w", encoding="utf-8"
     )
+<<<<<<< HEAD
+=======
 
+>>>>>>> d68da20d2e4386c25aeff38ba202c54819c01f66
     with open(
         os.path.join(args.src_data, "segments", set_name + ".txt"),
         "r",

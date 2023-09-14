@@ -1,13 +1,13 @@
-# cuda related
-export CUDA_HOME=/usr/local/cuda-11.3
-export LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"
+# # cuda related
+# export CUDA_HOME=/usr/local/cuda-11.3
+# export LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"
 
-# path related
-export PRJ_ROOT="${PWD}/../../../../Muskits/"
-if [ -e "${PRJ_ROOT}/tools/activate_python.sh" ]; then
-    # shellcheck disable=SC1090
-    . "${PRJ_ROOT}/tools/activate_python.sh"
-fi
+# # path related
+# export PRJ_ROOT="${PWD}/../../../../Muskits/"
+# if [ -e "${PRJ_ROOT}/tools/activate_python.sh" ]; then
+#     # shellcheck disable=SC1090
+#     . "${PRJ_ROOT}/tools/activate_python.sh"
+# fi
 
 # python related
 export OMP_NUM_THREADS=1

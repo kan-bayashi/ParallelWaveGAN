@@ -23,6 +23,7 @@ from parallel_wavegan.datasets import (
     MelDataset,
     MelF0ExcitationDataset,
     MelSCPDataset,
+    MelF0Dataset,
 )
 from parallel_wavegan.utils import load_model, read_hdf5
 
@@ -96,6 +97,12 @@ def main():
         default=1,
         help="logging level. higher is more logging. (default=1)",
     )
+    parser.add_argument(
+        "--use-f0",
+        default=False,
+        action="store_true",
+        help="whether to use f0 sequence.",
+    )
     args = parser.parse_args()
 
     # set logger
@@ -164,6 +171,9 @@ def main():
             if config["format"] == "hdf5":
                 mel_query = "*.h5"
                 mel_load_fn = lambda x: read_hdf5(x, "feats")  # NOQA
+                if args.use_f0:
+                    f0_query = "*.h5"
+                    f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
                 if use_f0_and_excitation:
                     f0_query = "*.h5"
                     f0_load_fn = lambda x: read_hdf5(x, "f0")  # NOQA
@@ -172,6 +182,9 @@ def main():
             elif config["format"] == "npy":
                 mel_query = "*-feats.npy"
                 mel_load_fn = np.load
+                if args.use_f0:
+                    f0_query = "*-f0.npy"
+                    f0_load_fn = np.load
                 if use_f0_and_excitation:
                     f0_query = "*-f0.npy"
                     f0_load_fn = np.load
@@ -180,7 +193,16 @@ def main():
             else:
                 raise ValueError("Support only hdf5 or npy format.")
 
-            if not use_f0_and_excitation:
+            if args.use_f0:
+                dataset = MelF0Dataset(
+                    root_dir=args.dumpdir,
+                    mel_query=mel_query,
+                    f0_query=f0_query,
+                    mel_load_fn=mel_load_fn,
+                    f0_load_fn=f0_load_fn,
+                    return_utt_id=True,
+                )
+            elif not use_f0_and_excitation:
                 dataset = MelDataset(
                     args.dumpdir,
                     mel_query=mel_query,
@@ -213,7 +235,10 @@ def main():
         total_rtf = 0.0
         with torch.no_grad(), tqdm(dataset, desc="[decode]") as pbar:
             for idx, items in enumerate(pbar, 1):
-                if not use_f0_and_excitation:
+                if args.use_f0:
+                    utt_id, c, f0 = items
+                    excitation = None
+                elif not use_f0_and_excitation:
                     utt_id, c = items
                     f0, excitation = None, None
                 else:

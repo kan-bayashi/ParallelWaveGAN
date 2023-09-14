@@ -23,12 +23,12 @@ format: "hdf5"           # Feature file format. "npy" or "hdf5" is supported.
 ###########################################################
 #         GENERATOR NETWORK ARCHITECTURE SETTING          #
 ###########################################################
-generator_type: DiscreteSymbolDurationGenerator
+generator_type: DiscreteSymbolHiFiGANGenerator
 generator_params:
-    in_channels: 512                      # Number of input channels.
+    in_channels: 768                      # Number of input channels.
     out_channels: 1                       # Number of output channels.
     channels: 512                         # Number of initial channels.
-    num_embs: 500
+    num_embs: 1024
     kernel_size: 7                        # Kernel size of initial and final conv layers.
     upsample_scales: [10, 8, 2, 2]        # Upsampling scales.
     upsample_kernel_sizes: [20, 16, 4, 4] # Kernel size for upsampling layers.
@@ -43,11 +43,11 @@ generator_params:
     nonlinear_activation_params:          # Nonlinear activation paramters.
         negative_slope: 0.1
     use_weight_norm: true                 # Whether to apply weight normalization.
-    duration_layers: 2                    # Duration predictor layers
-    duration_chans: 384                   # Duration predictor conv channels
-    duration_kernel_size: 3               # Duration predictor kernel size
-    duration_offset: 1.0                  # Duration predictor offset 
-    duration_dropout_rate: 0.5            # Duration predictor dropout
+    # duration_layers: 2                    # Duration predictor layers
+    # duration_chans: 384                   # Duration predictor conv channels
+    # duration_kernel_size: 3               # Duration predictor kernel size
+    # duration_offset: 1.0                  # Duration predictor offset 
+    # duration_dropout_rate: 0.5            # Duration predictor dropout
     num_spk_embs: 0                       # Do not consider speaker embedding for single spk
 
 ###########################################################

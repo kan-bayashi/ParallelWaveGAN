@@ -14,7 +14,7 @@ n_gpus=1       # number of gpus in training
 n_jobs=16      # number of parallel jobs in feature extraction
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
-conf=conf/hifigan_hubert_duration.v1.yaml
+conf=conf/hifigan_hubert_16k_nodp_f0.v1.yaml
 
 # directory path setting
 db_root=/data4/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
@@ -42,6 +42,7 @@ dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
 hubert_text=/data4/tyx/task/discrete_unit/opencpop_wavlm_km1024_noprefix.txt
+use_f0=true            # whether add f0 
 use_pretrain_feature=true
 
 # shellcheck disable=SC1091
@@ -92,12 +93,16 @@ EOF
     fi
     # extract raw features
     pids=()
+    # for name in "${dev_set}"; do
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.*.log."
         utils/make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
-        opts=""
+        _opts=
+        if [ ${use_f0} == true ]; then
+            _opts+="--use-f0"
+        fi
         if [ ${use_pretrain_feature} == "true" ]; then
             _opts+="--use-pretrain-feature"
         fi
@@ -132,6 +137,10 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     else
         train="parallel-wavegan-train"
     fi
+    _opts=
+    if [ ${use_f0} == true ]; then
+        _opts+="--use-f0"
+    fi
     # shellcheck disable=SC2012
     resume="$(ls -dt "${expdir}"/*.pkl | head -1 || true)"
     echo "Training start. See the progress via ${expdir}/train.log."
@@ -142,7 +151,7 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
             --dev-dumpdir "${dumpdir}/${dev_set}/raw" \
             --outdir "${expdir}" \
             --resume "${resume}" \
-            --verbose "${verbose}"
+            --verbose "${verbose}" ${_opts}
     echo "Successfully finished training."
 fi
 
@@ -157,12 +166,16 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
         [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
         [ "${n_gpus}" -gt 1 ] && n_gpus=1
         echo "Decoding start. See the progress via ${outdir}/${name}/decode.log."
+        if [ ${use_f0} == true ]; then
+            _opts+="--use-f0"
+        fi
         ${cuda_cmd} --gpu "${n_gpus}" "${outdir}/${name}/decode.log" \
             parallel-wavegan-decode \
                 --dumpdir "${dumpdir}/${name}/raw" \
                 --checkpoint "${checkpoint}" \
                 --outdir "${outdir}/${name}" \
-                --verbose "${verbose}"
+                --verbose "${verbose}" \
+                ${_opts}      
         echo "Successfully finished decoding of ${name} set."
     ) &
     pids+=($!)

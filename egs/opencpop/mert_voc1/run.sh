@@ -17,7 +17,7 @@ n_jobs=16      # number of parallel jobs in feature extraction
 conf=conf/hifigan_hubert_duration.v1.yaml
 
 # directory path setting
-db_root=/data8/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
+db_root=/data3/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
                           # each wav filename in the directory should be unique
                           # e.g.
                           # /path/to/database
@@ -41,7 +41,7 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
-hubert_text=/data8/tyx/task/discrete_unit/opencpop_mert
+hubert_text=/data3/tyx/task/discrete_unit/token/opencpop_mert
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;

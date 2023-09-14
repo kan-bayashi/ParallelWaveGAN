@@ -17,7 +17,7 @@ n_jobs=8      # number of parallel jobs in feature extraction
 conf=conf/uhifigan.v1.yaml
 
 # directory path setting
-download_dir= # set the directory to your database
+download_dir=/data3/tyx/dataset # set the directory to your database
 dumpdir=dump           # directory to dump features
 
 # training related setting
@@ -51,7 +51,7 @@ fi
 if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"
     mkdir -p wav_dump
-    python local/data_prep.py ${download_dir}/Opencpop \
+    python local/data_prep.py ${download_dir}/opencpop \
         --wav_dumpdir wav_dump \
         --sr 24000
 
@@ -81,7 +81,8 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
                 --config "${conf}" \
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
                 --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
-                --verbose "${verbose}"
+                --verbose "${verbose}" \
+                --extract-f0
         echo "Successfully finished feature extraction of ${name} set."
     ) &
     pids+=($!)
@@ -97,7 +98,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
             --config "${conf}" \
             --rootdir "${dumpdir}/${train_set}/raw" \
             --dumpdir "${dumpdir}/${train_set}" \
-            --verbose "${verbose}"
+            --verbose "${verbose}" 
     echo "Successfully finished calculation of statistics."
 
     # normalize and dump them
