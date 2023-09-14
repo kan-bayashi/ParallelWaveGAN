@@ -14,7 +14,7 @@ n_gpus=1       # number of gpus in training
 n_jobs=16      # number of parallel jobs in feature extraction
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
-conf=conf/hifigan_hubert_duration.v1.yaml
+conf=conf/hifigan_hubert_16k_nodp.v1.yaml
 
 # directory path setting
 db_root=/data3/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
@@ -41,7 +41,8 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
-hubert_text=/data3/tyx/task/discrete_unit/token/opencpop_mert
+hubert_text=/data3/tyx/task/discrete_unit/token/opencpop_hubert
+use_f0=false            # whether add f0 
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
@@ -55,10 +56,10 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     	echo "ERROR: Please download https://wenet.org.cn/opencpop/download/ and locate it at ${download_dir}"
     	exit 1
     fi
-    mkdir -p wav_dump
-    python local/data_prep.py ${db_root} \
-        --wav_dumpdir wav_dump \
-        --sr 24000
+    # mkdir -p wav_dump
+    # python local/data_prep.py ${db_root} \
+    #     --wav_dumpdir wav_dump \
+    #     --sr 24000
 
     sort -o data/train/wav.scp data/train/wav.scp
 
@@ -91,18 +92,25 @@ EOF
     fi
     # extract raw features
     pids=()
+    # for name in "${dev_set}"; do
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.*.log."
         utils/make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
+
+        # _opts=
+        # if [ ${use_f0} == true ]; then
+        #     _opts+="--use-f0"
+        # fi
         ${train_cmd} JOB=1:${n_jobs} "${dumpdir}/${name}/raw/preprocessing.JOB.log" \
             local/preprocess_hubert.py \
                 --config "${conf}" \
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
                 --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
                 --text "${hubert_text}" \
-                --verbose "${verbose}"
+                --verbose "${verbose}" # \
+                # ${_opts}
         echo "Successfully finished feature extraction of ${name} set."
     ) &
     pids+=($!)
@@ -127,6 +135,9 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     else
         train="parallel-wavegan-train"
     fi
+    # if [ ${use_f0} == true ]; then
+    #     _opts+="--use-f0"
+    # fi
     # shellcheck disable=SC2012
     resume="$(ls -dt "${expdir}"/*.pkl | head -1 || true)"
     echo "Training start. See the progress via ${expdir}/train.log."
@@ -137,7 +148,8 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
             --dev-dumpdir "${dumpdir}/${dev_set}/raw" \
             --outdir "${expdir}" \
             --resume "${resume}" \
-            --verbose "${verbose}"
+            --verbose "${verbose}" # \
+            # ${_opts}
     echo "Successfully finished training."
 fi
 

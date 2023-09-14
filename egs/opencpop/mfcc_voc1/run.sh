@@ -41,11 +41,7 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
-<<<<<<< HEAD
-hubert_text=/data8/tyx/task/discrete_unit/mfcc_new.txt
-=======
-hubert_text=/data4/tyx/task/discrete_unit/mfcc_new.txt
->>>>>>> master
+hubert_text=/data3/tyx/task/discrete_unit/token/opencpop_mfcc.txt
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
@@ -59,17 +55,10 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     	echo "ERROR: Please download https://wenet.org.cn/opencpop/download/ and locate it at ${download_dir}"
     	exit 1
     fi
-<<<<<<< HEAD
     mkdir -p wav_dump
     python local/data_prep.py ${db_root} \
         --wav_dumpdir wav_dump \
         --sr 24000
-=======
-    # mkdir -p wav_dump
-    # python local/data_prep.py ${db_root} \
-    #     --wav_dumpdir wav_dump \
-    #     --sr 24000
->>>>>>> master
 
     sort -o data/train/wav.scp data/train/wav.scp
 

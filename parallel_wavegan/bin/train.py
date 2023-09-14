@@ -95,6 +95,9 @@ class Trainer(object):
         self.use_duration_prediction = "Duration" in config.get(
             "generator_type", "ParallelWaveGANGenerator"
         )
+        # self.use_f0 = "F0" in config.get(
+        #     "generator_type", "ParallelWaveGANGenerator"
+        # )
 
     def run(self):
         """Run training."""
@@ -578,7 +581,7 @@ class Trainer(object):
         """Parse batch and send to the device."""
         # parse batch
         if self.use_duration_prediction:
-            inputs, targets, durations = batch
+                inputs, targets, durations = batch
         else:
             inputs, targets = batch
 
@@ -807,7 +810,7 @@ class Collater(object):
             if self.use_f0_and_excitation:
                 input_items = input_items + (f_batch, e_batch)
             if self.use_f0:
-                input_items = input_items + (f_batch)
+                input_items = input_items + (f_batch,)
 
             return input_items, y_batch
         else:
@@ -906,6 +909,8 @@ class Collater(object):
 
         if f0 is not None and excitation is not None:
             return x, c, f0, excitation
+        elif f0 is not None and excitation is None:
+            return x, c, f0
         else:
             return x, c
 
@@ -1191,22 +1196,20 @@ def main():
 
     # define dataset for training data
     if args.train_dumpdir is not None:
-        if not use_f0_and_excitation:
-            if args.use_f0:
-                train_dataset = AudioMelF0Dataset(
-                    root_dir=args.train_dumpdir,
-                    audio_query=audio_query,
-                    mel_query=mel_query,
-                    f0_query=f0_query,
-                    excitation_query=excitation_query,
-                    audio_load_fn=audio_load_fn,
-                    mel_load_fn=mel_load_fn,
-                    f0_load_fn=f0_load_fn,
-                    excitation_load_fn=excitation_load_fn,
-                    mel_length_threshold=mel_length_threshold,
-                    allow_cache=config.get("allow_cache", False),  # keep compatibility
-                )
-            elif use_aux_input:
+        if args.use_f0:
+            train_dataset = AudioMelF0Dataset(
+                root_dir=args.train_dumpdir,
+                audio_query=audio_query,
+                mel_query=mel_query,
+                f0_query=f0_query,
+                audio_load_fn=audio_load_fn,
+                mel_load_fn=mel_load_fn,
+                f0_load_fn=f0_load_fn,
+                mel_length_threshold=mel_length_threshold,
+                allow_cache=config.get("allow_cache", False),  # keep compatibility
+            )
+        elif not use_f0_and_excitation:
+            if use_aux_input:
                 train_dataset = AudioMelDataset(
                     root_dir=args.train_dumpdir,
                     audio_query=audio_query,
@@ -1277,22 +1280,20 @@ def main():
 
     # define dataset for validation
     if args.dev_dumpdir is not None:
-        if not use_f0_and_excitation:
-            if args.use_f0:
+        if args.use_f0:
                 dev_dataset = AudioMelF0Dataset(
                     root_dir=args.dev_dumpdir,
                     audio_query=audio_query,
                     mel_query=mel_query,
                     f0_query=f0_query,
-                    excitation_query=excitation_query,
                     audio_load_fn=audio_load_fn,
                     mel_load_fn=mel_load_fn,
                     f0_load_fn=f0_load_fn,
-                    excitation_load_fn=excitation_load_fn,
                     mel_length_threshold=mel_length_threshold,
                     allow_cache=config.get("allow_cache", False),  # keep compatibility
                 )
-            elif use_aux_input:
+        elif not use_f0_and_excitation:
+            if use_aux_input:
                 dev_dataset = AudioMelDataset(
                     root_dir=args.dev_dumpdir,
                     audio_query=audio_query,

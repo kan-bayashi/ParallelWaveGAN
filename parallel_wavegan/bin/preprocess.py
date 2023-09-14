@@ -415,6 +415,7 @@ def main():
             if len(audio) < len(l_) * config["hop_size"]:
                 audio = np.pad(
                     audio, (0, len(l_) * config["hop_size"] - len(audio)), mode="edge"
+                )
 
         if use_f0_and_excitation:
             f0 = f0_torchyin(

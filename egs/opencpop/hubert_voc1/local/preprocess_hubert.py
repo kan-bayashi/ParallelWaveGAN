@@ -61,14 +61,12 @@ def f0_torchyin(
         frame_stride=hop_size / sampling_rate,
     )
     f0 = pitch.cpu().numpy()
-    logging.info(f'f0: {f0}')
     nonzeros_idxs = np.where(f0 != 0)[0]
-    midi_number = np.zeros(shape=f0.shape, dtype=float)
-    midi_number[nonzeros_idxs] = 69 + 12 * np.log2(f0[nonzeros_idxs] / 440)
-    midi_number = midi_number.astype(int)
-    logging.info(f'midi: {midi_number}')
-    # f0[nonzeros_idxs] = np.log(f0[nonzeros_idxs])
-    return midi_number
+    # midi_number = np.zeros(shape=f0.shape, dtype=float)
+    # midi_number[nonzeros_idxs] = 69 + 12 * np.log2(f0[nonzeros_idxs] / 440)
+    # midi_number = midi_number.astype(int)
+    f0[nonzeros_idxs] = np.log(f0[nonzeros_idxs])
+    return f0
 
 
 def main():
@@ -242,6 +240,21 @@ def main():
         # use hubert index instead of mel
         mel = np.array(text[utt_id]).astype(np.int64).reshape(-1, 1)
         
+        # use f0
+        if args.use_f0:
+            f0 = f0_torchyin(
+                audio,
+                sampling_rate=config["sampling_rate"],
+                hop_size=config["hop_size"],
+                frame_length=config["win_length"],
+            ).reshape(-1, 1)
+            f0 = np.squeeze(f0)  # (#frames,)
+            if len(f0) > len(mel):
+                f0 = f0[: len(mel)]
+            else:
+                f0 = np.pad(f0, (0, len(mel) - len(f0)), mode="edge")
+            # logging.info(f'f0: {f0}')
+        
         if args.spk2idx is not None:
             spk = utt2spk[utt_id]
             if spk in spk2idx:
@@ -265,21 +278,6 @@ def main():
         audio = audio[: len(mel) * config["hop_size"]]
         assert len(mel) * config["hop_size"] == len(audio)
 
-        # use f0
-        if args.use_f0:
-            f0 = f0_torchyin(
-                audio,
-                sampling_rate=config["sampling_rate"],
-                hop_size=config["hop_size"],
-                frame_length=config["win_length"],
-            ).reshape(-1, 1)
-            logging.info(f'f0: {f0.shape}')
-            if len(f0) > len(mel):
-                f0 = f0[: len(mel)]
-            else:
-                f0 = np.pad(f0, (0, len(mel) - len(f0)), mode="edge")
-            f0 = np.squeeze(f0)  # (#frames,)
-
         # apply global gain
         if config["global_gain_scale"] > 0.0:
             audio *= config["global_gain_scale"]
@@ -292,6 +290,7 @@ def main():
 
         # save
         if config["format"] == "hdf5":
+            # logging.info(f'mel: {mel.shape} f0: {f0.shape}')
             write_hdf5(
                 os.path.join(args.dumpdir, f"{utt_id}.h5"),
                 "wave",
