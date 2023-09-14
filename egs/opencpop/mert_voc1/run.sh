@@ -41,7 +41,7 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
-hubert_text=/data3/tyx/task/discrete_unit/opencpop_mert
+hubert_text=/data3/tyx/task/discrete_unit/token/opencpop_mert
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
