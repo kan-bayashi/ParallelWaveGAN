@@ -155,6 +155,12 @@ def main():
         action="store_true",
         help="whether to use f0 sequence.",
     )
+    parser.add_argument(
+        "--layer-num",
+        type=int,
+        default=1,
+        help="logging level. higher is more logging. (default=1)",
+    )
     args = parser.parse_args()
 
     # set logger
@@ -248,9 +254,9 @@ def main():
             model = HubertModel.from_pretrained(pretrained_model)
             processor = Wav2Vec2FeatureExtractor.from_pretrained(pretrained_model, trust_remote_code=True) 
             inputs = processor(audio, sampling_rate=16000, return_tensors="pt")
-            outputs = model(**inputs)
-            features = outputs.last_hidden_state
-            mel = features.squeeze(0).detach().numpy()
+            outputs = model(**inputs, output_hidden_states=True)
+            features = outputs.hidden_states
+            mel = features[args.layer_num].squeeze(0).detach().numpy()
         else:
             # use hubert index instead of mel
             mel = np.array(text[utt_id]).astype(np.int64).reshape(-1, 1)

@@ -886,6 +886,7 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.1},
         use_weight_norm=True,
+        use_pretrain_feats=False,
     ):
         """Initialize HiFiGANGenerator module.
 
@@ -912,6 +913,7 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
         """
         super().__init__()
         self.num_spk_embs = num_spk_embs
+        self.use_pretrain_feats = use_pretrain_feats
 
         # define id embedding
         self.emb = torch.nn.Embedding(
@@ -1015,11 +1017,11 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
             else:
                 g = g.unsqueeze(1).expand(-1, c.size(1), -1)
                 c = torch.cat([c, g], dim=-1)
-        # NOTE(Yuxun): update for using embeding as input
-        # else:
-        #     assert c.size(1) == 1
-        #     logging.info(f'gen_c: {c.shape}')
-        #     c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
+        # NOTE(Yuxun): update for using pretrain model layer output as input
+        else:
+            if not self.use_pretrain_feats:
+                assert c.size(1) == 1
+                c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
             
         c = self.input_conv(c)
         for i in range(self.num_upsamples):
@@ -1087,7 +1089,7 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
         if g is not None:
             c = c[:, 0:1]
             c = torch.cat([c, c.new_zeros(*c.size()).fill_(g).to(c.device)], dim=1)
-        # NOTE(Yuxun): update for using embedding 
+        # NOTE(Yuxun): update for using pretrain model layer output as input  
         # if self.num_spk_embs <= 0:
         #     c = c[:, 0:1]
         # c = self.forward(c.transpose(1, 0).unsqueeze(0))
@@ -1321,6 +1323,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.1},
         use_weight_norm=True,
+        use_pretrain_feats=False,
     ):
         """Initialize HiFiGANGenerator module.
 
@@ -1380,6 +1383,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
             1,
             padding=(kernel_size - 1) // 2,
         )
+        self.use_pretrain_feats = use_pretrain_feats
         
     
     def forward(self, c, f0=None):
@@ -1406,13 +1410,12 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
                 g = g.unsqueeze(1).expand(-1, c.size(1), -1)
                 c = torch.cat([c, g], dim=-1)
         else:
-            assert c.size(1) == 1
-            c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
+            # NOTE(Yuxun): update for using pretrain model layer output as input
+            if not self.use_pretrain_feats:
+                assert c.size(1) == 1
+                c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
         if f0 is not None:
-            # logging.info(f'c: {c.shape}')
-            # logging.info(f'f0: {f0.shape}')
             f0 = self.f0_embedding(f0.transpose(1, 2)).transpose(1, 2)
-            # logging.info(f'new f0: {f0.shape}')
             c = torch.cat((c, f0), dim=1)
         c = self.input_conv(c)
         for i in range(self.num_upsamples):
