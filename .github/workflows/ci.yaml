@@ -34,6 +34,7 @@ jobs:
             ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-
       - name: Install dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install libsndfile-dev
           # make python env
           cd tools; make CUDA_VERSION="" PYTHON=python${{ matrix.python-version }} PYTORCH_VERSION=${{ matrix.pytorch-version }}
