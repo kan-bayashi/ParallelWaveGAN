@@ -27,7 +27,7 @@ if [ ! -e "${download_dir}/LibriTTS/.done" ]; then
             echo "Download of ${part} is already finished. skipped."
             continue
         fi
-	tgz="$(echo "$part" | sed s/-/_/g).tar.gz"
+	tgz="${part//-/_/}.tar.gz"
         wget --no-check-certificate "${base_url}/${tgz}"
         tar xvzf "${tgz}"
         touch "./LibriTTS/.${part}_done"

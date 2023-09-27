@@ -155,13 +155,13 @@ if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     [ ! -e "${expdir}" ] && mkdir -p "${expdir}"
     cp "${dumpdir}/${train_set}/stats.${stats_ext}" "${expdir}"
     if [ "${n_gpus}" -gt 1 ]; then
-        train="python -m parallel_wavegan.distributed.launch --nproc_per_node ${n_gpus} -c parallel-wavegan-train"
+        train=(python -m parallel_wavegan.distributed.launch --nproc_per_node "${n_gpus}" -c parallel-wavegan-train)
     else
-        train="parallel-wavegan-train"
+        train=(parallel-wavegan-train)
     fi
     echo "Training start. See the progress via ${expdir}/train.log."
     ${cuda_cmd} --gpu "${n_gpus}" "${expdir}/train.log" \
-        ${train} \
+        "${train[@]}" \
             --config "${conf}" \
             --train-dumpdir "${dumpdir}/${train_set}/norm" \
             --dev-dumpdir "${dumpdir}/${dev_set}/norm" \
