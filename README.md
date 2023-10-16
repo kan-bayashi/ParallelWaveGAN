@@ -27,6 +27,7 @@ You can try the real-time end-to-end text-to-speech and singing voice synthesis 
 
 ## What's new
 
+- 2023/08/17 [LibriTTS-R recipe](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts_r/voc1) is available!
 - 2022/02/27 Support singing voice vocoder [egs/{kiritan, opencpop, oniku\_kurumi\_utagoe\_db, ofuton\_p\_utagoe\_db, csd, kising}/voc1]
 - 2021/10/21 Single-speaker Korean recipe [egs/kss/voc1] is available.
 - 2021/08/24 Add more pretrained models of StyleMelGAN and HiFi-GAN.
@@ -110,6 +111,7 @@ Currently, the following recipes are supported.
 - [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi-speaker
 - [VCTK](https://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html): English multi-speaker
 - [LibriTTS](https://arxiv.org/abs/1904.02882): English multi-speaker
+- [LibriTTS-R](https://arxiv.org/abs/2305.18802): English multi-speaker enhanced by speech restoration.
 - [YesNo](https://arxiv.org/abs/1904.02882): English speaker (For debugging)
 - [KSS](https://www.kaggle.com/bryanpark/korean-single-speaker-speech-dataset): Single Korean female speaker
 - [Oniku\_kurumi\_utagoe\_db/](http://onikuru.info/db-download/): Single Japanese female singer (singing voice)
