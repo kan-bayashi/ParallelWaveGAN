@@ -1304,6 +1304,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         out_channels=1,
         channels=512,
         linear_channel=256,
+        layer_num=13,
         num_embs=100,
         num_spk_embs=128,
         spk_emb_dim=128,
@@ -1324,6 +1325,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         nonlinear_activation_params={"negative_slope": 0.1},
         use_weight_norm=True,
         use_pretrain_feats=False,
+        use_weight_sum=False,
     ):
         """Initialize HiFiGANGenerator module.
 
@@ -1376,6 +1378,13 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
             in_features=1,
             out_features=linear_channel,
         )
+        self.use_weight_sum = use_weight_sum
+        if use_weight_sum is True:
+            self.layer_num = layer_num
+            self.weights = torch.nn.Parameter(torch.zeros(self.layer_num))
+            self.emb = torch.nn.ModuleList([
+                torch.nn.Embedding(num_embeddings=num_embs, embedding_dim=in_channels) for _ in range(self.layer_num)
+            ])
         self.input_conv = torch.nn.Conv1d(
             in_channels + linear_channel,
             channels,
@@ -1412,8 +1421,22 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         else:
             # NOTE(Yuxun): update for using pretrain model layer output as input
             if not self.use_pretrain_feats:
-                assert c.size(1) == 1
-                c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
+                if self.use_weight_sum:
+                    assert c.size(1) == self.layer_num # (B, L, T)
+                    embedded = []
+                    for i, embedding_layer in enumerate(self.emb):
+                    # Apply the i-th embedding layer to the i-th layer of input
+                        embedded.append(embedding_layer(c[:, i].long()))
+                    c = torch.stack(embedded, dim=1).transpose(-1, 1)
+                    norm_weights = F.softmax(self.weights, dim=-1) # (L,)
+                    # logging.info(f'norm_weights: {norm_weights.shape}')
+                    # logging.info(f'norm_weights: {norm_weights}')
+                    # (B, C, T, L) * (L,) -> (B, C, T)
+                    c = torch.matmul(c, norm_weights)
+                else:
+                    assert c.size(1) == 1
+                    c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
+                
         if f0 is not None:
             f0 = self.f0_embedding(f0.transpose(1, 2)).transpose(1, 2)
             c = torch.cat((c, f0), dim=1)
@@ -1433,6 +1456,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
 
         Args:
             c (Union[Tensor, ndarray]): Input tensor (T, 2).
+            f0 (Tensor): Input f0  
 
         Returns:
             Tensor: Output tensor (T ** prod(upsample_scales), out_channels).
@@ -1444,7 +1468,9 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         if g is not None:
             c = c[:, 0:1]
             c = torch.cat([c, c.new_zeros(*c.size()).fill_(g).to(c.device)], dim=1)
-        if self.num_spk_embs <= 0:
-            c = c[:, 0:1]
+        if not self.use_pretrain_feats:
+            if self.num_spk_embs <= 0 and not self.use_weight_sum:
+                c = c[:, 0:1]
+        # weight sum: c (T, L)
         c = self.forward(c.transpose(1, 0).unsqueeze(0), f0.unsqueeze(0).unsqueeze(0))
         return c.squeeze(0).transpose(1, 0)

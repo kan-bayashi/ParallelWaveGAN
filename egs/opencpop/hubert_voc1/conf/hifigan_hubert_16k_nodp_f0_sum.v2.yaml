@@ -50,6 +50,9 @@ generator_params:
     # duration_offset: 1.0                  # Duration predictor offset 
     # duration_dropout_rate: 0.5            # Duration predictor dropout
     num_spk_embs: 0                       # Do not consider speaker embedding for single spk
+    
+    layer_num: 1                         # Number of discrete token layer
+    use_weight_sum: false                  # Whether to apply weight sum
 
 ###########################################################
 #       DISCRIMINATOR NETWORK ARCHITECTURE SETTING        #
@@ -129,7 +132,7 @@ lambda_feat_match: 2.0 # Loss balancing coefficient for feat match loss..
 ###########################################################
 #                  DATA LOADER SETTING                    #
 ###########################################################
-batch_size: 16              # Batch size.
+batch_size: 24              # Batch size.
 batch_max_steps: 10240      # Length of each audio in batch. Make sure dividable by hop_size.
 pin_memory: true            # Whether to pin memory in Pytorch DataLoader.
 num_workers: 0              # Number of workers in Pytorch DataLoader.

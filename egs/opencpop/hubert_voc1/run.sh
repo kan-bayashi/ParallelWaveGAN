@@ -14,10 +14,10 @@ n_gpus=1       # number of gpus in training
 n_jobs=16      # number of parallel jobs in feature extraction
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
-conf=conf/hifigan_hubert_nodp_pretrain_f0.v1.yaml
+conf=conf/hifigan_hubert_16k_nodp_f0_sum.v1.yaml
 
 # directory path setting
-db_root=/data4/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
+db_root=/data1/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
                           # each wav filename in the directory should be unique
                           # e.g.
                           # /path/to/database
@@ -41,9 +41,9 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
-hubert_text=/data4/tyx/task/discrete_unit/opencpop_wavlm_km1024_noprefix.txt
+hubert_text=/data1/tyx/task/discrete_unit/opencpop_wavlm_km1024_noprefix.txt
 use_f0=true                    # whether to add f0 
-use_pretrain_feature=true      # whether to use pretrain feature as input
+use_pretrain_feature=false      # whether to use pretrain feature as input
 layernum=0
 
 # shellcheck disable=SC1091
@@ -168,6 +168,7 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
         [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
         [ "${n_gpus}" -gt 1 ] && n_gpus=1
         echo "Decoding start. See the progress via ${outdir}/${name}/decode.log."
+        _opts=
         if [ ${use_f0} == true ]; then
             _opts+="--use-f0 "
         fi

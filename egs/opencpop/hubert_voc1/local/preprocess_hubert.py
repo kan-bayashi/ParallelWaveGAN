@@ -209,11 +209,24 @@ def main():
         )
 
     # get text
-    with open(args.text) as f:
-        lines = [line.strip() for line in f.readlines()]
-    text = {
-        line.split(maxsplit=1)[0]: line.split(maxsplit=1)[1].split() for line in lines
-    }
+    if not os.path.isdir(args.text):
+        with open(args.text) as f:
+            lines = [line.strip() for line in f.readlines()]
+        text = {
+            line.split(maxsplit=1)[0]: line.split(maxsplit=1)[1].split() for line in lines
+        }
+    else: 
+        text = {}
+        for fname in os.listdir(args.text):
+            fpath = os.path.join(args.text, fname)
+            with open(fpath, 'r') as f:
+                lines = [line.strip() for line in f.readlines()]
+            for line in lines:
+                l0, l1 = line.split(maxsplit=1) # name, list
+                l1 = l1.split() 
+                if text.get(l0) is None:
+                    text[l0] = []
+                text[l0].append(line.split(maxsplit=1)[1].split())
 
     # load spk2utt file
     if args.utt2spk is not None:
@@ -259,22 +272,11 @@ def main():
             mel = features[args.layer_num].squeeze(0).detach().numpy()
         else:
             # use hubert index instead of mel
-            mel = np.array(text[utt_id]).astype(np.int64).reshape(-1, 1)
-        
-        # use f0
-        if args.use_f0:
-            f0 = f0_torchyin(
-                audio,
-                sampling_rate=config["sampling_rate"],
-                hop_size=config["hop_size"],
-                frame_length=config["win_length"],
-            ).reshape(-1, 1)
-            f0 = np.squeeze(f0)  # (#frames,)
-            if len(f0) > len(mel):
-                f0 = f0[: len(mel)]
+            mel = np.array(text[utt_id]).astype(np.int64)
+            if mel.ndim > 1: 
+                mel = mel.transpose(1, 0)
             else:
-                f0 = np.pad(f0, (0, len(mel) - len(f0)), mode="edge")
-            # logging.info(f'f0: {f0}')
+                mel = mel.reshape(-1, 1)
         
         if args.spk2idx is not None:
             spk = utt2spk[utt_id]
@@ -298,6 +300,21 @@ def main():
         mel = mel[: len(audio) // config["hop_size"]]
         audio = audio[: len(mel) * config["hop_size"]]
         assert len(mel) * config["hop_size"] == len(audio)
+        
+        # use f0
+        if args.use_f0:
+            f0 = f0_torchyin(
+                audio,
+                sampling_rate=config["sampling_rate"],
+                hop_size=config["hop_size"],
+                frame_length=config["win_length"],
+            ).reshape(-1, 1)
+            f0 = np.squeeze(f0)  # (#frames,)
+            if len(f0) > len(mel):
+                f0 = f0[: len(mel)]
+            else:
+                f0 = np.pad(f0, (0, len(mel) - len(f0)), mode="edge")
+            # logging.info(f'f0: {f0}')
 
         # apply global gain
         if config["global_gain_scale"] > 0.0:
