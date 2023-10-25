@@ -1456,7 +1456,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
 
         Args:
             c (Union[Tensor, ndarray]): Input tensor (T, 2).
-            f0 (Tensor): Input f0  
+            f0 (Tensor): Input f0 (T,).
 
         Returns:
             Tensor: Output tensor (T ** prod(upsample_scales), out_channels).
