@@ -162,28 +162,52 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
     # shellcheck disable=SC2012
     [ -z "${checkpoint}" ] && checkpoint="$(ls -dt "${expdir}"/*.pkl | head -1 || true)"
     outdir="${expdir}/wav/$(basename "${checkpoint}" .pkl)"
-    pids=()
-    for name in "${dev_set}" "${eval_set}"; do
-    (
-        [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
-        [ "${n_gpus}" -gt 1 ] && n_gpus=1
-        echo "Decoding start. See the progress via ${outdir}/${name}/decode.log."
-        _opts=
-        if [ ${use_f0} == true ]; then
-            _opts+="--use-f0 "
-        fi
-        ${cuda_cmd} --gpu "${n_gpus}" "${outdir}/${name}/decode.log" \
-            parallel-wavegan-decode \
-                --dumpdir "${dumpdir}/${name}/raw" \
-                --checkpoint "${checkpoint}" \
-                --outdir "${outdir}/${name}" \
-                --verbose "${verbose}" ${_opts}      
-        echo "Successfully finished decoding of ${name} set."
-    ) &
-    pids+=($!)
-    done
-    i=0; for pid in "${pids[@]}"; do wait "${pid}" || ((++i)); done
-    [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && exit 1;
+    # pids=()
+    # for name in "${dev_set}" "${eval_set}"; do
+    # (
+    #     [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
+    #     [ "${n_gpus}" -gt 1 ] && n_gpus=1
+    #     echo "Decoding start. See the progress via ${outdir}/${name}/decode.log."
+    #     _opts=
+    #     if [ ${use_f0} == true ]; then
+    #         _opts+="--use-f0 "
+    #     fi
+    #     ${cuda_cmd} --gpu "${n_gpus}" "${outdir}/${name}/decode.log" \
+    #         parallel-wavegan-decode \
+    #             --dumpdir "${dumpdir}/${name}/raw" \
+    #             --checkpoint "${checkpoint}" \
+    #             --outdir "${outdir}/${name}" \
+    #             --verbose "${verbose}" ${_opts}      
+    #     echo "Successfully finished decoding of ${name} set."
+    # ) &
+    # pids+=($!)
+    # done
+    # i=0; for pid in "${pids[@]}"; do wait "${pid}" || ((++i)); done
+    # [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && exit 1;
     echo "Successfully finished decoding."
 fi
+
+if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
+    echo "Stage 4: Scoring"
+
+    for dset in ${eval_set}; do
+        _data="data/${dset}"
+        _gt_wavscp="${_data}/wav.scp"
+        _dir="${expdir}/wav/$(basename "${checkpoint}" .pkl)"
+        _gen_wavdir="${_dir}/${dset}"
+
+        # Objective Evaluation - MCD
+        echo "Begin Scoring for MCD metrics on ${dset}, results are written under ${_dir}/MCD_res"
+
+        mkdir -p "${_dir}/MCD_res"
+        python local/evaluate_mcd.py \
+            ${_gen_wavdir} \
+            ${_gt_wavscp} \
+            --outdir "${_dir}/MCD_res"
+
+    done
+else
+    log "Skip the evaluation stages"
+fi
+
 echo "Finished."
