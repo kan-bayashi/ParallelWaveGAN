@@ -162,28 +162,28 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
     # shellcheck disable=SC2012
     [ -z "${checkpoint}" ] && checkpoint="$(ls -dt "${expdir}"/*.pkl | head -1 || true)"
     outdir="${expdir}/wav/$(basename "${checkpoint}" .pkl)"
-    # pids=()
-    # for name in "${dev_set}" "${eval_set}"; do
-    # (
-    #     [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
-    #     [ "${n_gpus}" -gt 1 ] && n_gpus=1
-    #     echo "Decoding start. See the progress via ${outdir}/${name}/decode.log."
-    #     _opts=
-    #     if [ ${use_f0} == true ]; then
-    #         _opts+="--use-f0 "
-    #     fi
-    #     ${cuda_cmd} --gpu "${n_gpus}" "${outdir}/${name}/decode.log" \
-    #         parallel-wavegan-decode \
-    #             --dumpdir "${dumpdir}/${name}/raw" \
-    #             --checkpoint "${checkpoint}" \
-    #             --outdir "${outdir}/${name}" \
-    #             --verbose "${verbose}" ${_opts}      
-    #     echo "Successfully finished decoding of ${name} set."
-    # ) &
-    # pids+=($!)
-    # done
-    # i=0; for pid in "${pids[@]}"; do wait "${pid}" || ((++i)); done
-    # [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && exit 1;
+    pids=()
+    for name in "${dev_set}" "${eval_set}"; do
+    (
+        [ ! -e "${outdir}/${name}" ] && mkdir -p "${outdir}/${name}"
+        [ "${n_gpus}" -gt 1 ] && n_gpus=1
+        echo "Decoding start. See the progress via ${outdir}/${name}/decode.log."
+        _opts=
+        if [ ${use_f0} == true ]; then
+            _opts+="--use-f0 "
+        fi
+        ${cuda_cmd} --gpu "${n_gpus}" "${outdir}/${name}/decode.log" \
+            parallel-wavegan-decode \
+                --dumpdir "${dumpdir}/${name}/raw" \
+                --checkpoint "${checkpoint}" \
+                --outdir "${outdir}/${name}" \
+                --verbose "${verbose}" ${_opts}      
+        echo "Successfully finished decoding of ${name} set."
+    ) &
+    pids+=($!)
+    done
+    i=0; for pid in "${pids[@]}"; do wait "${pid}" || ((++i)); done
+    [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && exit 1;
     echo "Successfully finished decoding."
 fi
 
@@ -204,6 +204,33 @@ if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
             ${_gen_wavdir} \
             ${_gt_wavscp} \
             --outdir "${_dir}/MCD_res"
+
+        # Objective Evaluation - log-F0 RMSE
+        echo "Begin Scoring for F0 related metrics on ${dset}, results are written under ${_dir}/F0_res"
+
+        mkdir -p "${_dir}/F0_res"
+        python local/evaluate_f0.py \
+            ${_gen_wavdir} \
+            ${_gt_wavscp} \
+            --outdir "${_dir}/F0_res"
+
+        # # Objective Evaluation - semitone ACC
+        # echo "Begin Scoring for SEMITONE related metrics on ${dset}, results are written under ${_dir}/SEMITONE_res"
+
+        # mkdir -p "${_dir}/SEMITONE_res"
+        # python local/evaluate_semitone.py \
+        #     ${_gen_wavdir} \
+        #     ${_gt_wavscp} \
+        #     --outdir "${_dir}/SEMITONE_res"
+
+        #     # Objective Evaluation - VUV error
+        # echo "Begin Scoring for VUV related metrics on ${dset}, results are written under ${_dir}/VUV_res"
+
+        # mkdir -p "${_dir}/VUV_res"
+        # python local/evaluate_vuv.py \
+        #     ${_gen_wavdir} \
+        #     ${_gt_wavscp} \
+        #     --outdir "${_dir}/VUV_res"
 
     done
 else
