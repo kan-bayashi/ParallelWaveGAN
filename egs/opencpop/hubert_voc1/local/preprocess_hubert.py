@@ -30,6 +30,7 @@ def f0_torchyin(
     frame_length=None,
     pitch_min=40,
     pitch_max=10000,
+    use_log_f0=True,
 ):
     """Compute F0 with Yin.
 
@@ -52,7 +53,6 @@ def f0_torchyin(
         pitch_min = sampling_rate / (frame_length / 2)
 
     import torchyin
-
     pitch = torchyin.estimate(
         torch_wav,
         sample_rate=sampling_rate,
@@ -61,11 +61,56 @@ def f0_torchyin(
         frame_stride=hop_size / sampling_rate,
     )
     f0 = pitch.cpu().numpy()
-    nonzeros_idxs = np.where(f0 != 0)[0]
     # midi_number = np.zeros(shape=f0.shape, dtype=float)
     # midi_number[nonzeros_idxs] = 69 + 12 * np.log2(f0[nonzeros_idxs] / 440)
     # midi_number = midi_number.astype(int)
-    f0[nonzeros_idxs] = np.log(f0[nonzeros_idxs])
+    if use_log_f0:
+        nonzeros_idxs = np.where(f0 != 0)[0]
+        f0[nonzeros_idxs] = np.log(f0[nonzeros_idxs])
+    return f0
+
+
+def f0_dio(
+    audio,
+    sampling_rate,
+    hop_size=256,
+    pitch_min=40,
+    pitch_max=10000,
+    use_log_f0=True,
+):
+    """Compute F0 with pyworld.dio
+
+    Args:
+        audio (ndarray): Audio signal (T,).
+        sampling_rate (int): Sampling rate.
+        hop_size (int): Hop size.
+        pitch_min (int): Minimum pitch in pitch extraction.
+        pitch_max (int): Maximum pitch in pitch extraction.
+
+    Returns:
+        ndarray: f0 feature (#frames, ).
+
+    Note:
+        Unvoiced frame has value = 0.
+
+    """
+    if torch.is_tensor(audio):
+        x = audio.cpu().numpy().astype(np.double)
+    else:
+        x = audio.astype(np.double)
+    frame_period = 1000 * hop_size / sampling_rate
+    import pyworld
+    f0, timeaxis = pyworld.dio(
+        x,
+        sampling_rate,
+        f0_floor=pitch_min,
+        f0_ceil=pitch_max,
+        frame_period=frame_period,
+    )
+    f0 = pyworld.stonemask(x, f0, timeaxis, sampling_rate)
+    if use_log_f0:
+        nonzero_idxs = np.where(f0 != 0)[0]
+        f0[nonzero_idxs] = np.log(f0[nonzero_idxs])
     return f0
 
 
@@ -303,13 +348,17 @@ def main():
         
         # use f0
         if args.use_f0:
-            f0 = f0_torchyin(
+            # f0 = f0_torchyin(
+            #     audio,
+            #     sampling_rate=config["sampling_rate"],
+            #     hop_size=config["hop_size"],
+            #     frame_length=config["win_length"],
+            # ).reshape(-1, 1)
+            f0 = f0_dio(
                 audio,
                 sampling_rate=config["sampling_rate"],
                 hop_size=config["hop_size"],
-                frame_length=config["win_length"],
-            ).reshape(-1, 1)
-            f0 = np.squeeze(f0)  # (#frames,)
+            ) # (#frames,)
             if len(f0) > len(mel):
                 f0 = f0[: len(mel)]
             else:

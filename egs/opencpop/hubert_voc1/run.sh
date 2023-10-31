@@ -17,7 +17,7 @@ n_jobs=16      # number of parallel jobs in feature extraction
 conf=conf/hifigan_hubert_16k_nodp_f0_sum.v1.yaml
 
 # directory path setting
-db_root=/data1/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
+db_root=/data4/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
                           # each wav filename in the directory should be unique
                           # e.g.
                           # /path/to/database
@@ -41,7 +41,7 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
-hubert_text=/data1/tyx/task/discrete_unit/opencpop_wavlm_km1024_noprefix.txt
+hubert_text=/data4/tyx/task/discrete_unit/opencpop_wavlm_km1024_noprefix.txt
 use_f0=true                    # whether to add f0 
 use_pretrain_feature=false      # whether to use pretrain feature as input
 layernum=0

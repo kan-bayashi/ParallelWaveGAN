@@ -29,7 +29,7 @@ generator_params:
     out_channels: 1                       # Number of output channels.
     channels: 512                         # Number of initial channels.
     linear_channel: 256                   # Number of Linear channels(f0).
-    num_embs: 1024
+    num_embs: 1025
     kernel_size: 7                        # Kernel size of initial and final conv layers.
     upsample_scales: [10, 8, 2, 2]        # Upsampling scales.
     upsample_kernel_sizes: [20, 16, 4, 4] # Kernel size for upsampling layers.
@@ -132,7 +132,7 @@ lambda_feat_match: 2.0 # Loss balancing coefficient for feat match loss..
 ###########################################################
 #                  DATA LOADER SETTING                    #
 ###########################################################
-batch_size: 24              # Batch size.
+batch_size: 48              # Batch size.
 batch_max_steps: 10240      # Length of each audio in batch. Make sure dividable by hop_size.
 pin_memory: true            # Whether to pin memory in Pytorch DataLoader.
 num_workers: 0              # Number of workers in Pytorch DataLoader.
@@ -176,9 +176,9 @@ discriminator_grad_norm: -1
 ###########################################################
 generator_train_start_steps: 1     # Number of steps to start to train discriminator.
 discriminator_train_start_steps: 0 # Number of steps to start to train discriminator.
-train_max_steps: 2500000           # Number of training steps.
+train_max_steps: 250000           # Number of training steps.
 save_interval_steps: 50000         # Interval steps to save checkpoint.
-eval_interval_steps: 1000          # Interval steps to evaluate the network.
+eval_interval_steps: 10000          # Interval steps to evaluate the network.
 log_interval_steps: 100            # Interval steps to record the training log.
 
 ###########################################################
