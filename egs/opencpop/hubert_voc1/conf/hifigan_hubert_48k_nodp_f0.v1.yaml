@@ -4,7 +4,7 @@
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
 ###########################################################
-sampling_rate: 16000     # Sampling rate.
+sampling_rate: 48000     # Sampling rate.
 fft_size: null           # FFT size.
 hop_size: 320            # Hop size.
 win_length: null         # Window length.
@@ -51,7 +51,6 @@ generator_params:
     # duration_dropout_rate: 0.5            # Duration predictor dropout
     num_spk_embs: 0                       # Do not consider speaker embedding for single spk
     
-    layer_num: 1                         # Number of discrete token layer
     use_weight_sum: false                  # Whether to apply weight sum
 
 ###########################################################
@@ -103,9 +102,9 @@ duration_loss_params:
     reduction: mean
 use_mel_loss: true   # Whether to use Mel-spectrogram loss.
 mel_loss_params:     # Mel-spectrogram loss parameters.
-    fs: 16000
-    fft_size: 1024
-    hop_size: 256
+    fs: 48000
+    fft_size: 2048
+    hop_size: 320
     win_length: null
     window: "hann"
     num_mels: 80
@@ -132,7 +131,7 @@ lambda_feat_match: 2.0 # Loss balancing coefficient for feat match loss..
 ###########################################################
 #                  DATA LOADER SETTING                    #
 ###########################################################
-batch_size: 24              # Batch size.
+batch_size: 48              # Batch size.
 batch_max_steps: 10240      # Length of each audio in batch. Make sure dividable by hop_size.
 pin_memory: true            # Whether to pin memory in Pytorch DataLoader.
 num_workers: 0              # Number of workers in Pytorch DataLoader.
@@ -176,9 +175,9 @@ discriminator_grad_norm: -1
 ###########################################################
 generator_train_start_steps: 1     # Number of steps to start to train discriminator.
 discriminator_train_start_steps: 0 # Number of steps to start to train discriminator.
-train_max_steps: 2500000           # Number of training steps.
+train_max_steps: 400000           # Number of training steps.
 save_interval_steps: 50000         # Interval steps to save checkpoint.
-eval_interval_steps: 1000          # Interval steps to evaluate the network.
+eval_interval_steps: 10000          # Interval steps to evaluate the network.
 log_interval_steps: 100            # Interval steps to record the training log.
 
 ###########################################################

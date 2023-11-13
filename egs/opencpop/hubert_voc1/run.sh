@@ -41,7 +41,7 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
-hubert_text=/data4/tyx/task/discrete_unit/opencpop_wavlm_km1024_noprefix.txt
+hubert_text=""
 use_f0=true                    # whether to add f0 
 use_pretrain_feature=false      # whether to use pretrain feature as input
 layernum=0
@@ -234,7 +234,7 @@ if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
 
     done
 else
-    log "Skip the evaluation stages"
+    echo "Skip the evaluation stages"
 fi
 
 echo "Finished."

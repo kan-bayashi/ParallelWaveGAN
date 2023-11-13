@@ -70,13 +70,36 @@ def f0_torchyin(
     return f0
 
 
+def _convert_to_continuous_f0(f0: np.array) -> np.array:
+    if (f0 == 0).all():
+        logging.warning("All frames seems to be unvoiced.")
+        return f0
+
+    # padding start and end of f0 sequence
+    start_f0 = f0[f0 != 0][0]
+    end_f0 = f0[f0 != 0][-1]
+    start_idx = np.where(f0 == start_f0)[0][0]
+    end_idx = np.where(f0 == end_f0)[0][-1]
+    f0[:start_idx] = start_f0
+    f0[end_idx:] = end_f0
+
+    # get non-zero frame index
+    nonzero_idxs = np.where(f0 != 0)[0]
+
+    # perform linear interpolation
+    interp_fn = interp1d(nonzero_idxs, f0[nonzero_idxs])
+    f0 = interp_fn(np.arange(0, f0.shape[0]))
+
+    return f0
+
 def f0_dio(
     audio,
     sampling_rate,
-    hop_size=256,
-    pitch_min=40,
+    hop_size=160,
+    pitch_min=80,
     pitch_max=10000,
     use_log_f0=True,
+    use_continuous_f0=True,
 ):
     """Compute F0 with pyworld.dio
 
@@ -108,6 +131,8 @@ def f0_dio(
         frame_period=frame_period,
     )
     f0 = pyworld.stonemask(x, f0, timeaxis, sampling_rate)
+    if use_continuous_f0:
+        f0 = _convert_to_continuous_f0(f0)
     if use_log_f0:
         nonzero_idxs = np.where(f0 != 0)[0]
         f0[nonzero_idxs] = np.log(f0[nonzero_idxs])
@@ -359,6 +384,8 @@ def main():
                 sampling_rate=config["sampling_rate"],
                 hop_size=config["hop_size"],
             ) # (#frames,)
+            # logging.info(f'f0: {len(f0)} {len(mel)}')
+            logging.info(f'{utt_id} f0({len(f0)}): {f0}')
             if len(f0) > len(mel):
                 f0 = f0[: len(mel)]
             else:
