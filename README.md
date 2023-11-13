@@ -27,6 +27,7 @@ You can try the real-time end-to-end text-to-speech and singing voice synthesis 
 
 ## What's new
 
+- 2023/08/17 [LibriTTS-R recipe](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/libritts_r/voc1) is available!
 - 2022/02/27 Support singing voice vocoder [egs/{kiritan, opencpop, oniku\_kurumi\_utagoe\_db, ofuton\_p\_utagoe\_db, csd, kising}/voc1]
 - 2021/10/21 Single-speaker Korean recipe [egs/kss/voc1] is available.
 - 2021/08/24 Add more pretrained models of StyleMelGAN and HiFi-GAN.
@@ -53,18 +54,16 @@ You can try the real-time end-to-end text-to-speech and singing voice synthesis 
 
 This repository is tested on Ubuntu 20.04 with a GPU Titan V.
 
-- Python 3.7+
-- Cuda 10.0+
-- CuDNN 7+
+- Python 3.8+
+- Cuda 11.0+
+- CuDNN 8+
 - NCCL 2+ (for distributed multi-gpu training)
 - libsndfile (you can install via `sudo apt install libsndfile-dev` in ubuntu)
 - jq (you can install via `sudo apt install jq` in ubuntu)
 - sox (you can install via `sudo apt install sox` in ubuntu)
 
 Different cuda version should be working but not explicitly tested.  
-All of the codes are tested on Pytorch 1.4, 1.5.1, 1.7.1, 1.8.1, 1.9, 1.10.2, 1.11.0, 1.12.1, and 1.13.1.
-
-Pytorch 1.6 works but there are some issues in cpu mode (See #198).
+All of the codes are tested on Pytorch 1.8.1, 1.9, 1.10.2, 1.11.0, 1.12.1, 1.13.1, 2.0.1 and 2.1.0.
 
 ## Setup
 
@@ -110,6 +109,7 @@ Currently, the following recipes are supported.
 - [JNAS](http://research.nii.ac.jp/src/en/JNAS.html): Japanese multi-speaker
 - [VCTK](https://homepages.inf.ed.ac.uk/jyamagis/page3/page58/page58.html): English multi-speaker
 - [LibriTTS](https://arxiv.org/abs/1904.02882): English multi-speaker
+- [LibriTTS-R](https://arxiv.org/abs/2305.18802): English multi-speaker enhanced by speech restoration.
 - [YesNo](https://arxiv.org/abs/1904.02882): English speaker (For debugging)
 - [KSS](https://www.kaggle.com/bryanpark/korean-single-speaker-speech-dataset): Single Korean female speaker
 - [Oniku\_kurumi\_utagoe\_db/](http://onikuru.info/db-download/): Single Japanese female singer (singing voice)
