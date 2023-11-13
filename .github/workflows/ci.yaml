@@ -16,10 +16,8 @@ jobs:
     strategy:
       max-parallel: 8
       matrix:
-        python-version: [3.7]
-        # 1.6 is failed on cpu: https://github.com/kan-bayashi/ParallelWaveGAN/issues/198
-        # 1.10 does not support python 3.6
-        pytorch-version: [1.4, 1.5.1, 1.7.1, 1.8.1, 1.9, 1.10.2, 1.11.0, 1.12.1, 1.13.1]
+        python-version: ["3.8"]
+        pytorch-version: [1.8.1, 1.9, 1.10.2, 1.11.0, 1.12.1, 1.13.1, 2.0.1, 2.1.0]
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v2
@@ -59,12 +57,12 @@ jobs:
           pytest test
 
   integration:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       max-parallel: 10
       matrix:
-        python-version: [3.9]
-        pytorch-version: [1.13.1]
+        python-version: ["3.10"]
+        pytorch-version: [2.1.0]
         config:
           - "parallel_wavegan.v1.debug.yaml"
           - "melgan.v1.debug.yaml"
@@ -105,12 +103,12 @@ jobs:
           path: egs/yesno/voc1
 
   integration_segments:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       max-parallel: 10
       matrix:
-        python-version: [3.9]
-        pytorch-version: [1.13.1]
+        python-version: ["3.10"]
+        pytorch-version: [2.1.0]
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v2
@@ -141,12 +139,12 @@ jobs:
           path: egs/yesno/voc1
 
   integration_vq:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       max-parallel: 10
       matrix:
-        python-version: [3.8]
-        pytorch-version: [1.13.1]
+        python-version: ["3.10"]
+        pytorch-version: [2.1.0]
         config:
           - "melgan_vae.v3.debug.yaml"
           - "conditioned_melgan_vae.v3.debug.yaml"
