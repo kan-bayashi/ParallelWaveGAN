@@ -20,11 +20,11 @@ jobs:
         pytorch-version: [1.8.1, 1.9, 1.10.2, 1.11.0, 1.12.1, 1.13.1, 2.0.1, 2.1.0]
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: 'x64'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-${{ hashFiles('**/setup.py') }}
@@ -75,11 +75,11 @@ jobs:
           - "uhifigan.v1.debug.yaml"
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: 'x64'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-${{ hashFiles('**/setup.py') }}
@@ -111,11 +111,11 @@ jobs:
         pytorch-version: [2.1.0]
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: 'x64'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-${{ hashFiles('**/setup.py') }}
@@ -151,11 +151,11 @@ jobs:
           - "local_conditioned_melgan_vae.v3.debug.yaml"
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: 'x64'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.pytorch-version }}-pip-${{ hashFiles('**/setup.py') }}
