@@ -23,52 +23,6 @@ from transformers import HubertModel, Wav2Vec2FeatureExtractor
 from parallel_wavegan.datasets import AudioDataset, AudioSCPDataset
 from parallel_wavegan.utils import write_hdf5
 
-def f0_torchyin(
-    audio,
-    sampling_rate,
-    hop_size=256,
-    frame_length=None,
-    pitch_min=40,
-    pitch_max=10000,
-    use_log_f0=True,
-):
-    """Compute F0 with Yin.
-
-    Args:
-        audio (ndarray): Audio signal (T,).
-        sampling_rate (int): Sampling rate.
-        hop_size (int): Hop size.
-        pitch_min (int): Minimum pitch in pitch extraction.
-        pitch_max (int): Maximum pitch in pitch extraction.
-
-    Returns:
-        ndarray: f0 feature (#frames, ).
-
-    Note:
-        Unvoiced frame has value = 0.
-
-    """
-    torch_wav = torch.from_numpy(audio).float()
-    if frame_length is not None:
-        pitch_min = sampling_rate / (frame_length / 2)
-
-    import torchyin
-    pitch = torchyin.estimate(
-        torch_wav,
-        sample_rate=sampling_rate,
-        pitch_min=pitch_min,
-        pitch_max=pitch_max,
-        frame_stride=hop_size / sampling_rate,
-    )
-    f0 = pitch.cpu().numpy()
-    # midi_number = np.zeros(shape=f0.shape, dtype=float)
-    # midi_number[nonzeros_idxs] = 69 + 12 * np.log2(f0[nonzeros_idxs] / 440)
-    # midi_number = midi_number.astype(int)
-    if use_log_f0:
-        nonzeros_idxs = np.where(f0 != 0)[0]
-        f0[nonzeros_idxs] = np.log(f0[nonzeros_idxs])
-    return f0
-
 
 def _convert_to_continuous_f0(f0: np.array) -> np.array:
     if (f0 == 0).all():
@@ -279,13 +233,13 @@ def main():
         )
 
     # get text
-    if not os.path.isdir(args.text):
+    if not os.path.isdir(args.text): # single layer token file
         with open(args.text) as f:
             lines = [line.strip() for line in f.readlines()]
         text = {
             line.split(maxsplit=1)[0]: line.split(maxsplit=1)[1].split() for line in lines
         }
-    else: 
+    else:  # multi-stream: directory of token files
         text = {}
         for fname in os.listdir(args.text):
             fpath = os.path.join(args.text, fname)
@@ -332,6 +286,7 @@ def main():
                 hop_length=config["trim_hop_size"],
             )
         
+        # use feature embedding(for teacher-forcing)
         if args.use_pretrain_feature:
             pretrained_model = "facebook/hubert-base-ls960"
             model = HubertModel.from_pretrained(pretrained_model)
@@ -373,24 +328,15 @@ def main():
         
         # use f0
         if args.use_f0:
-            # f0 = f0_torchyin(
-            #     audio,
-            #     sampling_rate=config["sampling_rate"],
-            #     hop_size=config["hop_size"],
-            #     frame_length=config["win_length"],
-            # ).reshape(-1, 1)
             f0 = f0_dio(
                 audio,
                 sampling_rate=config["sampling_rate"],
                 hop_size=config["hop_size"],
-            ) # (#frames,)
-            # logging.info(f'f0: {len(f0)} {len(mel)}')
-            logging.info(f'{utt_id} f0({len(f0)}): {f0}')
+            ) # (#frames,)  
             if len(f0) > len(mel):
                 f0 = f0[: len(mel)]
             else:
                 f0 = np.pad(f0, (0, len(mel) - len(f0)), mode="edge")
-            # logging.info(f'f0: {f0}')
 
         # apply global gain
         if config["global_gain_scale"] > 0.0:

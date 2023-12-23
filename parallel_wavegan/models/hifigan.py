@@ -1304,16 +1304,11 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         out_channels=1,
         channels=512,
         linear_channel=256,
-        layer_num=13,
+        layer_num=12,
         num_embs=100,
         num_spk_embs=128,
         spk_emb_dim=128,
         concat_spk_emb=False,
-        # duration_layers=2,
-        # duration_chans=384,
-        # duration_kernel_size=3,
-        # duration_offset=1.0,
-        # duration_dropout_rate=0.5,
         kernel_size=7,
         upsample_scales=(8, 8, 2, 2),
         upsample_kernel_sizes=(16, 16, 4, 4),
@@ -1326,6 +1321,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         use_weight_norm=True,
         use_pretrain_feats=False,
         use_weight_sum=False,
+        use_fix_weight=False,
     ):
         """Initialize HiFiGANGenerator module.
 
@@ -1358,11 +1354,6 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
             num_spk_embs=num_spk_embs,
             spk_emb_dim=spk_emb_dim,
             concat_spk_emb=concat_spk_emb,
-            # duration_layers=duration_layers,
-            # duration_chans=duration_chans,
-            # duration_kernel_size=duration_kernel_size,
-            # duration_offset=duration_offset,
-            # duration_dropout_rate=duration_dropout_rate,
             kernel_size=kernel_size,
             upsample_scales=upsample_scales,
             upsample_kernel_sizes=upsample_kernel_sizes,
@@ -1374,17 +1365,27 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
             nonlinear_activation_params=nonlinear_activation_params,
             use_weight_norm=use_weight_norm,
         )
+        
         self.f0_embedding = torch.nn.Linear(
             in_features=1,
             out_features=linear_channel,
         )
+        
         self.use_weight_sum = use_weight_sum
         if use_weight_sum is True:
             self.layer_num = layer_num
-            self.weights = torch.nn.Parameter(torch.zeros(self.layer_num))
+            self.weights = torch.nn.Parameter(torch.ones(self.layer_num))
+            self.use_fix_weight = use_fix_weight
+            
+            if use_fix_weight is True: # fix update
+                self.weights = torch.nn.Parameter(torch.ones(self.layer_num), requires_grad=False)
+            else: 
+                self.weights = torch.nn.Parameter(torch.ones(self.layer_num))
+                
             self.emb = torch.nn.ModuleList([
                 torch.nn.Embedding(num_embeddings=num_embs, embedding_dim=in_channels) for _ in range(self.layer_num)
             ])
+
         self.input_conv = torch.nn.Conv1d(
             in_channels + linear_channel,
             channels,
@@ -1392,6 +1393,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
             1,
             padding=(kernel_size - 1) // 2,
         )
+
         self.use_pretrain_feats = use_pretrain_feats
         
     
@@ -1399,7 +1401,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         """Calculate forward propagation.
 
         Args:
-            c (Tensor): Input tensor (B, 2, T). or (B, 1, T)
+            c (Tensor): Input tensor (B, 2, T). or (B, 1, T) or (B, L, T)
             f0 (Tensor): Input tensor (B, 1, T)
 
         Returns:
@@ -1428,15 +1430,23 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
                     # Apply the i-th embedding layer to the i-th layer of input
                         embedded.append(embedding_layer(c[:, i].long()))
                     c = torch.stack(embedded, dim=1).transpose(-1, 1)
-                    norm_weights = F.softmax(self.weights, dim=-1) # (L,)
-                    # logging.info(f'norm_weights: {norm_weights.shape}')
-                    # logging.info(f'norm_weights: {norm_weights}')
-                    # (B, C, T, L) * (L,) -> (B, C, T)
+                    
+                    # weights: [L,]
+                    if self.use_fix_weight:
+                        norm_weights = self.weights
+                    else:
+                        norm_weights = F.softmax(self.weights, dim=-1) 
+                        
+                    # logging.info(f'norm_weights({norm_weights.shape}): {norm_weights}')
+                    
+                    # c: (B, C, T, L) * (L,) -> (B, C, T)
                     c = torch.matmul(c, norm_weights)
                 else:
                     assert c.size(1) == 1
                     c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
-                
+        
+        # logging.info(f'feats: {c.shape}')        
+        # logging.info(f'f0: {f0.shape}')        
         if f0 is not None:
             f0 = self.f0_embedding(f0.transpose(1, 2)).transpose(1, 2)
             c = torch.cat((c, f0), dim=1)
@@ -1448,14 +1458,14 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
                 cs += self.blocks[i * self.num_blocks + j](c)
             c = cs / self.num_blocks
         c = self.output_conv(c)
-
         return c
+    
     
     def inference(self, c, f0, g=None, normalize_before=False):
         """Perform inference.
 
         Args:
-            c (Union[Tensor, ndarray]): Input tensor (T, 2).
+            c (Union[Tensor, ndarray]): Input tensor (T, 2) or (T, L).
             f0 (Tensor): Input f0 (T,).
 
         Returns:

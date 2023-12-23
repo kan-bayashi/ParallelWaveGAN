@@ -83,8 +83,10 @@ fi
 if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     echo "Stage 1: Feature extraction"
     if [ ! -e "${hubert_text}" ]; then
-        echo "Valid --hubert_text is not provided. Please prepare it by yourself."
-        echo "hubert_text should be like kaldi-style text as follows:"
+        echo "Valid --hubert_text is not provided. Please prepare it by yourself."        
+        echo "--hubert_text have 2 kinds of input: path of a hubert_text file / path of a directory of hubert_text files."
+        echo "If --hubert_text is a directory of hubert_text files described above, it will process in a multi-stream way. Multi-stream setting should be updated in `conf/hifigan_hubert_16k_nodp_f0_sum.v1.yaml`"
+        echo "For hubert_text file, it should be like kaldi-style text as follows:"
         cat << EOF
 utt_id_1 0 0 0 0 1 1 1 1 2 2 2 2
 utt_id_2 0 0 0 0 0 0 3 3 3 3 3 3 5 5 5 5
@@ -94,7 +96,7 @@ EOF
     fi
     # extract raw features
     pids=()
-    # for name in "${dev_set}"; do
+    # for name in "${eval_set}"; do
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"

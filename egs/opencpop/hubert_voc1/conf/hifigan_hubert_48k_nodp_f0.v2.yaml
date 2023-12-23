@@ -4,7 +4,7 @@
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
 ###########################################################
-sampling_rate: 16000     # Sampling rate.
+sampling_rate: 48000     # Sampling rate.
 fft_size: null           # FFT size.
 hop_size: 320            # Hop size.
 win_length: null         # Window length.
@@ -33,6 +33,8 @@ generator_params:
     kernel_size: 7                        # Kernel size of initial and final conv layers.
     upsample_scales: [10, 8, 2, 2]        # Upsampling scales.
     upsample_kernel_sizes: [20, 16, 4, 4] # Kernel size for upsampling layers.
+    # upsample_scales: [8, 5, 4, 2]        # Upsampling scales.
+    # upsample_kernel_sizes: [16, 10, 8, 4] # Kernel size for upsampling layers.
     resblock_kernel_sizes: [3, 7, 11]     # Kernel size for residual blocks.
     resblock_dilations:                   # Dilations for residual blocks.
         - [1, 3, 5]
@@ -44,11 +46,17 @@ generator_params:
     nonlinear_activation_params:          # Nonlinear activation paramters.
         negative_slope: 0.1
     use_weight_norm: true                 # Whether to apply weight normalization.
+    # duration_layers: 2                    # Duration predictor layers
+    # duration_chans: 384                   # Duration predictor conv channels
+    # duration_kernel_size: 3               # Duration predictor kernel size
+    # duration_offset: 1.0                  # Duration predictor offset 
+    # duration_dropout_rate: 0.5            # Duration predictor dropout
     num_spk_embs: 0                       # Do not consider speaker embedding for single spk
     
     use_weight_sum: true                  # Whether to apply weight sum
     layer_num: 3
-    use_fix_weight: true                  # Whether to fix parameter of weight sum (for RVQ cluster layer)
+    use_fix_weight: true                  # Whether to fix parameter of weight sum
+
 
 ###########################################################
 #       DISCRIMINATOR NETWORK ARCHITECTURE SETTING        #
@@ -99,9 +107,9 @@ duration_loss_params:
     reduction: mean
 use_mel_loss: true   # Whether to use Mel-spectrogram loss.
 mel_loss_params:     # Mel-spectrogram loss parameters.
-    fs: 16000
-    fft_size: 1024
-    hop_size: 256
+    fs: 48000
+    fft_size: 2048
+    hop_size: 320
     win_length: null
     window: "hann"
     num_mels: 80
