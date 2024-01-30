@@ -24,7 +24,7 @@ if LooseVersion(pip.__version__) < LooseVersion("19"):
 
 requirements = {
     "install": [
-        "torch>=1.4",
+        "torch>=1.8",
         "setuptools>=38.5.1",
         "librosa>=0.8.0",
         "soundfile>=0.10.2",
@@ -37,8 +37,6 @@ requirements = {
         "yq>=2.10.0",
         "gdown",
         "filelock",
-        # https://github.com/kan-bayashi/ParallelWaveGAN/runs/6646851174?check_suite_focus=true#step:6:294
-        "protobuf<=3.20.1",
     ],
     "setup": [
         "numpy",
@@ -72,7 +70,7 @@ extras_require = {
 dirname = os.path.dirname(__file__)
 setup(
     name="parallel_wavegan",
-    version="0.6.0",
+    version="0.6.2a",
     url="http://github.com/kan-bayashi/ParallelWaveGAN",
     author="Tomoki Hayashi",
     author_email="hayashi.tomoki@g.sp.m.is.nagoya-u.ac.jp",
@@ -90,6 +88,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Intended Audience :: Science/Research",
         "Operating System :: POSIX :: Linux",
         "License :: OSI Approved :: MIT License",

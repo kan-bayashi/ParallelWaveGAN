@@ -22,29 +22,21 @@ num_split=$2
 dst_dir=$3
 
 src_scp=${src_dir}/wav.scp
+num_src_utts=$(wc -l < "${src_scp}")
+has_utt2spk=false
+has_segments=false
+
 if [ -e "${src_dir}/segments" ]; then
     has_segments=true
     src_segments=${src_dir}/segments
-else
-    has_segments=false
+    num_src_utts=$(wc -l < "${src_segments}")
 fi
+
 if [ -e "${src_dir}/utt2spk" ]; then
     has_utt2spk=true
     src_utt2spk=${src_dir}/utt2spk
-else
-    has_utt2spk=false
 fi
-src_scp=${src_dir}/wav.scp
-num_src_utts=$(wc -l < "${src_scp}")
 
-# NOTE: We assume that wav.scp and segments has the same number of lines
-if ${has_segments}; then
-    num_src_segments=$(wc -l < "${src_segments}")
-    if [ "${num_src_segments}" -ne "${num_src_utts}" ]; then
-        echo "ERROR: wav.scp and segments has different #lines (${num_src_utts} vs ${num_src_segments})." >&2
-        exit 1;
-    fi
-fi
 if ${has_utt2spk}; then
     num_src_utt2spk=$(wc -l < "${src_utt2spk}")
     if [ "${num_src_utt2spk}" -ne "${num_src_utts}" ]; then

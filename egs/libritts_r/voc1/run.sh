@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2019 Tomoki Hayashi
+# Copyright 2020 Tomoki Hayashi
 #  MIT License (https://opensource.org/licenses/MIT)
 
 . ./cmd.sh || exit 1;
@@ -10,18 +10,20 @@
 stage=-1       # stage to start
 stop_stage=100 # stage to stop
 verbose=1      # verbosity level (lower is less info)
-n_gpus=0       # number of gpus in training
-n_jobs=2       # number of parallel jobs in feature extraction
+n_gpus=8       # number of gpus in training
+n_jobs=128     # number of parallel jobs in feature extraction
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
-conf=conf/parallel_wavegan.v1.debug.yaml
+conf=conf/hifigan.v1.yaml
+
+# speaker setting
+part="all" # "clean" or "all"
+             # if set to "clean", use only clean data
+             # if set to "all", use clean + other data
 
 # directory path setting
-download_dir=downloads # direcotry to save downloaded files
+download_dir=downloads # directory to save database
 dumpdir=dump           # directory to dump features
-
-# data setting
-use_fake_segments=false  # for testing
 
 # training related setting
 tag=""     # tag for directory to save model
@@ -36,9 +38,9 @@ checkpoint="" # checkpoint path to be used for decoding
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
 
-train_set="train_nodev" # name of training data directory
-dev_set="dev"           # name of development data direcotry
-eval_set="eval"         # name of evaluation data direcotry
+train_set="train_nodev_${part}" # name of training data directory
+dev_set="dev_${part}"           # name of development data directory
+eval_set="eval_${part}"         # name of evaluation data directory
 
 set -euo pipefail
 
@@ -49,12 +51,41 @@ fi
 
 if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"
-    local/data_prep.sh \
-        --use_fake_segments "${use_fake_segments}" \
-        --train_set "${train_set}" \
-        --dev_set "${dev_set}" \
-        --eval_set "${eval_set}" \
-        "${download_dir}/waves_yesno" data
+    if [ "${part}" = "clean" ]; then
+        train_parts="train-clean-100 train-clean-360"
+        dev_parts="dev-clean"
+        eval_parts="test-clean"
+    elif [ "${part}" = "all" ]; then
+        train_parts="train-clean-100 train-clean-360 train-other-500"
+        dev_parts="dev-clean dev-other"
+        eval_parts="test-clean test-other"
+    else
+        echo "You must select from all or clean." >&2; exit 1;
+    fi
+    train_data_dirs=""
+    dev_data_dirs=""
+    eval_data_dirs=""
+    for train_part in ${train_parts}; do
+        local/data_prep.sh "${download_dir}/LibriTTS" \
+            "${train_part}" data "${download_dir}/LibriTTSLabel"
+        train_data_dirs+=" data/${train_part}"
+    done
+    for dev_part in ${dev_parts}; do
+        local/data_prep.sh "${download_dir}/LibriTTS" \
+            "${dev_part}" data "${download_dir}/LibriTTSLabel"
+        dev_data_dirs+=" data/${dev_part}"
+    done
+    for eval_part in ${eval_parts}; do
+        local/data_prep.sh "${download_dir}/LibriTTS" \
+            "${eval_part}" data "${download_dir}/LibriTTSLabel"
+        eval_data_dirs+=" data/${eval_part}"
+    done
+    # shellcheck disable=SC2086
+    utils/combine_data.sh "data/${train_set}" ${train_data_dirs}
+    # shellcheck disable=SC2086
+    utils/combine_data.sh "data/${dev_set}" ${dev_data_dirs}
+    # shellcheck disable=SC2086
+    utils/combine_data.sh "data/${eval_set}" ${eval_data_dirs}
 fi
 
 stats_ext=$(grep -q "hdf5" <(yq ".format" "${conf}") && echo "h5" || echo "npy")
@@ -71,6 +102,7 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
             parallel-wavegan-preprocess \
                 --config "${conf}" \
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
+                --segments "${dumpdir}/${name}/raw/segments.JOB" \
                 --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
                 --verbose "${verbose}"
         echo "Successfully finished feature extraction of ${name} set."
@@ -114,22 +146,22 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp/${train_set}_yesno_$(basename "${conf}" .yaml)"
+    expdir="exp/${train_set}_libritts_$(basename "${conf}" .yaml)"
 else
-    expdir="exp/${train_set}_yesno_${tag}"
+    expdir="exp/${train_set}_libritts_${tag}"
 fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
     [ ! -e "${expdir}" ] && mkdir -p "${expdir}"
     cp "${dumpdir}/${train_set}/stats.${stats_ext}" "${expdir}"
     if [ "${n_gpus}" -gt 1 ]; then
-        train="python -m parallel_wavegan.distributed.launch --nproc_per_node ${n_gpus} -c parallel-wavegan-train"
+        train=(python -m parallel_wavegan.distributed.launch --nproc_per_node "${n_gpus}" -c parallel-wavegan-train)
     else
-        train="parallel-wavegan-train"
+        train=(parallel-wavegan-train)
     fi
     echo "Training start. See the progress via ${expdir}/train.log."
     ${cuda_cmd} --gpu "${n_gpus}" "${expdir}/train.log" \
-        ${train} \
+        "${train[@]}" \
             --config "${conf}" \
             --train-dumpdir "${dumpdir}/${train_set}/norm" \
             --dev-dumpdir "${dumpdir}/${dev_set}/norm" \
@@ -153,17 +185,6 @@ if [ "${stage}" -le 3 ] && [ "${stop_stage}" -ge 3 ]; then
         ${cuda_cmd} --gpu "${n_gpus}" "${outdir}/${name}/decode.log" \
             parallel-wavegan-decode \
                 --dumpdir "${dumpdir}/${name}/norm" \
-                --checkpoint "${checkpoint}" \
-                --outdir "${outdir}/${name}" \
-                --verbose "${verbose}"
-        echo "Successfully finished decoding of ${name} set."
-
-        # NOTE(kan-bayashi): Extra decoding for debugging
-        echo "Decoding start. See the progress via ${outdir}/${name}/decode.log."
-        ${cuda_cmd} --gpu "${n_gpus}" "${outdir}/${name}/decode.log" \
-            parallel-wavegan-decode \
-                --normalize-before \
-                --dumpdir "${dumpdir}/${name}/raw" \
                 --checkpoint "${checkpoint}" \
                 --outdir "${outdir}/${name}" \
                 --verbose "${verbose}"
