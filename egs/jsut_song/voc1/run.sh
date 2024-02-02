@@ -7,31 +7,21 @@
 . ./path.sh || exit 1;
 
 # basic settings
-stage=0        # stage to start
+stage=-1        # stage to start
 stop_stage=100 # stage to stop
 verbose=1      # verbosity level (lower is less info)
 n_gpus=1       # number of gpus in training
 n_jobs=4       # number of parallel jobs in feature extraction
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
-conf=conf/parallel_wavegan.v1.yaml
+conf=conf/hifigan.v1.yaml
 
 # directory path setting
-db_root=/path/to/database # direcotry including wavfiles (MODIFY BY YOURSELF)
-                          # each wav filename in the directory should be unique
-                          # e.g.
-                          # /path/to/database
-                          # ├── utt_1.wav
-                          # ├── utt_2.wav
-                          # │   ...
-                          # └── utt_N.wav
+db_root=downloads # direcotry to download data and labels from https://sites.google.com/site/shinnosuketakamichi/publication/jsut-song
 dumpdir=dump # directory to dump features
 
 # subset setting
 shuffle=false # whether to shuffle the data to create subset
-num_dev=100   # the number of development data
-num_eval=100  # the number of evaluation data
-              # (if set to 0, the same dev set is used as eval set)
 
 # training related setting
 tag=""     # tag for directory to save model
@@ -54,17 +44,45 @@ eval_set="eval"         # name of evaluation data direcotry
 
 set -euo pipefail
 
+if [ "${stage}" -le -1 ] && [ "${stop_stage}" -ge -1 ]; then
+    echo "Stage -1: Data download"
+    if [ -e "${db_root}/todai_child" ] && [ -e "${db_root}/jsut-song_ver1/child_song/wav" ]; then
+        echo "The JSUT-song corpus exists. Skip downloading."
+    
+    elif [ -e "${db_root}/jsut-song_ver1.zip" ] && [ -e "${db_root}/jsut-song_label.zip" ]; then
+        echo "Unzipping downloaded zip files for JSUT-song corpus."
+        unzip ${db_root}/jsut-song_ver1.zip -d ${db_root}
+        unzip ${db_root}/jsut-song_label.zip -d ${db_root}
+        rm ${db_root}/jsut-song_ver1.zip
+        rm ${db_root}/jsut-song_label.zip
+
+    else
+    	echo "ERROR: The JSUT-song corpus does not exist."
+    	echo "ERROR: Please download from https://sites.google.com/site/shinnosuketakamichi/publication/jsut-song"
+        echo "and locate it at ${db_root}"
+        echo "Please ensure that you've downloaded songs (jsut-song_ver1.zip) and labels (jsut-song_label.zip) to ${db_root} before proceeding"
+        # Terms from https://sites.google.com/site/shinnosuketakamichi/publication/jsut-song
+    	exit 1
+    fi
+fi
+
 if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     echo "Stage 0: Data preparation"
-    local/data_prep.sh \
-        --fs "$(yq ".sampling_rate" "${conf}")" \
-        --num_dev "${num_dev}" \
-        --num_eval "${num_eval}" \
+    mkdir -p score_dump
+    mkdir -p wav_dump
+    python local/data_prep.py \
+        --lab_srcdir ${db_root}/todai_child \
+        --wav_srcdir ${db_root}/jsut-song_ver1/child_song/wav \
+        --score_dump score_dump \
+        --wav_dumpdir wav_dump \
+        --sr "$(yq ".sampling_rate" "${conf}")" \
         --train_set "${train_set}" \
         --dev_set "${dev_set}" \
-        --eval_set "${eval_set}" \
-        --shuffle "${shuffle}" \
-        "${db_root}" data
+        --eval_set "${eval_set}"
+    for src_data in ${train_set} ${dev_set} ${eval_set}; do
+        utils/utt2spk_to_spk2utt.pl < data/${src_data}/utt2spk > data/${src_data}/spk2utt
+        utils/fix_data_dir.sh --utt_extra_files "label score.scp" data/${src_data}
+    done
 fi
 
 stats_ext=$(grep -q "hdf5" <(yq ".format" "${conf}") && echo "h5" || echo "npy")
@@ -130,13 +148,13 @@ if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp/${train_set}_$(basename "${conf}" .yaml)"
+    expdir="exp/${train_set}_jsut_song_$(basename "${conf}" .yaml)"
     if [ -n "${pretrain}" ]; then
         pretrain_tag=$(basename "$(dirname "${pretrain}")")
         expdir+="_${pretrain_tag}"
     fi
 else
-    expdir="exp/${train_set}_${tag}"
+    expdir="exp/${train_set}_jsut_song_${tag}"
 fi
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
     echo "Stage 2: Network training"
