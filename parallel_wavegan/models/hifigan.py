@@ -886,7 +886,7 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.1},
         use_weight_norm=True,
-        use_pretrain_feats=False,
+        use_embedding_feats=False,
     ):
         """Initialize HiFiGANGenerator module.
 
@@ -913,7 +913,7 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
         """
         super().__init__()
         self.num_spk_embs = num_spk_embs
-        self.use_pretrain_feats = use_pretrain_feats
+        self.use_embedding_feats = use_embedding_feats
 
         # define id embedding
         self.emb = torch.nn.Embedding(
@@ -1019,10 +1019,10 @@ class DiscreteSymbolHiFiGANGenerator(torch.nn.Module):
                 c = torch.cat([c, g], dim=-1)
         # NOTE(Yuxun): update for using pretrain model layer output as input
         else:
-            if not self.use_pretrain_feats:
+            if not self.use_embedding_feats:
                 assert c.size(1) == 1
                 c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
-            
+
         c = self.input_conv(c)
         for i in range(self.num_upsamples):
             c = self.upsamples[i](c)
@@ -1304,7 +1304,6 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         out_channels=1,
         channels=512,
         linear_channel=256,
-        layer_num=12,
         num_embs=100,
         num_spk_embs=128,
         spk_emb_dim=128,
@@ -1319,9 +1318,12 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         nonlinear_activation="LeakyReLU",
         nonlinear_activation_params={"negative_slope": 0.1},
         use_weight_norm=True,
-        use_pretrain_feats=False,
+        # discret token
+        use_embedding_feats=False,
         use_weight_sum=False,
+        layer_num=12,
         use_fix_weight=False,
+        use_f0=True,
     ):
         """Initialize HiFiGANGenerator module.
 
@@ -1366,10 +1368,12 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
             use_weight_norm=use_weight_norm,
         )
         
-        self.f0_embedding = torch.nn.Linear(
-            in_features=1,
-            out_features=linear_channel,
-        )
+        if use_f0 is True:
+            self.use_f0 = use_f0
+            self.f0_embedding = torch.nn.Linear(
+                in_features=1,
+                out_features=linear_channel,
+            )
         
         self.use_weight_sum = use_weight_sum
         if use_weight_sum is True:
@@ -1387,26 +1391,27 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
             ])
 
         self.input_conv = torch.nn.Conv1d(
-            in_channels + linear_channel,
+            in_channels + linear_channel if use_f0 is True else in_channels,
             channels,
             kernel_size,
             1,
             padding=(kernel_size - 1) // 2,
         )
 
-        self.use_pretrain_feats = use_pretrain_feats
+        self.use_embedding_feats = use_embedding_feats
         
     
     def forward(self, c, f0=None):
         """Calculate forward propagation.
 
         Args:
-            c (Tensor): Input tensor (B, 2, T). or (B, 1, T) or (B, L, T)
+            c (Tensor): Input tensor token: (B, 2, T). or (B, 1, T) or (B, L, T)
+                        or for embedding feature: (B, C, T)
             f0 (Tensor): Input tensor (B, 1, T)
-
         Returns:
             Tensor: Output tensor (B, out_channels, T').
         """
+        # logging.info(f'feats({c.shape}): {c}')       
         # convert idx to embedding
         if self.num_spk_embs > 0:
             assert c.size(1) == 2
@@ -1422,7 +1427,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
                 c = torch.cat([c, g], dim=-1)
         else:
             # NOTE(Yuxun): update for using pretrain model layer output as input
-            if not self.use_pretrain_feats:
+            if not self.use_embedding_feats:
                 if self.use_weight_sum:
                     assert c.size(1) == self.layer_num # (B, L, T)
                     embedded = []
@@ -1436,18 +1441,15 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
                         norm_weights = self.weights
                     else:
                         norm_weights = F.softmax(self.weights, dim=-1) 
-                        
                     # logging.info(f'norm_weights({norm_weights.shape}): {norm_weights}')
-                    
                     # c: (B, C, T, L) * (L,) -> (B, C, T)
                     c = torch.matmul(c, norm_weights)
                 else:
                     assert c.size(1) == 1
                     c = self.emb(c.squeeze(1).long()).transpose(1, 2)  # (B, C, T)
-        
-        # logging.info(f'feats: {c.shape}')        
-        # logging.info(f'f0: {f0.shape}')        
-        if f0 is not None:
+         
+        # logging.info(f'f0({f0.shape}): {f0} ')        
+        if f0 is not None and self.use_f0:
             f0 = self.f0_embedding(f0.transpose(1, 2)).transpose(1, 2)
             c = torch.cat((c, f0), dim=1)
         c = self.input_conv(c)
@@ -1465,9 +1467,8 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         """Perform inference.
 
         Args:
-            c (Union[Tensor, ndarray]): Input tensor (T, 2) or (T, L).
+            c (Union[Tensor, ndarray]): Input tensor (T, 2) or (T, 1) or (T, L).
             f0 (Tensor): Input f0 (T,).
-
         Returns:
             Tensor: Output tensor (T ** prod(upsample_scales), out_channels).
 
@@ -1478,7 +1479,7 @@ class DiscreteSymbolF0Generator(DiscreteSymbolHiFiGANGenerator):
         if g is not None:
             c = c[:, 0:1]
             c = torch.cat([c, c.new_zeros(*c.size()).fill_(g).to(c.device)], dim=1)
-        if not self.use_pretrain_feats:
+        if not self.use_embedding_feats:
             if self.num_spk_embs <= 0 and not self.use_weight_sum:
                 c = c[:, 0:1]
         # weight sum: c (T, L)

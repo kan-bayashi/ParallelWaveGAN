@@ -1,6 +1,8 @@
 # This configuration is based on HiFiGAN V1, derived
 # from official repository (https://github.com/jik876/hifi-gan).
 
+# for 16k pre-trained model token, like HuBERT, WavLM, XSL-R...
+
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
 ###########################################################

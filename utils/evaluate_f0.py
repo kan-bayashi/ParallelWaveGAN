@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
 # Copyright 2021 Wen-Chin Huang and Tomoki Hayashi
-# Copyright 2022 Shuai Guo
 #  Apache 2.0  (http://www.apache.org/licenses/LICENSE-2.0)
 
-"""Evaluate VUV error between generated and groundtruth audios based on World."""
+"""Evaluate log-F0 RMSE between generated and groundtruth audios based on World."""
 
 import argparse
 import fnmatch
@@ -20,13 +19,6 @@ import pyworld as pw
 import soundfile as sf
 from fastdtw import fastdtw
 from scipy import spatial
-
-
-def _Hz2Flag(freq):
-    if freq == 0:
-        return False
-    else:
-        return True
 
 
 def find_files(
@@ -121,9 +113,9 @@ def calculate(
     file_list: List[str],
     gt_file_list: List[str],
     args: argparse.Namespace,
-    vuv_err_dict: Dict[str, float],
+    f0_rmse_dict: Dict[str, float],
 ):
-    """Calculate VUV error."""
+    """Calculate log-F0 RMSE."""
     for i, gen_path in enumerate(file_list):
         corresponding_list = list(
             filter(lambda gt_path: _get_basename(gt_path) in gen_path, gt_file_list)
@@ -138,7 +130,7 @@ def calculate(
 
         fs = gen_fs
         if gen_fs != gt_fs:
-            gt_x = librosa.resample(gt_x.astype(np.float), gt_fs, gen_fs)
+            gt_x = librosa.resample(gt_x.astype(np.float64), orig_sr=gt_fs, target_sr=gen_fs)
 
         # extract ground truth and converted features
         gen_mcep, gen_f0 = world_extract(
@@ -168,11 +160,15 @@ def calculate(
         gen_f0_dtw = gen_f0[twf[0]]
         gt_f0_dtw = gt_f0[twf[1]]
 
-        # VUV ERR
-        vuv_GT = np.array([_Hz2Flag(_f0) for _f0 in gt_f0_dtw])
-        vuv_predict = np.array([_Hz2Flag(_f0) for _f0 in gen_f0_dtw])
-        vuv_ERR = float((vuv_GT != vuv_predict).sum()) / len(vuv_GT)
-        vuv_err_dict[gt_basename] = vuv_ERR
+        # Get voiced part
+        nonzero_idxs = np.where((gen_f0_dtw != 0) & (gt_f0_dtw != 0))[0]
+        gen_f0_dtw_voiced = np.log(gen_f0_dtw[nonzero_idxs])
+        gt_f0_dtw_voiced = np.log(gt_f0_dtw[nonzero_idxs])
+
+        # log F0 RMSE
+        log_f0_rmse = np.sqrt(np.mean((gen_f0_dtw_voiced - gt_f0_dtw_voiced) ** 2))
+        logging.info(f"{gt_basename} {log_f0_rmse:.4f}")
+        f0_rmse_dict[gt_basename] = log_f0_rmse
 
 
 def get_parser() -> argparse.Namespace:
@@ -253,7 +249,7 @@ def get_parser() -> argparse.Namespace:
 
 
 def main():
-    """Run VUV error calculation in parallel."""
+    """Run log-F0 RMSE calculation in parallel."""
     args = get_parser().parse_args()
 
     # logging info
@@ -305,10 +301,12 @@ def main():
 
     # multi processing
     with mp.Manager() as manager:
-        vuv_err_dict = manager.dict()
+        log_f0_rmse_dict = manager.dict()
         processes = []
+        # for f in file_lists:
+        #     calculate(f, gt_files, args, log_f0_rmse_dict)
         for f in file_lists:
-            p = mp.Process(target=calculate, args=(f, gt_files, args, vuv_err_dict))
+            p = mp.Process(target=calculate, args=(f, gt_files, args, log_f0_rmse_dict))
             p.start()
             processes.append(p)
 
@@ -317,11 +315,12 @@ def main():
             p.join()
 
         # convert to standard list
-        vuv_err_dict = dict(vuv_err_dict)
+        log_f0_rmse_dict = dict(log_f0_rmse_dict)
 
         # calculate statistics
-        mean_vuv_err = np.mean(np.array([v for v in vuv_err_dict.values()]))
-        logging.info(f"Average - VUV_ERROR: {mean_vuv_err*100:.2f}%")
+        mean_log_f0_rmse = np.mean(np.array([v for v in log_f0_rmse_dict.values()]))
+        std_log_f0_rmse = np.std(np.array([v for v in log_f0_rmse_dict.values()]))
+        logging.info(f"Average: {mean_log_f0_rmse:.4f} ± {std_log_f0_rmse:.4f}")
 
     # write results
     if args.outdir is None:
@@ -330,15 +329,15 @@ def main():
         else:
             args.outdir = os.path.dirname(args.gen_wavdir_or_wavscp)
     os.makedirs(args.outdir, exist_ok=True)
-    with open(f"{args.outdir}/utt2vuv_error", "w") as f:
-        for utt_id in sorted(vuv_err_dict.keys()):
-            vuv_ERR = vuv_err_dict[utt_id]
-            f.write(f"{utt_id} {vuv_ERR*100:.2f}%\n")
-    with open(f"{args.outdir}/vuv_error_avg_result.txt", "w") as f:
+    with open(f"{args.outdir}/utt2log_f0_rmse", "w") as f:
+        for utt_id in sorted(log_f0_rmse_dict.keys()):
+            log_f0_rmse = log_f0_rmse_dict[utt_id]
+            f.write(f"{utt_id} {log_f0_rmse:.4f}\n")
+    with open(f"{args.outdir}/log_f0_rmse_avg_result.txt", "w") as f:
         f.write(f"#utterances: {len(gen_files)}\n")
-        f.write(f"Average: {mean_vuv_err*100:.2f}%")
+        f.write(f"Average: {mean_log_f0_rmse:.4f} ± {std_log_f0_rmse:.4f}")
 
-    logging.info("Successfully finished VUV error evaluation.")
+    logging.info("Successfully finished log-F0 RMSE evaluation.")
 
 
 if __name__ == "__main__":

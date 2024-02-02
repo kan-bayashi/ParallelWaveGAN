@@ -30,6 +30,7 @@ egs/*/*/downloads
 egs/*/*/dump
 egs/*/*/dump*
 egs/*/*/wav_dump
+egs/*/*/wav_dump*
 egs/*/*/exp
 egs/*/*/conf/tuning
 

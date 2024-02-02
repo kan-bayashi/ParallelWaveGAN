@@ -18,7 +18,6 @@ import yaml
 import torch
 from tqdm import tqdm
 from scipy.interpolate import interp1d
-from transformers import HubertModel, Wav2Vec2FeatureExtractor
 
 from parallel_wavegan.datasets import AudioDataset, AudioSCPDataset
 from parallel_wavegan.utils import write_hdf5
@@ -162,12 +161,6 @@ def main():
         help="yaml format configuration file.",
     )
     parser.add_argument(
-        "--use-pretrain-feature",
-        default=False,
-        action="store_true",
-        help="whether to use pretrain model to get feature.",
-    )
-    parser.add_argument(
         "--verbose",
         type=int,
         default=1,
@@ -180,10 +173,22 @@ def main():
         help="whether to use f0 sequence.",
     )
     parser.add_argument(
-        "--layer-num",
+        "--use-embedding-feats",
+        default=False,
+        action="store_true",
+        help="whether to use pretrain model to get feature.",
+    )
+    parser.add_argument(
+        "--emb-layer",
         type=int,
         default=1,
         help="logging level. higher is more logging. (default=1)",
+    )
+    parser.add_argument(
+        "--pretrained-model",
+        type=str,
+        default="facebook/hubert-base-ls960",
+        help="pretrained model for embedding feature",
     )
     args = parser.parse_args()
 
@@ -232,7 +237,7 @@ def main():
             return_sampling_rate=True,
         )
 
-    # get text
+    # get token single layer / multi layer
     if not os.path.isdir(args.text): # single layer token file
         with open(args.text) as f:
             lines = [line.strip() for line in f.readlines()]
@@ -246,11 +251,11 @@ def main():
             with open(fpath, 'r') as f:
                 lines = [line.strip() for line in f.readlines()]
             for line in lines:
-                l0, l1 = line.split(maxsplit=1) # name, list
-                l1 = l1.split() 
-                if text.get(l0) is None:
-                    text[l0] = []
-                text[l0].append(line.split(maxsplit=1)[1].split())
+                utt_name, tokens = line.split(maxsplit=1) # name, list
+                tokens = tokens.split() 
+                if text.get(utt_name) is None:
+                    text[utt_name] = []
+                text[utt_name].append(tokens)
 
     # load spk2utt file
     if args.utt2spk is not None:
@@ -287,14 +292,21 @@ def main():
             )
         
         # use feature embedding(for teacher-forcing)
-        if args.use_pretrain_feature:
-            pretrained_model = "facebook/hubert-base-ls960"
-            model = HubertModel.from_pretrained(pretrained_model)
-            processor = Wav2Vec2FeatureExtractor.from_pretrained(pretrained_model, trust_remote_code=True) 
-            inputs = processor(audio, sampling_rate=16000, return_tensors="pt")
+        if args.use_embedding_feats:
+            os.environ["http_proxy"] = "http://127.0.0.1:7890"
+            os.environ["https_proxy"] = "http://127.0.0.1:7890"
+            from transformers import AutoModel, Wav2Vec2FeatureExtractor
+            pretrained_model = args.pretrained_model
+            logging.info(f'model: {pretrained_model}')
+            model = AutoModel.from_pretrained(pretrained_model, cache_dir='/data3/tyx/pretrain_model')
+            processor = Wav2Vec2FeatureExtractor.from_pretrained(pretrained_model, cache_dir='/data3/tyx/pretrain_model') 
+            # model = AutoModel.from_pretrained(pretrained_model, cache_dir='/data3/tyx/pretrain_model')
+            # processor = Wav2Vec2CTCTokenizer.from_pretrained(pretrained_model, cache_dir='/data3/tyx/pretrain_model') 
+            inputs = processor(audio, sampling_rate=fs, return_tensors="pt")
             outputs = model(**inputs, output_hidden_states=True)
             features = outputs.hidden_states
-            mel = features[args.layer_num].squeeze(0).detach().numpy()
+            mel = features[args.emb_layer].squeeze(0).detach().numpy()
+            # mel: (T, 1024) 
         else:
             # use hubert index instead of mel
             mel = np.array(text[utt_id]).astype(np.int64)
@@ -302,6 +314,8 @@ def main():
                 mel = mel.transpose(1, 0)
             else:
                 mel = mel.reshape(-1, 1)
+            # mel: (T, 1)
+        # logging.info(f'mel({mel.shape})')
         
         if args.spk2idx is not None:
             spk = utt2spk[utt_id]
@@ -322,6 +336,10 @@ def main():
             logging.warning(
                 "len(mel) * config['hop_size'] <= len(audio), may be errors"
             )
+        # logging.info(f'audio: {len(audio)}')
+        # import math
+        # token_len = math.ceil(len(audio) / config["hop_size"])
+        # assert len(mel) == token_len
         mel = mel[: len(audio) // config["hop_size"]]
         audio = audio[: len(mel) * config["hop_size"]]
         assert len(mel) * config["hop_size"] == len(audio)
@@ -332,7 +350,8 @@ def main():
                 audio,
                 sampling_rate=config["sampling_rate"],
                 hop_size=config["hop_size"],
-            ) # (#frames,)  
+            ) # (#frames,) 
+            # logging.info(f'f0({f0.shape}): {f0}') 
             if len(f0) > len(mel):
                 f0 = f0[: len(mel)]
             else:

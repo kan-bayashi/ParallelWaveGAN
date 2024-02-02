@@ -11,13 +11,13 @@ stage=-1       # stage to start
 stop_stage=100 # stage to stop
 verbose=1      # verbosity level (lower is less info)
 n_gpus=1       # number of gpus in training
-n_jobs=16      # number of parallel jobs in feature extraction
+n_jobs=8      # number of parallel jobs in feature extraction
 
 # NOTE(kan-bayashi): renamed to conf to avoid conflict in parse_options.sh
-conf=conf/hifigan_hubert_16k_nodp_f0_sum.v1.yaml
+conf=conf/hifigan_token_16k_nodp_f0.v1.yaml
 
 # directory path setting
-db_root=/data4/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
+db_root=/data3/tyx/dataset/opencpop # direcotry including wavfiles (MODIFY BY YOURSELF)
                           # each wav filename in the directory should be unique
                           # e.g.
                           # /path/to/database
@@ -41,10 +41,13 @@ train_set="train"       # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="test"         # name of evaluation data direcotry
 
-hubert_text=""
+token_text=""
 use_f0=true                    # whether to add f0 
-use_pretrain_feature=false      # whether to use pretrain feature as input
-layernum=0
+use_embedding_feats=false      # whether to use pretrain feature as input
+pretrained_model="facebook/hubert-base-ls960"      # pre-trained model (confirm it on Huggingface)
+emb_layer=6
+fs=16000
+subexp="exp"
 
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
@@ -58,17 +61,18 @@ if [ "${stage}" -le 0 ] && [ "${stop_stage}" -ge 0 ]; then
     	echo "ERROR: Please download https://wenet.org.cn/opencpop/download/ and locate it at ${download_dir}"
     	exit 1
     fi
+    echo "Please make sure fs=${fs} is right sample rate for model."
     mkdir -p wav_dump
     python local/data_prep.py ${db_root} \
         --wav_dumpdir wav_dump \
-        --sr 24000
+        --sr ${fs} \
 
     sort -o data/train/wav.scp data/train/wav.scp
 
     dev_num=50
     train_num=$(( $(wc -l < data/train/wav.scp) - dev_num ))
 
-    cp -r data/${train_set} data/${dev_set}
+    mkdir -p data/${dev_set}
     head -n $train_num data/${train_set}/wav.scp > data/${train_set}/wav.scp.tmp
     tail -n $dev_num data/${train_set}/wav.scp > data/${dev_set}/wav.scp.tmp
     mv data/${dev_set}/wav.scp.tmp data/${dev_set}/wav.scp
@@ -82,40 +86,50 @@ fi
 
 if [ "${stage}" -le 1 ] && [ "${stop_stage}" -ge 1 ]; then
     echo "Stage 1: Feature extraction"
-    if [ ! -e "${hubert_text}" ]; then
-        echo "Valid --hubert_text is not provided. Please prepare it by yourself."        
-        echo "--hubert_text have 2 kinds of input: path of a hubert_text file / path of a directory of hubert_text files."
-        echo "If --hubert_text is a directory of hubert_text files described above, it will process in a multi-stream way. Multi-stream setting should be updated in `conf/hifigan_hubert_16k_nodp_f0_sum.v1.yaml`"
-        echo "For hubert_text file, it should be like kaldi-style text as follows:"
+    if [ ! -e "${token_text}" ]; then
+        echo "Valid --token_text is not provided. Please prepare it by yourself."        
+        echo "--token_text have 2 kinds of input: path of token_text file / path of token files directory."
         cat << EOF
+---------------------------------
+token_text file: like kaldi-style text as follows:
 utt_id_1 0 0 0 0 1 1 1 1 2 2 2 2
 utt_id_2 0 0 0 0 0 0 3 3 3 3 3 3 5 5 5 5
 ...
+----------------------------------
+token files directory: token_text files described above
+It will run in multi-stream way, training set should update in conf/hifigan_token_16k_nodp_f0.v1.yaml.
+token files directory format as follows:
+token_dir/
+    - token_file(layer1)
+    - token_file(layer2)
+    ....
 EOF
         exit 1
     fi
     # extract raw features
     pids=()
-    # for name in "${eval_set}"; do
     for name in "${train_set}" "${dev_set}" "${eval_set}"; do
     (
         [ ! -e "${dumpdir}/${name}/raw" ] && mkdir -p "${dumpdir}/${name}/raw"
         echo "Feature extraction start. See the progress via ${dumpdir}/${name}/raw/preprocessing.*.log."
         utils/make_subset_data.sh "data/${name}" "${n_jobs}" "${dumpdir}/${name}/raw"
+
         _opts=
         if [ ${use_f0} == true ]; then
             _opts+="--use-f0 "
         fi
-        if [ ${use_pretrain_feature} == "true" ]; then
-            _opts+="--use-pretrain-feature "
+        if [ ${use_embedding_feats} == "true" ]; then
+            _opts+="--use-embedding-feats "
+            _opts+="--pretrained-model ${pretrained_model} "
+            _opts+="--emb-layer ${emb_layer} "
         fi
-        _opts+="--layer-num ${layernum} "
+
         ${train_cmd} JOB=1:${n_jobs} "${dumpdir}/${name}/raw/preprocessing.JOB.log" \
-            local/preprocess_hubert.py \
+            local/preprocess_token.py \
                 --config "${conf}" \
                 --scp "${dumpdir}/${name}/raw/wav.JOB.scp" \
                 --dumpdir "${dumpdir}/${name}/raw/dump.JOB" \
-                --text "${hubert_text}" \
+                --text "${token_text}" \
                 --verbose "${verbose}" ${_opts}
         echo "Successfully finished feature extraction of ${name} set."
     ) &
@@ -124,13 +138,12 @@ EOF
     i=0; for pid in "${pids[@]}"; do wait "${pid}" || ((++i)); done
     [ "${i}" -gt 0 ] && echo "$0: ${i} background jobs are failed." && exit 1;
     echo "Successfully finished feature extraction."
-
 fi
 
 if [ -z "${tag}" ]; then
-    expdir="exp/${train_set}_opencpop_$(basename "${conf}" .yaml)"
+    expdir="${subexp}/${train_set}_opencpop_$(basename "${conf}" .yaml)"
 else
-    expdir="exp/${train_set}_opencpop_${tag}"
+    expdir="${subexp}/${train_set}_opencpop_${tag}"
 fi
 
 if [ "${stage}" -le 2 ] && [ "${stop_stage}" -ge 2 ]; then
@@ -191,7 +204,7 @@ fi
 
 if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
     echo "Stage 4: Scoring"
-
+    [ -z "${checkpoint}" ] && checkpoint="$(ls -dt "${expdir}"/*.pkl | head -1 || true)"
     for dset in ${eval_set}; do
         _data="data/${dset}"
         _gt_wavscp="${_data}/wav.scp"
@@ -202,7 +215,7 @@ if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
         echo "Begin Scoring for MCD metrics on ${dset}, results are written under ${_dir}/MCD_res"
 
         mkdir -p "${_dir}/MCD_res"
-        python local/evaluate_mcd.py \
+        python utils/evaluate_mcd.py \
             ${_gen_wavdir} \
             ${_gt_wavscp} \
             --outdir "${_dir}/MCD_res"
@@ -211,7 +224,7 @@ if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
         echo "Begin Scoring for F0 related metrics on ${dset}, results are written under ${_dir}/F0_res"
 
         mkdir -p "${_dir}/F0_res"
-        python local/evaluate_f0.py \
+        python utils/evaluate_f0.py \
             ${_gen_wavdir} \
             ${_gt_wavscp} \
             --outdir "${_dir}/F0_res"
@@ -220,7 +233,7 @@ if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
         # echo "Begin Scoring for SEMITONE related metrics on ${dset}, results are written under ${_dir}/SEMITONE_res"
 
         # mkdir -p "${_dir}/SEMITONE_res"
-        # python local/evaluate_semitone.py \
+        # python utils/evaluate_semitone.py \
         #     ${_gen_wavdir} \
         #     ${_gt_wavscp} \
         #     --outdir "${_dir}/SEMITONE_res"
@@ -229,7 +242,7 @@ if [ "${stage}" -le 4 ] && [ "${stop_stage}" -ge 4 ]; then
         # echo "Begin Scoring for VUV related metrics on ${dset}, results are written under ${_dir}/VUV_res"
 
         # mkdir -p "${_dir}/VUV_res"
-        # python local/evaluate_vuv.py \
+        # python utils/evaluate_vuv.py \
         #     ${_gen_wavdir} \
         #     ${_gt_wavscp} \
         #     --outdir "${_dir}/VUV_res"

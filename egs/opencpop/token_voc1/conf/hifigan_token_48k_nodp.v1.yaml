@@ -1,10 +1,12 @@
 # This configuration is based on HiFiGAN V1, derived
 # from official repository (https://github.com/jik876/hifi-gan).
 
+# for 16k pre-trained model token, like HuBERT, WavLM, XSL-R...
+
 ###########################################################
 #                FEATURE EXTRACTION SETTING               #
 ###########################################################
-sampling_rate: 16000     # Sampling rate.
+sampling_rate: 48000     # Sampling rate.
 fft_size: null           # FFT size.
 hop_size: 320            # Hop size.
 win_length: null         # Window length.
@@ -28,7 +30,7 @@ generator_params:
     in_channels: 768                      # Number of input channels.
     out_channels: 1                       # Number of output channels.
     channels: 512                         # Number of initial channels.
-    num_embs: 1024
+    num_embs: 1025
     kernel_size: 7                        # Kernel size of initial and final conv layers.
     upsample_scales: [10, 8, 2, 2]        # Upsampling scales.
     upsample_kernel_sizes: [20, 16, 4, 4] # Kernel size for upsampling layers.
@@ -43,13 +45,7 @@ generator_params:
     nonlinear_activation_params:          # Nonlinear activation paramters.
         negative_slope: 0.1
     use_weight_norm: true                 # Whether to apply weight normalization.
-    # duration_layers: 2                    # Duration predictor layers
-    # duration_chans: 384                   # Duration predictor conv channels
-    # duration_kernel_size: 3               # Duration predictor kernel size
-    # duration_offset: 1.0                  # Duration predictor offset 
-    # duration_dropout_rate: 0.5            # Duration predictor dropout
     num_spk_embs: 0                       # Do not consider speaker embedding for single spk
-    use_pretrain_feats: true              # whether to use pretrain model layer output as input
 
 ###########################################################
 #       DISCRIMINATOR NETWORK ARCHITECTURE SETTING        #
@@ -173,9 +169,9 @@ discriminator_grad_norm: -1
 ###########################################################
 generator_train_start_steps: 1     # Number of steps to start to train discriminator.
 discriminator_train_start_steps: 0 # Number of steps to start to train discriminator.
-train_max_steps: 2500000           # Number of training steps.
+train_max_steps: 400000           # Number of training steps.
 save_interval_steps: 50000         # Interval steps to save checkpoint.
-eval_interval_steps: 1000          # Interval steps to evaluate the network.
+eval_interval_steps: 10000          # Interval steps to evaluate the network.
 log_interval_steps: 100            # Interval steps to record the training log.
 
 ###########################################################
