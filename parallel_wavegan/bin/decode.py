@@ -226,7 +226,7 @@ def main():
                     "SCP format is not supported for f0 and excitation."
                 )
             dataset = MelSCPDataset(
-                feats_scp=args.feats_scp,
+                feats_scp=args.scp,
                 return_utt_id=True,
             )
         logging.info(f"The number of features to be decoded = {len(dataset)}.")
