@@ -17,7 +17,7 @@ n_jobs=8      # number of parallel jobs in feature extraction
 conf=conf/hifigan.v1.yaml
 
 # directory path setting
-download_dir=downloads # set the directory to your database
+download_dir=/data3/tyx/dataset # set the directory to your database
 dumpdir=dump           # directory to dump features
 
 # training related setting
@@ -33,7 +33,7 @@ checkpoint="" # checkpoint path to be used for decoding
 # shellcheck disable=SC1091
 . utils/parse_options.sh || exit 1;
 
-train_set="train_nodev" # name of training data directory
+train_set="train" # name of training data directory
 dev_set="dev"           # name of development data direcotry
 eval_set="eval"         # name of evaluation data direcotry
 

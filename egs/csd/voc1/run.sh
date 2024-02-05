@@ -18,7 +18,7 @@ n_jobs=8      # number of parallel jobs in feature extraction
 conf=conf/hifigan.v1.yaml
 
 # directory path setting
-download_dir=downloads # set the directory to your database
+download_dir="/data2/tyx/dataset" # set the directory to your database
 dumpdir=dump           # directory to dump features
 
 # training related setting
