@@ -239,6 +239,8 @@ You can listen to the samples and download pretrained models from the link to ou
 | [csd_english_hifigan.v1](https://drive.google.com/open?id=1NACjfBqmaecwh4dZMl714RukEkV8XLAi)                 | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csd/voc1/conf/hifigan.v1.yaml)                        | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
 | [csd_korean_hifigan.v1](https://drive.google.com/open?id=1BGxIoRg4VgXcX0G-4Dwea030-qQ_Ynyp)                  | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/csd/voc1/conf/hifigan.v1.yaml)                        | EN    | 24k     | 80-7600        | 2048 / 300 / 1200    | 250k    |
 | [kising_hifigan.v1](https://drive.google.com/open?id=1GGu3pW89qxmJapd0Vm1aqp6lqgZARLO9)                      | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/kising/voc1/conf/hifigan.v1.yaml)                     | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200    | 300k    |
+| [m4singer_hifigan.v1](https://drive.google.com/open?id=1dvD6imY6p2L80tN8tr_kzqUa3M7QJtLY)                    | [link](https://github.com/kan-bayashi/ParallelWaveGAN/blob/master/egs/m4singer/voc1/conf/hifigan.v1.yaml)                 | ZH    | 24k     | 80-7600        | 2048 / 300 / 1200     | 1M      |
+
 
 
 
